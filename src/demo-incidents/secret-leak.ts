@@ -2,11 +2,11 @@
 // DO NOT use real credentials in source control.
 
 // Fake AWS Access Key (matches AKIA shape for scanners, but is not real)
-const AWS_ACCESS_KEY = "AKIAIOSFODNN7EXAMPLE";
+const AWS_ACCESS_KEY = "REDACTED_AWS_ACCESS_KEY";
 const AWS_SECRET_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
 
 // Fake database connection string for live-demo secret scanning
-const DB_CONNECTION = "Server=demo-server;Database=citizens;User Id=admin;Password=DemoP@ssw0rd123!;";
+const DB_CONNECTION = "Server=demo-server;Database=citizens;User Id=admin;Password=REDACTED_PASSWORD";
 
 // Fake API tokens
 const GITHUB_TOKEN = "ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef12";
