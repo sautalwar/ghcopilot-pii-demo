@@ -1,0 +1,14 @@
+[
+  {
+    "id": "citizen-001",
+    "ssn": "111-22-3333",
+    "email": "alexa.rivera@example.gov",
+    "phone": "555-0101"
+  },
+  {
+    "id": "citizen-002",
+    "ssn": "444-55-6666",
+    "email": "nina.cho@example.gov",
+    "phone": "555-0102"
+  }
+]

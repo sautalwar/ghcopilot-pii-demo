@@ -1,0 +1,124 @@
+name: Dependency Vulnerability Check
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'demo/*'
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  check-dependencies:
+    name: check-dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Review dependency changes on pull requests
+        id: dependency_review
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+      - name: Run npm audit
+        id: npm_audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f package.json ]]; then
+            echo "audit_available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No package.json found. Skipping npm audit."
+            exit 0
+          fi
+
+          if [[ ! -f package-lock.json && ! -f npm-shrinkwrap.json ]]; then
+            echo "::warning::No lockfile found. Generating a temporary package-lock.json for npm audit."
+            npm install --package-lock-only --ignore-scripts --no-audit
+          fi
+
+          npm audit --json > audit.json || true
+          echo "audit_available=true" >> "$GITHUB_OUTPUT"
+
+      - name: Annotate high and critical vulnerabilities
+        if: steps.npm_audit.outputs.audit_available == 'true'
+        shell: bash
+        env:
+          DEPENDENCY_REVIEW_OUTCOME: ${{ steps.dependency_review.outcome || 'skipped' }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const outputPath = process.env.GITHUB_OUTPUT;
+          const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+          const report = JSON.parse(fs.readFileSync('audit.json', 'utf8'));
+          const vulnerabilities = report.vulnerabilities || {};
+          const findings = Object.entries(vulnerabilities)
+            .filter(([, vuln]) => ['high', 'critical'].includes(String(vuln.severity || '').toLowerCase()))
+            .map(([name, vuln]) => ({ name, ...vuln }));
+
+          let high = 0;
+          let critical = 0;
+
+          for (const finding of findings) {
+            const severity = String(finding.severity || '').toLowerCase();
+            if (severity === 'critical') {
+              critical += 1;
+            } else {
+              high += 1;
+            }
+
+            const via = Array.isArray(finding.via)
+              ? finding.via.map((entry) => typeof entry === 'string' ? entry : entry.name).filter(Boolean).join(', ')
+              : 'No advisory metadata provided';
+            const annotationLevel = severity === 'critical' ? 'error' : 'warning';
+            console.log(`::${annotationLevel} title=${finding.name} ${severity} vulnerability::${finding.name} (${severity}) - ${via}`);
+          }
+
+          const lines = [
+            '## Dependency review summary',
+            '',
+            `- Event: \`${process.env.GITHUB_EVENT_NAME}\``,
+            `- Dependency review action: **${process.env.DEPENDENCY_REVIEW_OUTCOME || 'skipped'}**`,
+            `- High vulnerabilities: **${high}**`,
+            `- Critical vulnerabilities: **${critical}**`,
+            ''
+          ];
+
+          if (findings.length > 0) {
+            lines.push('| Package | Severity | Fix Available |');
+            lines.push('| --- | --- | --- |');
+            for (const finding of findings.slice(0, 50)) {
+              lines.push(`| ${finding.name} | ${finding.severity} | ${finding.fixAvailable ? 'Yes' : 'No'} |`);
+            }
+          } else {
+            lines.push('No high or critical vulnerabilities were detected by npm audit.');
+          }
+
+          fs.appendFileSync(summaryPath, `${lines.join('\n')}\n`);
+          fs.appendFileSync(outputPath, `high_count=${high}\ncritical_count=${critical}\n`);
+
+          if (high + critical > 0) {
+            process.exit(1);
+          }
+          NODE
+
+      - name: Summarize skipped audit
+        if: steps.npm_audit.outputs.audit_available != 'true'
+        shell: bash
+        run: |
+          {
+            echo "## Dependency review summary"
+            echo ""
+            echo "npm audit was skipped because the repository does not contain a package.json file."
+          } >> "$GITHUB_STEP_SUMMARY"

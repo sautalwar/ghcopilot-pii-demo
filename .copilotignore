@@ -1,0 +1,26 @@
+# Content Exclusion - Files Copilot should NOT process
+# This is enforced at the PLATFORM level, not by the LLM
+
+# Environment files with secrets
+*.env
+.env.*
+
+# Secret/credential directories
+**/secrets/**
+**/credentials/**
+**/private-keys/**
+
+# Demo incident files (contain fake PII/secrets for demo)
+src/demo-incidents/secret-leak.ts
+src/demo-incidents/pii-data-leak.ts
+
+# Database dumps and data exports
+*.sql
+*.csv
+*.dump
+
+# Certificate and key files
+*.pem
+*.key
+*.p12
+*.pfx

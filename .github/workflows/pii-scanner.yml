@@ -1,0 +1,147 @@
+name: PII Detection Scanner
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'demo/*'
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  scan-for-pii:
+    name: scan-for-pii
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Scan repository for PII patterns
+        id: scan
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          FILE_ARGS=(
+            --include='*.ts'
+            --include='*.js'
+            --include='*.json'
+            --include='*.env'
+            --include='.env'
+            --include='*.csv'
+            --exclude-dir=.git
+            --exclude-dir=node_modules
+            --exclude-dir=dist
+            --exclude-dir=build
+          )
+
+          > pii-findings.tsv
+
+          declare -A PATTERNS=(
+            [SSN]='[0-9]{3}-[0-9]{2}-[0-9]{4}'
+            [EMAIL]='[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
+            [PHONE]='([0-9]{3}-[0-9]{3}-[0-9]{4}|\([0-9]{3}\) [0-9]{3}-[0-9]{4})'
+            [CREDIT_CARD]='[0-9]{4}[- ]?[0-9]{4}[- ]?[0-9]{4}[- ]?[0-9]{4}'
+          )
+
+          total=0
+          for type in SSN EMAIL PHONE CREDIT_CARD; do
+            pattern="${PATTERNS[$type]}"
+            while IFS=: read -r file line match; do
+              [[ -z "${file:-}" ]] && continue
+              total=$((total + 1))
+              printf '%s\t%s\t%s\n' "$type" "$file" "$line" >> pii-findings.tsv
+              echo "::warning file=$file,line=$line,title=$type detected::Potential $type found in $file"
+            done < <(grep -RInE --binary-files=without-match "${FILE_ARGS[@]}" "$pattern" . || true)
+          done
+
+          if [[ $total -gt 0 ]]; then
+            echo "has_pii=true" >> "$GITHUB_OUTPUT"
+            echo "finding_count=$total" >> "$GITHUB_OUTPUT"
+            {
+              echo "## PII scan findings"
+              echo ""
+              echo "- Findings detected: **$total**"
+              echo "- Event: \`${{ github.event_name }}\`"
+              echo "- Ref: \`${{ github.ref_name }}\`"
+              echo ""
+              echo "| Type | File | Line |"
+              echo "| --- | --- | --- |"
+              awk -F '\t' '{printf("| %s | %s | %s |\n", $1, $2, $3)}' pii-findings.tsv
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Potential PII detected in repository content."
+          else
+            echo "has_pii=false" >> "$GITHUB_OUTPUT"
+            echo "finding_count=0" >> "$GITHUB_OUTPUT"
+            {
+              echo "## PII scan findings"
+              echo ""
+              echo "No PII matches were detected in the scanned file types."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Create issue with PII findings
+        id: create_issue
+        if: steps.scan.outputs.has_pii == 'true'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        env:
+          FINDINGS_COUNT: ${{ steps.scan.outputs.finding_count }}
+        with:
+          script: |
+            const fs = require('fs');
+            const refName = context.ref.replace('refs/heads/', '');
+            const raw = fs.readFileSync('pii-findings.tsv', 'utf8').trim();
+            const entries = raw
+              .split('\n')
+              .filter(Boolean)
+              .slice(0, 100)
+              .map((line) => {
+                const [type, file, lineNumber] = line.split('\t');
+                return `- **${type}** in \`${file}\` at line ${lineNumber}`;
+              })
+              .join('\n');
+
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[PII Scanner] ${process.env.FINDINGS_COUNT} potential findings on ${refName}`,
+              body: [
+                `Automated PII scanning detected **${process.env.FINDINGS_COUNT}** potential findings.`,
+                '',
+                `- Repository: \`${context.repo.owner}/${context.repo.repo}\``,
+                `- Ref: \`${refName}\``,
+                `- Actor: @${context.actor}`,
+                `- Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+                '',
+                '### Findings',
+                entries || '- No findings were serialized.'
+              ].join('\n')
+            });
+
+            core.setOutput('issue_number', String(issue.data.number));
+            core.setOutput('issue_url', issue.data.html_url);
+
+      - name: Summarize issue creation
+        if: always()
+        shell: bash
+        env:
+          HAS_PII: ${{ steps.scan.outputs.has_pii }}
+          ISSUE_URL: ${{ steps.create_issue.outputs.issue_url }}
+          ISSUE_OUTCOME: ${{ steps.create_issue.outcome }}
+        run: |
+          if [[ "$HAS_PII" != "true" ]]; then
+            exit 0
+          fi
+
+          {
+            echo ""
+            echo "### Issue creation"
+            if [[ "$ISSUE_OUTCOME" == "success" && -n "$ISSUE_URL" ]]; then
+              echo "- Created tracking issue: $ISSUE_URL"
+            else
+              echo "- Issue creation did not complete successfully. Review the workflow logs."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

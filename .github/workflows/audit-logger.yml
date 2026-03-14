@@ -1,0 +1,87 @@
+name: Security Audit Logger
+
+on:
+  workflow_dispatch:
+    inputs:
+      action_type:
+        description: Audit action type (pii_access, secret_scan, code_review, dependency_check)
+        required: true
+        type: string
+  push:
+    branches:
+      - 'demo/*'
+
+permissions:
+  contents: read
+
+jobs:
+  log-audit-event:
+    name: log-audit-event
+    runs-on: ubuntu-latest
+    env:
+      ACTION_TYPE: ${{ github.event.inputs.action_type || 'secret_scan' }}
+    steps:
+      - name: Generate audit event report
+        id: generate_report
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p audit-artifacts
+          python <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          allowed_actions = {'pii_access', 'secret_scan', 'code_review', 'dependency_check'}
+          action_type = os.environ['ACTION_TYPE']
+          result = 'success' if action_type in allowed_actions else 'invalid_action_type'
+
+          report = {
+              'timestamp_utc': datetime.now(timezone.utc).isoformat(),
+              'repository': os.environ['GITHUB_REPOSITORY'],
+              'workflow': os.environ['GITHUB_WORKFLOW'],
+              'run_id': os.environ['GITHUB_RUN_ID'],
+              'run_attempt': os.environ['GITHUB_RUN_ATTEMPT'],
+              'actor': os.environ['GITHUB_ACTOR'],
+              'trigger_event': os.environ['GITHUB_EVENT_NAME'],
+              'ref': os.environ['GITHUB_REF_NAME'],
+              'action': action_type,
+              'result': result
+          }
+
+          output_file = Path('audit-artifacts') / f"audit-report-{os.environ['GITHUB_RUN_ID']}.json"
+          output_file.write_text(json.dumps(report, indent=2), encoding='utf-8')
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write(f"report_path={output_file.as_posix()}\n")
+              output.write(f"result={result}\n")
+
+          if result != 'success':
+              print(f"::warning::Unsupported action_type '{action_type}' supplied. Logged report with invalid_action_type result.")
+          else:
+              print('::warning::Security audit event logged successfully.')
+          PY
+
+      - name: Add audit summary
+        shell: bash
+        env:
+          ACTION_TYPE: ${{ env.ACTION_TYPE }}
+          RESULT: ${{ steps.generate_report.outputs.result }}
+          REPORT_PATH: ${{ steps.generate_report.outputs.report_path }}
+        run: |
+          {
+            echo "## Security audit event"
+            echo ""
+            echo "- Timestamp: \`$(date -u +'%Y-%m-%dT%H:%M:%SZ')\`"
+            echo "- Actor: \`${{ github.actor }}\`"
+            echo "- Action: \`${ACTION_TYPE}\`"
+            echo "- Result: **${RESULT}**"
+            echo "- Report: \`${REPORT_PATH}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload audit report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-report-${{ github.run_id }}
+          path: ${{ steps.generate_report.outputs.report_path }}

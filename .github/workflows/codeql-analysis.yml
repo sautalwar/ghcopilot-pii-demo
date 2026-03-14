@@ -1,0 +1,53 @@
+name: CodeQL Security Scanning
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'demo/*'
+  pull_request:
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: analyze
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language:
+          - javascript-typescript
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: Autobuild project
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Analyze with CodeQL
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:${{ matrix.language }}
+
+      - name: Summarize CodeQL results
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## CodeQL analysis"
+            echo ""
+            echo "- Language: \`${{ matrix.language }}\`"
+            echo "- Event: \`${{ github.event_name }}\`"
+            echo "- Ref: \`${{ github.ref_name }}\`"
+            echo "- Status: CodeQL analysis completed. Review the Security tab for alerts."
+          } >> "$GITHUB_STEP_SUMMARY"

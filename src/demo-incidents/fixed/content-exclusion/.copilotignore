@@ -1,0 +1,4 @@
+dist/
+coverage/
+tests/content-exclusion/citizens-test-data.json
+src/demo-incidents/**

@@ -1,0 +1,175 @@
+name: Content Exclusion Validator
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'demo/*'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-exclusions:
+    name: validate-exclusions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Analyze .copilotignore exclusions
+        id: validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          import json
+          import os
+          from fnmatch import fnmatch
+          from pathlib import Path, PurePosixPath
+
+          root = Path('.')
+          copilotignore = root / '.copilotignore'
+          summary_path = os.environ['GITHUB_STEP_SUMMARY']
+          output_path = os.environ['GITHUB_OUTPUT']
+          report_path = root / 'content-exclusion-report.json'
+
+          sensitive_patterns = {
+              'SSN': r'[0-9]{3}-[0-9]{2}-[0-9]{4}',
+              'EMAIL': r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}',
+              'PHONE': r'([0-9]{3}-[0-9]{3}-[0-9]{4}|\([0-9]{3}\) [0-9]{3}-[0-9]{4})',
+              'CREDIT_CARD': r'[0-9]{4}[- ]?[0-9]{4}[- ]?[0-9]{4}[- ]?[0-9]{4}',
+              'AWS_ACCESS_KEY': r'AKIA[0-9A-Z]{16}',
+              'PASSWORD_IN_CONFIG': r'(?i)\b(?:password|passwd|pwd)\b\s*[:=]\s*[\"\']?[^\"\'\s]{6,}'
+          }
+
+          import re
+          compiled_patterns = {name: re.compile(pattern) for name, pattern in sensitive_patterns.items()}
+
+          def matches(pattern: str, path: str) -> bool:
+              anchored = pattern.startswith('/')
+              dir_only = pattern.endswith('/')
+              normalized = pattern.lstrip('/').rstrip('/')
+              if not normalized:
+                  return False
+
+              path_obj = PurePosixPath(path)
+              candidates = [path]
+              if not anchored:
+                  candidates.extend('/'.join(path_obj.parts[index:]) for index in range(1, len(path_obj.parts)))
+                  candidates.append(path_obj.name)
+
+              if dir_only:
+                  return any(candidate == normalized or candidate.startswith(f"{normalized}/") for candidate in candidates)
+
+              if anchored:
+                  return path_obj.match(normalized)
+
+              return any(fnmatch(candidate, normalized) or PurePosixPath(candidate).match(normalized) for candidate in candidates)
+
+          patterns = []
+          if copilotignore.exists():
+              for raw_line in copilotignore.read_text(encoding='utf-8').splitlines():
+                  line = raw_line.strip()
+                  if not line or line.startswith('#'):
+                      continue
+                  patterns.append({'negate': line.startswith('!'), 'pattern': line[1:] if line.startswith('!') else line})
+          else:
+              patterns = []
+
+          excluded_files = []
+          status = 'passed'
+          messages = []
+
+          if not copilotignore.exists():
+              status = 'failed'
+              messages.append('::error::.copilotignore file is missing; content exclusion cannot be validated.')
+          else:
+              for path in root.rglob('*'):
+                  if not path.is_file():
+                      continue
+                  rel = path.relative_to(root).as_posix()
+                  if rel.startswith('.git/'):
+                      continue
+
+                  excluded = False
+                  for entry in patterns:
+                      if matches(entry['pattern'], rel):
+                          excluded = not entry['negate']
+
+                  if not excluded:
+                      continue
+
+                  try:
+                      content = path.read_text(encoding='utf-8')
+                  except (UnicodeDecodeError, OSError):
+                      content = ''
+
+                  matched = [name for name, pattern in compiled_patterns.items() if pattern.search(content)]
+                  excluded_files.append({
+                      'path': rel,
+                      'sensitive': bool(matched),
+                      'matched_patterns': matched
+                  })
+
+              if not excluded_files:
+                  status = 'failed'
+                  messages.append('::error::No files matched the .copilotignore patterns, so exclusion proof could not be generated.')
+              elif not any(item['sensitive'] for item in excluded_files):
+                  status = 'failed'
+                  messages.append('::error::Excluded files were found, but none contained the expected sensitive patterns.')
+              else:
+                  non_sensitive = [item['path'] for item in excluded_files if not item['sensitive']]
+                  if non_sensitive:
+                      messages.append(f"::warning::{len(non_sensitive)} excluded file(s) did not contain sensitive patterns.")
+
+          report = {
+              'repository': os.environ['GITHUB_REPOSITORY'],
+              'ref': os.environ['GITHUB_REF_NAME'],
+              'generated_at': os.environ.get('GITHUB_RUN_ID'),
+              'copilotignore_present': copilotignore.exists(),
+              'patterns': [entry['pattern'] for entry in patterns],
+              'excluded_files': excluded_files,
+              'excluded_count': len(excluded_files),
+              'sensitive_count': sum(1 for item in excluded_files if item['sensitive']),
+              'status': status
+          }
+          report_path.write_text(json.dumps(report, indent=2), encoding='utf-8')
+
+          with open(output_path, 'a', encoding='utf-8') as output:
+              output.write(f"status={status}\n")
+              output.write(f"report_path={report_path.as_posix()}\n")
+              output.write(f"excluded_count={len(excluded_files)}\n")
+              output.write(f"sensitive_count={sum(1 for item in excluded_files if item['sensitive'])}\n")
+
+          with open(summary_path, 'a', encoding='utf-8') as summary:
+              summary.write('## Content exclusion validation\n\n')
+              summary.write(f"- .copilotignore present: **{'yes' if copilotignore.exists() else 'no'}**\n")
+              summary.write(f"- Excluded files detected: **{len(excluded_files)}**\n")
+              summary.write(f"- Sensitive excluded files: **{sum(1 for item in excluded_files if item['sensitive'])}**\n\n")
+              if excluded_files:
+                  summary.write('| File | Sensitive | Matched Patterns |\n')
+                  summary.write('| --- | --- | --- |\n')
+                  for item in excluded_files[:50]:
+                      patterns_text = ', '.join(item['matched_patterns']) if item['matched_patterns'] else 'None'
+                      summary.write(f"| {item['path']} | {'Yes' if item['sensitive'] else 'No'} | {patterns_text} |\n")
+              else:
+                  summary.write('No excluded files were detected.\n')
+
+          for message in messages:
+              print(message)
+          PY
+
+      - name: Upload content exclusion report
+        if: always() && steps.validate.outputs.report_path != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-exclusion-report
+          path: ${{ steps.validate.outputs.report_path }}
+
+      - name: Enforce validation result
+        if: steps.validate.outputs.status != 'passed'
+        shell: bash
+        run: |
+          echo "::error::Content exclusion validation failed. Review the uploaded report and step summary for details."
+          exit 1

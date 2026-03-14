@@ -1,0 +1,2558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitHub Copilot Security Demo Console</title>
+  <meta name="description" content="Interactive enterprise demo console for GitHub Copilot security, GHAS, business vs enterprise, and competitor comparisons." />
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface-alt: #0f1722;
+      --surface-soft: #11161d;
+      --border: #30363d;
+      --border-strong: #3d444d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --blue: #58a6ff;
+      --blue-strong: #1f6feb;
+      --green: #3fb950;
+      --green-soft: rgba(63, 185, 80, 0.16);
+      --red: #f85149;
+      --red-soft: rgba(248, 81, 73, 0.14);
+      --yellow: #d29922;
+      --yellow-soft: rgba(210, 153, 34, 0.14);
+      --purple: #a371f7;
+      --teal: #39c5cf;
+      --shadow: 0 20px 48px rgba(1, 4, 9, 0.35);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+      --transition: 220ms ease;
+      --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-sans);
+      background:
+        radial-gradient(circle at top right, rgba(88, 166, 255, 0.14), transparent 22%),
+        radial-gradient(circle at top left, rgba(163, 113, 247, 0.08), transparent 18%),
+        linear-gradient(180deg, rgba(13, 17, 23, 0.98), rgba(13, 17, 23, 1));
+      color: var(--text);
+    }
+
+    a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      outline: none;
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 24px 20px 24px;
+      border-right: 1px solid var(--border);
+      background: rgba(13, 17, 23, 0.92);
+      backdrop-filter: blur(16px);
+      overflow-y: auto;
+      z-index: 30;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background: linear-gradient(145deg, rgba(31, 111, 235, 0.35), rgba(163, 113, 247, 0.22));
+      border: 1px solid rgba(88, 166, 255, 0.28);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 8px 24px rgba(31, 111, 235, 0.15);
+      color: #fff;
+      font-size: 1.4rem;
+    }
+
+    .brand-copy h1 {
+      margin: 0;
+      font-size: 1.1rem;
+      letter-spacing: 0.01em;
+    }
+
+    .brand-copy p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    .sidebar-toggle {
+      display: none;
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: rgba(22, 27, 34, 0.95);
+      border: 1px solid var(--border);
+      color: var(--text);
+      box-shadow: var(--shadow);
+      z-index: 90;
+    }
+
+    .sidebar-nav,
+    .sidebar-section {
+      display: grid;
+      gap: 10px;
+    }
+
+    .sidebar-label {
+      margin: 28px 0 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text);
+      text-align: left;
+      transition: var(--transition);
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+      background: rgba(88, 166, 255, 0.1);
+      border-color: rgba(88, 166, 255, 0.2);
+      transform: translateX(2px);
+    }
+
+    .nav-item .nav-copy {
+      display: grid;
+      gap: 4px;
+    }
+
+    .nav-item small {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .nav-pill,
+    .chip,
+    .badge,
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .nav-pill,
+    .chip,
+    .badge {
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      background: rgba(139, 148, 158, 0.14);
+      border: 1px solid rgba(139, 148, 158, 0.18);
+      color: var(--muted);
+    }
+
+    .sidebar-card {
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(180deg, rgba(22, 27, 34, 0.95), rgba(15, 23, 34, 0.95));
+      border: 1px solid var(--border);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    .sidebar-card h3,
+    .sidebar-card h4 {
+      margin: 0 0 10px;
+      font-size: 0.98rem;
+    }
+
+    .sidebar-card p,
+    .sidebar-card li {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.92rem;
+    }
+
+    .sidebar-card ul {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .main-content {
+      min-width: 0;
+      padding: 28px 28px 40px;
+    }
+
+    .hero {
+      position: relative;
+      padding: 28px;
+      border-radius: 28px;
+      background:
+        linear-gradient(130deg, rgba(22, 27, 34, 0.98), rgba(15, 23, 34, 0.96)),
+        linear-gradient(145deg, rgba(31, 111, 235, 0.16), rgba(163, 113, 247, 0.08));
+      border: 1px solid rgba(88, 166, 255, 0.18);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -40px -60px auto;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(88, 166, 255, 0.18), transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 22px;
+      margin-bottom: 20px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      margin-bottom: 14px;
+      border-radius: 999px;
+      background: rgba(88, 166, 255, 0.12);
+      border: 1px solid rgba(88, 166, 255, 0.22);
+      color: #b6d7ff;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .hero h2 {
+      margin: 0;
+      font-size: clamp(1.9rem, 3vw, 3.15rem);
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      margin: 14px 0 0;
+      max-width: 78ch;
+      color: #c8d1d9;
+      line-height: 1.75;
+      font-size: 1rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .hero-metrics,
+    .stats-strip,
+    .mini-stats,
+    .feature-stats,
+    .why-enterprise-grid,
+    .wins-grid,
+    .security-grid,
+    .cards-grid,
+    .detail-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .hero-metrics {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-top: 24px;
+    }
+
+    .metric-card,
+    .stat-card,
+    .value-card,
+    .info-card,
+    .feature-card,
+    .security-card,
+    .migration-card,
+    .callout {
+      position: relative;
+      padding: 18px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(22, 27, 34, 0.94), rgba(15, 23, 34, 0.96));
+      border: 1px solid rgba(48, 54, 61, 0.9);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    .metric-card span,
+    .stat-card span,
+    .mini-metric span,
+    .table-note span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .metric-card strong,
+    .stat-card strong {
+      font-size: 1.65rem;
+      letter-spacing: -0.03em;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .metric-card p,
+    .stat-card p,
+    .value-card p,
+    .feature-card p,
+    .security-card p,
+    .migration-card p,
+    .callout p,
+    .table-note p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    .top-tabs {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      gap: 10px;
+      margin: 24px 0 24px;
+      padding: 14px;
+      border-radius: 20px;
+      background: rgba(13, 17, 23, 0.88);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(48, 54, 61, 0.85);
+      overflow-x: auto;
+    }
+
+    .tab-button {
+      position: relative;
+      flex: 1 1 0;
+      min-width: 180px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      font-weight: 700;
+      transition: var(--transition);
+    }
+
+    .tab-button:hover,
+    .tab-button.active {
+      background: rgba(88, 166, 255, 0.12);
+      color: var(--text);
+      border-color: rgba(88, 166, 255, 0.22);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-button.active::after {
+      content: "";
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 8px;
+      height: 3px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--blue), var(--purple));
+    }
+
+    .tab-panel {
+      display: none;
+      animation: tabFade 300ms ease;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    @keyframes tabFade {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    .panel-header h3 {
+      margin: 0;
+      font-size: 1.55rem;
+      letter-spacing: -0.03em;
+    }
+
+    .panel-header p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 78ch;
+    }
+
+    .section-shell {
+      display: grid;
+      gap: 20px;
+    }
+
+    .controls-bar,
+    .toggle-bar,
+    .inline-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .controls-bar {
+      justify-content: space-between;
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(22, 27, 34, 0.82);
+      border: 1px solid var(--border);
+    }
+
+    .summary-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .summary-line strong {
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 42px;
+      padding: 0 16px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      font-weight: 700;
+      transition: var(--transition);
+      color: var(--text);
+      background: rgba(139, 148, 158, 0.14);
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 26px rgba(1, 4, 9, 0.18);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, rgba(31, 111, 235, 0.9), rgba(88, 166, 255, 0.86));
+      border-color: rgba(88, 166, 255, 0.28);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, rgba(248, 81, 73, 0.95), rgba(218, 54, 51, 0.9));
+      border-color: rgba(248, 81, 73, 0.25);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, rgba(63, 185, 80, 0.95), rgba(46, 160, 67, 0.92));
+      border-color: rgba(63, 185, 80, 0.22);
+    }
+
+    .btn-neutral {
+      background: rgba(139, 148, 158, 0.12);
+      border: 1px solid rgba(139, 148, 158, 0.18);
+      color: #d0d7de;
+    }
+
+    .btn-link {
+      background: transparent;
+      border: 1px solid rgba(88, 166, 255, 0.18);
+      color: var(--blue);
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .demo-card {
+      padding: 22px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(22, 27, 34, 0.98), rgba(15, 23, 34, 0.98));
+      border: 1px solid rgba(48, 54, 61, 0.92);
+      box-shadow: var(--shadow);
+      transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .demo-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(88, 166, 255, 0.22);
+      box-shadow: 0 22px 46px rgba(1, 4, 9, 0.28);
+    }
+
+    .demo-card-header,
+    .feature-header,
+    .security-card-header {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .demo-title {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .icon-shell,
+    .feature-icon,
+    .security-icon {
+      display: grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: rgba(88, 166, 255, 0.12);
+      border: 1px solid rgba(88, 166, 255, 0.18);
+      color: var(--blue);
+      flex-shrink: 0;
+    }
+
+    .demo-card h4,
+    .feature-card h4,
+    .security-card h4,
+    .value-card h4,
+    .migration-card h4,
+    .info-card h4,
+    .callout h4 {
+      margin: 0;
+      font-size: 1.08rem;
+      letter-spacing: -0.02em;
+    }
+
+    .demo-card p,
+    .feature-card p,
+    .security-card p,
+    .value-card p,
+    .info-card p,
+    .callout p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 0.95rem;
+    }
+
+    .status-pill {
+      padding: 8px 12px;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border: 1px solid rgba(139, 148, 158, 0.2);
+      background: rgba(139, 148, 158, 0.12);
+      color: #d0d7de;
+    }
+
+    .status-pill::before,
+    .signal-dot,
+    .api-indicator::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 0 0 currentColor;
+      flex-shrink: 0;
+    }
+
+    .status-ready {
+      color: #9fb3c8;
+      background: rgba(139, 148, 158, 0.12);
+      border-color: rgba(139, 148, 158, 0.2);
+    }
+
+    .status-running {
+      color: #7cc7ff;
+      background: rgba(31, 111, 235, 0.16);
+      border-color: rgba(88, 166, 255, 0.22);
+    }
+
+    .status-running::before,
+    .api-indicator.online::before {
+      animation: pulse 1.7s infinite;
+    }
+
+    .status-complete {
+      color: #7ee787;
+      background: rgba(63, 185, 80, 0.14);
+      border-color: rgba(63, 185, 80, 0.2);
+    }
+
+    .status-failed {
+      color: #ff938d;
+      background: rgba(248, 81, 73, 0.16);
+      border-color: rgba(248, 81, 73, 0.24);
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(88, 166, 255, 0.55); }
+      70% { box-shadow: 0 0 0 12px rgba(88, 166, 255, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(88, 166, 255, 0); }
+    }
+
+    .demo-meta,
+    .pill-row,
+    .bullet-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .mini-stats {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 18px;
+    }
+
+    .mini-metric {
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(13, 17, 23, 0.5);
+      border: 1px solid rgba(48, 54, 61, 0.9);
+    }
+
+    .mini-metric strong {
+      display: block;
+      font-size: 1rem;
+      word-break: break-word;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .progress-shell {
+      margin-top: 18px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .progress-track {
+      position: relative;
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(48, 54, 61, 0.92);
+    }
+
+    .progress-bar {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue), var(--purple), var(--teal));
+      background-size: 200% 100%;
+      animation: progressShift 2s linear infinite;
+      transition: width 400ms ease;
+    }
+
+    .progress-bar.complete {
+      background: linear-gradient(90deg, var(--green), #7ee787);
+      animation: none;
+    }
+
+    .progress-bar.failed {
+      background: linear-gradient(90deg, var(--red), #ff938d);
+      animation: none;
+    }
+
+    @keyframes progressShift {
+      from { background-position: 0% 0%; }
+      to { background-position: 200% 0%; }
+    }
+
+    .log-panel {
+      margin-top: 18px;
+      border-radius: 16px;
+      border: 1px solid rgba(48, 54, 61, 0.92);
+      background: rgba(13, 17, 23, 0.78);
+      overflow: hidden;
+    }
+
+    .log-panel summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .log-panel summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .log-panel summary::after {
+      content: "\f078";
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+      transition: transform var(--transition);
+      color: var(--muted);
+    }
+
+    .log-panel[open] summary::after {
+      transform: rotate(180deg);
+    }
+
+    .log-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 16px 12px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      border-bottom: 1px solid rgba(48, 54, 61, 0.92);
+    }
+
+    .log-output,
+    .code-block,
+    .ascii-diagram {
+      margin: 0;
+      padding: 18px;
+      background: #0d1117;
+      color: #c9d1d9;
+      font-family: var(--font-mono);
+      font-size: 0.86rem;
+      line-height: 1.65;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border-radius: 0 0 16px 16px;
+    }
+
+    .log-output {
+      max-height: 260px;
+      min-height: 180px;
+    }
+
+    .log-line { display: block; }
+    .log-line.info { color: #c9d1d9; }
+    .log-line.success { color: #7ee787; }
+    .log-line.warning { color: #f2cc60; }
+    .log-line.error { color: #ff938d; }
+
+    .feature-stack,
+    .comparison-stack,
+    .security-stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .feature-card,
+    .security-card,
+    .table-shell,
+    .value-card,
+    .migration-card {
+      overflow: hidden;
+    }
+
+    .feature-card {
+      padding: 22px;
+      border-radius: 22px;
+    }
+
+    .feature-stats,
+    .why-enterprise-grid,
+    .wins-grid,
+    .security-grid,
+    .cards-grid,
+    .detail-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .feature-card ul,
+    .value-card ul,
+    .migration-card ul,
+    .security-card ul,
+    .info-card ul,
+    .callout ul {
+      margin: 14px 0 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 10px;
+      color: #c8d1d9;
+      line-height: 1.6;
+    }
+
+    .feature-card li::marker,
+    .value-card li::marker,
+    .migration-card li::marker,
+    .security-card li::marker,
+    .info-card li::marker,
+    .callout li::marker {
+      color: var(--blue);
+    }
+
+    .feature-card .feature-header {
+      margin-bottom: 20px;
+    }
+
+    .table-shell {
+      border-radius: 22px;
+      border: 1px solid rgba(48, 54, 61, 0.92);
+      background: linear-gradient(180deg, rgba(22, 27, 34, 0.98), rgba(15, 23, 34, 0.98));
+      box-shadow: var(--shadow);
+    }
+
+    .table-shell .table-head {
+      padding: 20px 22px 0;
+    }
+
+    .table-shell .table-head h4 {
+      margin: 0;
+      font-size: 1.15rem;
+    }
+
+    .table-shell .table-head p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-width: 100%;
+      padding: 18px 22px 22px;
+    }
+
+    table.comparison-table {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: separate;
+      border-spacing: 0;
+      border: 1px solid rgba(48, 54, 61, 0.92);
+      border-radius: 16px;
+      overflow: hidden;
+      background: rgba(13, 17, 23, 0.55);
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(48, 54, 61, 0.9);
+      vertical-align: top;
+    }
+
+    .comparison-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: rgba(22, 27, 34, 0.98);
+      color: #f0f6fc;
+      font-size: 0.87rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .comparison-table tbody tr:nth-child(even) td {
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    .comparison-table tbody tr:hover td {
+      background: rgba(88, 166, 255, 0.05);
+    }
+
+    .comparison-table td.enterprise-highlight,
+    .comparison-table th.enterprise-highlight {
+      background: linear-gradient(180deg, rgba(31, 111, 235, 0.12), rgba(88, 166, 255, 0.05));
+    }
+
+    .comparison-table .good { color: #7ee787; font-weight: 700; }
+    .comparison-table .bad { color: #ff938d; font-weight: 700; }
+    .comparison-table .neutral { color: #f2cc60; font-weight: 700; }
+
+    .table-footnote {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding: 0 22px 22px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .toggle-pill {
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(48, 54, 61, 0.92);
+      background: rgba(139, 148, 158, 0.08);
+      color: var(--muted);
+      font-weight: 700;
+      transition: var(--transition);
+    }
+
+    .toggle-pill.active,
+    .toggle-pill:hover {
+      color: var(--text);
+      background: rgba(88, 166, 255, 0.14);
+      border-color: rgba(88, 166, 255, 0.2);
+    }
+
+    .subview {
+      display: none;
+      animation: tabFade 260ms ease;
+    }
+
+    .subview.active {
+      display: grid;
+      gap: 18px;
+    }
+
+    .security-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .security-card.large,
+    .table-shell.full,
+    .callout.full,
+    .migration-card.full {
+      grid-column: 1 / -1;
+    }
+
+    .security-card-header {
+      margin-bottom: 16px;
+    }
+
+    .data-points {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .data-point {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(88, 166, 255, 0.08);
+      border: 1px solid rgba(88, 166, 255, 0.18);
+      color: #cfe5ff;
+      font-size: 0.86rem;
+      font-weight: 600;
+    }
+
+    .footnote-list {
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin-top: 14px;
+    }
+
+    .footer {
+      margin-top: 28px;
+      padding: 20px 0 8px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    .footer strong { color: var(--text); }
+
+    .toast-stack {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      display: grid;
+      gap: 10px;
+      z-index: 100;
+      max-width: min(420px, calc(100vw - 32px));
+    }
+
+    .toast {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(22, 27, 34, 0.98);
+      border: 1px solid rgba(48, 54, 61, 0.92);
+      box-shadow: var(--shadow);
+      animation: toastIn 260ms ease;
+    }
+
+    .toast.success { border-color: rgba(63, 185, 80, 0.24); }
+    .toast.error { border-color: rgba(248, 81, 73, 0.24); }
+    .toast.warning { border-color: rgba(210, 153, 34, 0.28); }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+
+    @media (max-width: 1180px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: min(340px, 88vw);
+        transform: translateX(-100%);
+        transition: transform var(--transition);
+      }
+
+      body.sidebar-open .sidebar {
+        transform: translateX(0);
+      }
+
+      .sidebar-toggle {
+        display: grid;
+        place-items: center;
+      }
+
+      .main-content {
+        padding-top: 82px;
+      }
+    }
+
+    @media (max-width: 960px) {
+      .hero-top,
+      .panel-header,
+      .controls-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .hero-metrics,
+      .demo-grid,
+      .feature-stats,
+      .why-enterprise-grid,
+      .wins-grid,
+      .security-grid,
+      .cards-grid,
+      .detail-grid,
+      .mini-stats,
+      .button-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .main-content {
+        padding: 82px 14px 28px;
+      }
+
+      .hero,
+      .demo-card,
+      .feature-card,
+      .table-shell,
+      .security-card,
+      .value-card,
+      .migration-card,
+      .sidebar-card {
+        border-radius: 18px;
+      }
+
+      .top-tabs {
+        margin-top: 18px;
+        padding: 10px;
+      }
+
+      .tab-button {
+        min-width: 160px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button class="sidebar-toggle" id="sidebarToggle" aria-label="Open sidebar navigation">
+    <i class="fa-solid fa-bars"></i>
+  </button>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark"><i class="fa-brands fa-github"></i></div>
+        <div class="brand-copy">
+          <h1>Copilot Security Demo</h1>
+          <p>Enterprise-ready presenter console for live GitHub Actions, GHAS, and Copilot security proof points.</p>
+        </div>
+      </div>
+
+      <div class="sidebar-nav" id="sidebarNav"></div>
+
+      <div class="sidebar-label">Live controls</div>
+      <div class="sidebar-card">
+        <h3>Orchestration API</h3>
+        <p>Presenter UI talks directly to the Express orchestration layer so you can trigger incidents, poll workflow status, and open remediation pull requests without leaving the room.</p>
+        <div class="pill-row" style="margin-top: 14px;">
+          <span class="chip" id="apiConnectionChip"><i class="fa-solid fa-plug-circle-bolt"></i> Pending API check</span>
+          <span class="chip" id="lastRefreshChip"><i class="fa-regular fa-clock"></i> Waiting for refresh</span>
+        </div>
+      </div>
+
+      <div class="sidebar-label">Presenter cues</div>
+      <div class="sidebar-section">
+        <div class="sidebar-card">
+          <h4>Talk track</h4>
+          <ul>
+            <li>Lead with live proof: simulate a problem, let GitHub detect it, then remediate in real time.</li>
+            <li>Pivot to GHAS breadth: detection, policy, dependency risk, and executive reporting.</li>
+            <li>Close on governance: plan choice, AI model controls, and deterministic boundaries like content exclusion and redaction.</li>
+          </ul>
+        </div>
+        <div class="sidebar-card">
+          <h4>Customer outcomes</h4>
+          <ul>
+            <li>Reduce time from incident introduction to verified remediation.</li>
+            <li>Standardize secure defaults across every repository and organization.</li>
+            <li>Adopt Copilot with auditable controls, enterprise policy, and model-aware governance.</li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="hero">
+        <div class="hero-top">
+          <div>
+            <div class="eyebrow"><i class="fa-solid fa-shield-halved"></i> Customer-facing enterprise security demo</div>
+            <h2>GitHub Copilot security, GHAS, and workflow automation — in one live demo page.</h2>
+            <p>
+              Use this single-page presenter to simulate incidents, drive GitHub Actions workflows in real time,
+              compare Business vs Enterprise, position GitHub against GitLab and Jenkins, and explain Copilot's
+              data flow, retention, model routing, and policy boundaries with customer-ready visuals.
+            </p>
+          </div>
+          <div class="hero-actions">
+            <button class="btn btn-primary" onclick="switchTab(0)"><i class="fa-solid fa-bolt"></i> Launch live demos</button>
+            <button class="btn btn-link" onclick="switchTab(4)"><i class="fa-solid fa-brain"></i> Open Copilot Security</button>
+          </div>
+        </div>
+        <div class="hero-metrics">
+          <div class="metric-card">
+            <span>Live security journeys</span>
+            <strong>6 demos</strong>
+            <p>Secrets, PII, CodeQL, dependencies, exclusion policy, and audit evidence.</p>
+          </div>
+          <div class="metric-card">
+            <span>Top navigation views</span>
+            <strong>5 tabs</strong>
+            <p>Built for a structured executive conversation: operations, platform, business, competition, and AI security.</p>
+          </div>
+          <div class="metric-card">
+            <span>Enterprise value</span>
+            <strong>GHAS included</strong>
+            <p>Use the plan comparison to position security, identity, residency, and governance as a single story.</p>
+          </div>
+          <div class="metric-card">
+            <span>AI trust narrative</span>
+            <strong>Model-aware</strong>
+            <p>Explain where prompts go, what retention applies, and why content exclusion is a platform control.</p>
+          </div>
+        </div>
+      </header>
+
+      <nav class="top-tabs" id="topTabs" aria-label="Primary tabs"></nav>
+
+      <section class="tab-panel active" id="tab-0">
+        <div class="section-shell">
+          <div class="panel-header">
+            <div>
+              <h3>🎯 Live Demos</h3>
+              <p>Simulate real incidents, poll GitHub Actions in flight, display live output, and trigger remediation or teardown without leaving the customer conversation.</p>
+            </div>
+          </div>
+
+          <div class="controls-bar">
+            <div class="summary-line">
+              <span class="chip" id="statusSummaryChip"><i class="fa-solid fa-chart-line"></i> 0 running, 0 complete, 6 ready</span>
+              <span class="chip" id="workflowPulseChip"><i class="fa-solid fa-wave-square"></i> Workflow polling every 3 seconds</span>
+            </div>
+            <div class="inline-actions">
+              <button class="btn btn-neutral" onclick="refreshAllStatuses()"><i class="fa-solid fa-rotate"></i> Refresh Status</button>
+              <button class="btn btn-neutral" onclick="teardownAll()"><i class="fa-solid fa-broom-ball"></i> Teardown All</button>
+            </div>
+          </div>
+
+          <div class="demo-grid" id="demoGrid"></div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-1">
+        <div class="section-shell">
+          <div class="panel-header">
+            <div>
+              <h3>🛡️ GHAS Showcase</h3>
+              <p>Frame GitHub Advanced Security as a layered enterprise security platform: scanning, prevention, dependency risk management, executive reporting, and PR-level change control.</p>
+            </div>
+          </div>
+          <div class="feature-stack" id="ghasShowcase"></div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-2">
+        <div class="section-shell">
+          <div class="panel-header">
+            <div>
+              <h3>📊 Business vs Enterprise</h3>
+              <p>Use this comparison to explain why Enterprise becomes the right answer once security, identity, governance, and AI administration become customer priorities.</p>
+            </div>
+          </div>
+          <div id="businessVsEnterprise"></div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-3">
+        <div class="section-shell">
+          <div class="panel-header">
+            <div>
+              <h3>⚔️ GitHub vs Competitors</h3>
+              <p>Toggle between GitHub Enterprise vs GitLab Ultimate and GitHub Actions vs Jenkins to handle platform, pricing, ecosystem, and modernization questions from both engineering and procurement stakeholders.</p>
+            </div>
+            <div class="toggle-bar" id="competitorToggle"></div>
+          </div>
+          <div id="competitorViews"></div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-4">
+        <div class="section-shell">
+          <div class="panel-header">
+            <div>
+              <h3>🤖 Copilot Security</h3>
+              <p>Explain how prompts move through GitHub's proxy, what retention controls apply by plan, why multi-model routing matters, and which boundaries are deterministic versus best effort.</p>
+            </div>
+          </div>
+          <div class="security-stack" id="copilotSecurity"></div>
+        </div>
+      </section>
+
+      <div class="footer">
+        <strong>GitHub Copilot Security Demo Console</strong> · Built as a single-file presenter for enterprise customer demos · <span id="currentYear"></span>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    const NAV_TABS = [
+      {
+        index: 0,
+        icon: 'fa-solid fa-bullseye',
+        title: 'Live Demos',
+        subtitle: 'Incidents, detection, remediation'
+      },
+      {
+        index: 1,
+        icon: 'fa-solid fa-shield-halved',
+        title: 'GHAS Showcase',
+        subtitle: 'Platform security capabilities'
+      },
+      {
+        index: 2,
+        icon: 'fa-solid fa-chart-column',
+        title: 'Business vs Enterprise',
+        subtitle: 'Plan and governance comparison'
+      },
+      {
+        index: 3,
+        icon: 'fa-solid fa-scale-balanced',
+        title: 'GitHub vs Competitors',
+        subtitle: 'GitLab and Jenkins positioning'
+      },
+      {
+        index: 4,
+        icon: 'fa-solid fa-brain',
+        title: 'Copilot Security',
+        subtitle: 'Data flow, retention, model controls'
+      }
+    ];
+
+    const DEMO_BLUEPRINTS = [
+      {
+        id: 'secret-leak',
+        title: '🔑 Secret Leak Detection',
+        icon: 'fa-solid fa-key',
+        description: 'Push code with hardcoded API keys → GHAS detects → Auto-remediation PR',
+        branch: 'demo/secret-leak',
+        workflow: 'secret-remediation.yml',
+        audienceValue: 'Demonstrates immediate visibility, remediation automation, and reviewable pull requests.'
+      },
+      {
+        id: 'pii-exposure',
+        title: '👤 PII Exposure Scanner',
+        icon: 'fa-solid fa-user-shield',
+        description: 'Push code with SSN/email data → Custom scanner detects → Auto-redaction',
+        branch: 'demo/pii-exposure',
+        workflow: 'pii-scanner.yml',
+        audienceValue: 'Perfect for showing enterprise customers how to govern sensitive test data and developer mistakes.'
+      },
+      {
+        id: 'sql-injection',
+        title: '💉 SQL Injection Finder',
+        icon: 'fa-solid fa-syringe',
+        description: 'Push vulnerable SQL code → CodeQL finds injection → Parameterized fix',
+        branch: 'demo/sql-injection',
+        workflow: 'codeql-analysis.yml',
+        audienceValue: 'Connects static analysis, secure coding, and Copilot-assisted remediation in one storyline.'
+      },
+      {
+        id: 'vuln-deps',
+        title: '📦 Vulnerable Dependencies',
+        icon: 'fa-solid fa-box-open',
+        description: 'Add outdated packages → Dependabot alerts → Auto-update PR',
+        branch: 'demo/vuln-deps',
+        workflow: 'dependency-check.yml',
+        audienceValue: 'Shows software supply chain hygiene with proactive dependency visibility and update workflows.'
+      },
+      {
+        id: 'content-exclusion',
+        title: '🚫 Content Exclusion Proof',
+        icon: 'fa-solid fa-ban',
+        description: 'Configure .copilotignore → Verify excluded files are not processed',
+        branch: 'demo/content-exclusion',
+        workflow: 'content-exclusion-validator.yml',
+        audienceValue: 'Explains why platform-level exclusion beats prompt-only instruction for sensitive assets.'
+      },
+      {
+        id: 'audit-trail',
+        title: '📋 Audit Trail Logger',
+        icon: 'fa-solid fa-clipboard-list',
+        description: 'Trigger security events → Generate audit report → Download artifact',
+        branch: 'demo/audit-trail',
+        workflow: 'audit-logger.yml',
+        audienceValue: 'Demonstrates evidence, traceability, and compliance reporting for regulated buyers.'
+      }
+    ];
+
+    const GHAS_SECTIONS = [
+      {
+        icon: 'fa-solid fa-user-secret',
+        title: 'Secret Scanning',
+        eyebrow: 'Prevent credential drift before it becomes an incident',
+        description: 'Secret Scanning continuously inspects commits, history, and inbound pushes to catch leaked credentials across hundreds of provider patterns and customer-defined detectors. Use it to show both developer guardrails and executive confidence.',
+        stats: [
+          { value: '200+', label: 'provider patterns out of the box' },
+          { value: 'Push protection', label: 'blocks high-confidence leaks before they land' },
+          { value: 'Custom patterns', label: 'cover internal tokens and proprietary credentials' },
+          { value: 'Real alerts', label: 'workflow, PR, and dashboard visibility' }
+        ],
+        bullets: [
+          'Detect hardcoded cloud keys, database passwords, webhook endpoints, and internal secrets at scale.',
+          'Show the customer how push protection changes behavior from reactive cleanup to proactive prevention.',
+          'Pair GHAS detection with a remediation workflow that masks or replaces leaked material automatically.',
+          'Explain that custom patterns let security teams codify enterprise-specific secret formats, not just public providers.'
+        ],
+        link: 'https://docs.github.com/en/code-security/secret-scanning/introduction/about-secret-scanning'
+      },
+      {
+        icon: 'fa-solid fa-code',
+        title: 'Code Scanning (CodeQL)',
+        eyebrow: 'Find exploitable patterns with semantic static analysis',
+        description: 'CodeQL goes beyond linting by understanding how code and data flow through your application. It is the right platform story for developers who want high-signal findings and for leaders who need measurable AppSec coverage.',
+        stats: [
+          { value: 'Multi-language', label: 'JavaScript, TypeScript, Python, Java, Go, C#, C/C++, Ruby, Swift, and more' },
+          { value: 'SARIF', label: 'ingest results from GitHub or third-party scanners' },
+          { value: 'PR-native', label: 'alerts appear directly in the developer workflow' },
+          { value: 'Custom queries', label: 'build organization-specific detection logic' }
+        ],
+        bullets: [
+          'Show how a vulnerable string-concatenated SQL query becomes a precise alert with a file, sink, and remediation guidance.',
+          'Use SARIF integration to position GitHub as a security aggregation surface, not only a built-in scanner.',
+          'Highlight branch protection and required checks to enforce code scanning before merge.',
+          'Tie remediation back to Copilot by showing how developers can move from finding to secure code faster.'
+        ],
+        link: 'https://docs.github.com/en/code-security/code-scanning/introduction-to-code-scanning/about-code-scanning-with-codeql'
+      },
+      {
+        icon: 'fa-solid fa-boxes-stacked',
+        title: 'Dependabot',
+        eyebrow: 'Keep dependencies current without flooding teams',
+        description: 'Dependabot combines alerting and automated pull requests for version and security updates. It helps customers reduce supply chain risk while keeping maintenance friction manageable through grouping, auto-merge policy, and review automation.',
+        stats: [
+          { value: 'Security + version', label: 'separate urgent risk from routine hygiene' },
+          { value: 'Grouped updates', label: 'reduce PR noise and improve review efficiency' },
+          { value: 'Auto-merge ready', label: 'combine with required checks and policy gates' },
+          { value: 'Manifest aware', label: 'works across ecosystems the customer already uses' }
+        ],
+        bullets: [
+          'Compare a vulnerable dependency alert with a fully generated patch PR to emphasize time-to-remediation.',
+          'Explain the difference between security updates and routine version drift to show prioritization.',
+          'Show how grouped updates make platform teams comfortable adopting automation without creating chaos.',
+          'Position Dependabot as the entry point for broader supply chain governance inside GitHub.'
+        ],
+        link: 'https://docs.github.com/en/code-security/dependabot/dependabot-alerts/about-dependabot-alerts'
+      },
+      {
+        icon: 'fa-solid fa-chart-line',
+        title: 'Security Overview Dashboard',
+        eyebrow: 'Give leadership a single place to understand risk posture',
+        description: 'Security Overview helps security and platform leaders move from repository-level findings to organization-level trends. It is ideal for customers who need visibility by business unit, campaign, repository, severity, or compliance program.',
+        stats: [
+          { value: 'Org-level', label: 'roll up risk across repositories and teams' },
+          { value: 'Trend view', label: 'measure remediation velocity over time' },
+          { value: 'Campaigns', label: 'drive focused remediation programs' },
+          { value: 'Compliance signal', label: 'support audits and leadership reporting' }
+        ],
+        bullets: [
+          'Use dashboard screenshots or narrative to show that GHAS scales from developer tooling to board-level reporting.',
+          'Call out severity tracking, aging alerts, and remediation campaigns as proof of governance maturity.',
+          'Explain that one platform for code, workflows, and security means fewer integration gaps in reporting.',
+          'Tie the dashboard back to audit trail evidence for regulated accounts.'
+        ],
+        link: 'https://docs.github.com/en/code-security/security-overview/about-security-overview'
+      },
+      {
+        icon: 'fa-solid fa-code-branch',
+        title: 'Dependency Review',
+        eyebrow: 'Inspect supply chain impact inside every pull request',
+        description: 'Dependency Review gives reviewers immediate visibility into what a pull request adds, upgrades, or downgrades in the dependency graph. That makes it especially compelling for customers worried about transitive risk entering through normal feature work.',
+        stats: [
+          { value: 'PR-aware', label: 'comments directly on the proposed change' },
+          { value: 'License insight', label: 'surface policy issues earlier in review' },
+          { value: 'Transitive visibility', label: 'understand what your direct updates pull in' },
+          { value: 'Policy friendly', label: 'great companion to repository rulesets' }
+        ],
+        bullets: [
+          'Explain that reviewers do not need to reverse-engineer a lockfile diff to assess package risk.',
+          'Use it as a bridge between developer ergonomics and procurement or legal policy requirements.',
+          'Show how it complements Dependabot by protecting every PR, not just automated updates.',
+          'This is a strong story for customers consolidating secure-by-default workflow in one platform.'
+        ],
+        link: 'https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/about-dependency-review'
+      }
+    ];
+
+    const BUSINESS_ENTERPRISE_ROWS = [
+      ['Price', '$4/user/month', '$21/user/month'],
+      ['SAML SSO', '❌', '✅'],
+      ['SCIM Provisioning', '❌', '✅'],
+      ['Advanced Security (GHAS)', 'Add-on', '✅ Included'],
+      ['Enterprise Managed Users', '❌', '✅'],
+      ['Data Residency', '❌', '✅ (US, EU, Japan)'],
+      ['Audit Log Streaming', '❌', '✅'],
+      ['IP Allow Lists', '❌', '✅'],
+      ['Repository Rulesets', 'Limited', '✅ Full'],
+      ['Multi-Org Management', '❌', '✅ Enterprise Account'],
+      ['Self-Hosted Option', '❌', '✅ GHES'],
+      ['Copilot Enterprise Features', '❌', '✅'],
+      ['DORA Metrics', '❌', '✅'],
+      ['Custom Support/SLA', 'Standard', '✅ Priority 24/7'],
+      ['Internal Repositories', '❌', '✅'],
+      ['GitHub Connect', '❌', '✅']
+    ];
+
+    const WHY_ENTERPRISE = [
+      {
+        icon: 'fa-solid fa-lock',
+        title: '🔒 Security & Compliance',
+        description: 'GHAS included, audit log streaming, SAML SSO, and richer policy controls give security teams a central operating model instead of a collection of add-ons.'
+      },
+      {
+        icon: 'fa-solid fa-earth-europe',
+        title: '🌍 Data Residency',
+        description: 'Choose where collaboration and source control live with regional residency options that align to customer policy and regulatory expectations.'
+      },
+      {
+        icon: 'fa-solid fa-building',
+        title: '🏢 Enterprise Scale',
+        description: 'Multi-org management, EMUs, central policy, and governance controls matter once platform adoption spans business units and regulated teams.'
+      },
+      {
+        icon: 'fa-solid fa-robot',
+        title: '🤖 AI Governance',
+        description: 'Copilot admin controls, model selection, usage analytics, and policy-based rollout are enterprise differentiators when AI becomes part of software delivery.'
+      }
+    ];
+
+    const COMPETITOR_VIEWS = {
+      gitlab: {
+        title: 'GitHub Enterprise vs GitLab Ultimate',
+        description: 'Position GitHub as the lower-cost, larger-ecosystem, stronger-AI platform with GHAS, Actions, and Copilot working as a single operating layer.',
+        columns: ['Capability', 'GitHub Enterprise', 'GitLab Ultimate'],
+        rows: [
+          ['Price', '$21/user/mo', '$99/user/mo'],
+          ['AI Assistant', 'Copilot (multi-model)', 'Duo ($19 add-on)'],
+          ['CI/CD', 'GitHub Actions (marketplace)', 'Built-in GitLab CI'],
+          ['Secret Scanning', '✅ 200+ patterns', '✅ Built-in'],
+          ['SAST/Code Scanning', '✅ CodeQL', '✅ Native SAST'],
+          ['DAST', 'Via partners', '✅ Native'],
+          ['Dependency Scanning', '✅ Dependabot', '✅ Built-in'],
+          ['Container Scanning', 'Via Actions', '✅ Built-in'],
+          ['License Compliance', 'Via partners', '✅ Built-in'],
+          ['Marketplace/Ecosystem', '✅ 15,000+ Actions', 'Limited'],
+          ['Community Size', '✅ 100M+ developers', 'Smaller'],
+          ['Self-Hosted', '✅ GHES', '✅ Self-managed'],
+          ['Copilot Agent Mode', '✅ Autonomous coding', '❌ Limited'],
+          ['Context Window', '✅ Up to 1M tokens', 'Limited']
+        ],
+        cards: [
+          {
+            icon: 'fa-solid fa-sack-dollar',
+            title: '💰 4.7x Lower Cost',
+            description: 'At list price, GitHub Enterprise is dramatically less expensive than GitLab Ultimate before you even factor in Copilot value and ecosystem leverage.'
+          },
+          {
+            icon: 'fa-solid fa-wand-magic-sparkles',
+            title: '🤖 Superior AI',
+            description: 'Copilot delivers multi-model choice, agent mode, and large context support instead of a narrower assistant add-on story.'
+          },
+          {
+            icon: 'fa-solid fa-globe',
+            title: '🌐 Largest Ecosystem',
+            description: '100M+ developers and 15K+ marketplace Actions create a depth of tooling and community momentum competitors struggle to match.'
+          },
+          {
+            icon: 'fa-solid fa-rocket',
+            title: '🚀 Innovation Speed',
+            description: 'GitHub ships continuously across Actions, Copilot, security, and platform experiences with a public roadmap customers can track.'
+          }
+        ]
+      },
+      jenkins: {
+        title: 'GitHub Actions vs Jenkins',
+        description: 'Use this view when customers are modernizing CI/CD, eliminating self-hosted maintenance overhead, or standardizing directly on the developer platform they already use every day.',
+        columns: ['Aspect', 'GitHub Actions', 'Jenkins'],
+        rows: [
+          ['Hosting', 'Cloud + self-hosted', 'Self-hosted only'],
+          ['Setup Time', 'Minutes', 'Hours to days'],
+          ['Maintenance', 'Zero (managed)', 'High (patches, plugins, infra)'],
+          ['Security', 'Managed, ephemeral runners', 'DIY, plugin vulnerabilities'],
+          ['Cost', 'Usage-based, free tier', 'Free software, costly infra'],
+          ['Scalability', 'Auto-scaling cloud', 'Manual scaling'],
+          ['Plugins/Actions', '15,000+ marketplace', '1,800+ plugins'],
+          ['YAML Config', 'Native', 'Jenkinsfile (Groovy)'],
+          ['Integration', 'Native GitHub', 'Requires plugins'],
+          ['Secret Management', 'Built-in, OIDC', 'Jenkins Credentials']
+        ],
+        migration: {
+          title: 'Migration from Jenkins',
+          description: 'Most Jenkins conversations are not really about build syntax — they are about removing operational burden and making security controls easier to enforce.',
+          bullets: [
+            'Start with high-friction jobs: workflows with brittle plugins, custom agent maintenance, or slow onboarding deliver the fastest modernization wins.',
+            'Use reusable workflows, hosted runners, and OIDC to replace bespoke credential handling and hand-maintained master nodes.',
+            'Position GitHub Actions as part of a platform consolidation strategy: source, automation, policy, security, and AI in the same control plane.'
+          ]
+        }
+      }
+    };
+
+    const RETENTION_ROWS = [
+      {
+        tier: 'Individual',
+        prompts: 'Consumer experience policies apply; some chat experiences may retain prompts for limited periods.',
+        training: 'Not framed as an enterprise contract boundary.',
+        controls: 'No enterprise admin controls, limited governance, not the recommended tier for sensitive enterprise work.',
+        note: 'Use cautiously for corporate data; policy and governance requirements usually push customers to Business or Enterprise.'
+      },
+      {
+        tier: 'Business',
+        prompts: 'Zero data retention for prompts and suggestions in the core business posture.',
+        training: 'Code and prompts are not used to train foundation models.',
+        controls: 'Central admin, policy management, and business privacy posture. Azure abuse monitoring still applies where relevant.',
+        note: 'Good fit when customers want secure Copilot adoption but do not yet need the broader enterprise platform envelope.'
+      },
+      {
+        tier: 'Enterprise',
+        prompts: 'Zero retention posture plus the richest governance story for model access, auditability, and enterprise policy.',
+        training: 'Not used for model training; enterprise agreements and governance controls reinforce the boundary.',
+        controls: 'Admin model controls, audit evidence, SAML, EMUs, residency options, and enterprise pathways for additional privacy controls.',
+        note: 'Best tier for regulated or global organizations that want both AI productivity and policy-backed governance.'
+      }
+    ];
+
+    const MULTI_MODEL_ROWS = [
+      ['Claude Sonnet / Opus', 'Anthropic', 'GitHub proxy → Anthropic', 'Zero via GitHub agreement', 'Anthropic ZDR posture via Copilot for GA scenarios', '1,000,000 tokens (Sonnet)'],
+      ['GPT-4.1 / GPT-5', 'Azure OpenAI', 'GitHub proxy → Azure OpenAI', 'Zero for Business/Enterprise', '30-day abuse monitoring by default; enterprise opt-out path where applicable', '1,000,000 tokens (GPT-4.1), 400,000 (GPT-5)'],
+      ['Gemini 2.5 / 3 Pro', 'Google Cloud', 'GitHub proxy → Google Cloud', 'Zero under GitHub / Google enterprise governance terms', 'Governed by Google Cloud terms', '2,000,000 tokens']
+    ];
+
+    const CONTENT_EXCLUSION_SAMPLE = `# Content Exclusion - Files Copilot should NOT process\n# This is enforced at the PLATFORM level, not by the LLM\n\n*.env\n.env.*\n**/secrets/**\n**/credentials/**\n**/private-keys/**\nsrc/demo-incidents/secret-leak.ts\nsrc/demo-incidents/pii-data-leak.ts\n*.sql\n*.csv\n*.pem\n*.key\n*.p12\n*.pfx`;
+
+    const DATA_FLOW_ASCII = `Developer prompt / @workspace / MCP tool output\n                │\n                ▼\n      GitHub Copilot Extension\n                │\n                │ TLS + approved repository context\n                ▼\n      ┌────────────────────────────────────┐\n      │ GitHub Copilot Proxy               │\n      │ Auth • policy • filtering • audit  │\n      └───────────────┬─────────────┬──────┘\n                      │             │\n                      │             ├────▶ Azure OpenAI (GPT-4.1 / GPT-5)\n                      │             ├────▶ Anthropic (Claude Sonnet / Opus)\n                      │             └────▶ Google Cloud (Gemini)\n                      │\n                      ▼\n         Response returns through GitHub policy layer\n                      │\n                      ▼\n            VS Code / CLI / PR experience\n\nImportant: if an MCP server returns raw PII, that data can become part of the model context.\nMitigation: redact in the MCP or application layer BEFORE the response reaches the model.`;
+
+    const LAYERED_SECURITY_ASCII = `Layer 1  Content Exclusion     → block sensitive files from prompt assembly\nLayer 2  Redacted MCP Servers  → mask PII before it reaches the model\nLayer 3  App Response Controls → redact data in APIs and external endpoints\nLayer 4  Encryption            → protect sensitive records at rest and in transit\nLayer 5  Audit Logging         → trace who accessed what and from where\nLayer 6  Model Selection       → choose provider and context window by sensitivity\nLayer 7  Enterprise Governance → apply org policy, SSO, residency, and admin controls`;
+
+    const INSTRUCTIONS_BOUNDARY = `⚠️ copilot-instructions.md is guidance, not a hard security barrier.\n\nWhy: the LLM may ignore, reinterpret, or partially follow natural language instructions.\nWhat to rely on instead: content exclusion, deterministic redaction code, audit logging, encryption, DLP, and reviewable platform policy.`;
+
+    const demoState = {};
+    const pollingIntervals = {};
+    const logCache = {};
+    let competitorView = 'gitlab';
+
+    const API_BASE = window.location.origin + '/api';
+
+    function escapeHtml(value = '') {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function formatTime(date = new Date()) {
+      return new Intl.DateTimeFormat([], {
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      }).format(date);
+    }
+
+    function showToast(message, level = 'success', icon = 'fa-circle-info') {
+      const stack = document.getElementById('toastStack');
+      const toast = document.createElement('div');
+      toast.className = `toast ${level}`;
+      toast.innerHTML = `<i class="fa-solid ${icon}" style="margin-top:2px;color:${level === 'error' ? '#ff938d' : level === 'warning' ? '#f2cc60' : '#7ee787'}"></i><div><strong style="display:block;margin-bottom:4px;">${escapeHtml(message)}</strong><span style="color:var(--muted);font-size:0.88rem;">${formatTime()}</span></div>`;
+      stack.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(12px)';
+        setTimeout(() => toast.remove(), 260);
+      }, 4200);
+    }
+
+    function setApiConnection(isOnline, label) {
+      const chip = document.getElementById('apiConnectionChip');
+      if (!chip) return;
+      chip.innerHTML = `<i class="fa-solid ${isOnline ? 'fa-plug-circle-check' : 'fa-plug-circle-xmark'}"></i> ${escapeHtml(label)}`;
+      chip.style.color = isOnline ? '#7ee787' : '#ff938d';
+      chip.style.borderColor = isOnline ? 'rgba(63, 185, 80, 0.22)' : 'rgba(248, 81, 73, 0.24)';
+      chip.style.background = isOnline ? 'rgba(63, 185, 80, 0.12)' : 'rgba(248, 81, 73, 0.12)';
+      document.getElementById('lastRefreshChip').innerHTML = `<i class="fa-regular fa-clock"></i> Last refresh ${formatTime()}`;
+    }
+
+    function initializeState() {
+      DEMO_BLUEPRINTS.forEach((demo) => {
+        demoState[demo.id] = {
+          id: demo.id,
+          status: 'ready',
+          progress: 0,
+          branchExists: false,
+          alerts: { secretScanning: 0, codeScanning: 0, total: 0 },
+          workflow: { status: 'not-started', conclusion: null, runId: null, url: null },
+          openPullRequests: 0,
+          errors: []
+        };
+        logCache[demo.id] = { raw: '', lastKey: '', link: '' };
+      });
+    }
+
+    function renderNavigation() {
+      const sidebarNav = document.getElementById('sidebarNav');
+      const topTabs = document.getElementById('topTabs');
+      const navMarkup = NAV_TABS.map((tab, idx) => `
+        <button class="nav-item ${idx === 0 ? 'active' : ''}" data-tab-target="${tab.index}" aria-label="${escapeHtml(tab.title)}">
+          <div class="nav-copy">
+            <strong><i class="${tab.icon}"></i> ${escapeHtml(tab.title)}</strong>
+            <small>${escapeHtml(tab.subtitle)}</small>
+          </div>
+          <span class="nav-pill">${String(tab.index + 1).padStart(2, '0')}</span>
+        </button>
+      `).join('');
+
+      const topMarkup = NAV_TABS.map((tab, idx) => `
+        <button class="tab-button ${idx === 0 ? 'active' : ''}" data-tab-target="${tab.index}" role="tab" aria-selected="${idx === 0}">
+          <i class="${tab.icon}"></i> ${escapeHtml(tab.title)}
+        </button>
+      `).join('');
+
+      sidebarNav.innerHTML = navMarkup;
+      topTabs.innerHTML = topMarkup;
+
+      document.querySelectorAll('[data-tab-target]').forEach((button) => {
+        button.addEventListener('click', () => switchTab(Number(button.dataset.tabTarget)));
+      });
+    }
+
+    function switchTab(tabIndex) {
+      document.querySelectorAll('.tab-panel').forEach((panel, idx) => panel.classList.toggle('active', idx === tabIndex));
+      document.querySelectorAll('.tab-button').forEach((button) => {
+        const active = Number(button.dataset.tabTarget) === tabIndex;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-selected', String(active));
+      });
+      document.querySelectorAll('.nav-item').forEach((button) => button.classList.toggle('active', Number(button.dataset.tabTarget) === tabIndex));
+      document.body.classList.remove('sidebar-open');
+    }
+
+    function switchCompetitorView(view) {
+      competitorView = view;
+      document.querySelectorAll('.toggle-pill').forEach((button) => button.classList.toggle('active', button.dataset.view === view));
+      document.querySelectorAll('.subview').forEach((panel) => panel.classList.toggle('active', panel.dataset.view === view));
+    }
+
+    function renderDemoCards() {
+      const grid = document.getElementById('demoGrid');
+      grid.innerHTML = DEMO_BLUEPRINTS.map((demo) => `
+        <article class="demo-card" id="card-${demo.id}">
+          <div class="demo-card-header">
+            <div class="demo-title">
+              <div class="icon-shell"><i class="${demo.icon}"></i></div>
+              <div>
+                <h4>${escapeHtml(demo.title)}</h4>
+                <p>${escapeHtml(demo.description)}</p>
+              </div>
+            </div>
+            <span class="status-pill status-ready" id="status-pill-${demo.id}">Ready</span>
+          </div>
+
+          <div class="demo-meta">
+            <span class="badge"><i class="fa-solid fa-code-branch"></i> ${escapeHtml(demo.branch)}</span>
+            <span class="badge"><i class="fa-solid fa-gears"></i> ${escapeHtml(demo.workflow)}</span>
+            <span class="badge"><i class="fa-solid fa-star"></i> Customer value</span>
+          </div>
+
+          <div class="mini-stats">
+            <div class="mini-metric">
+              <span>Workflow state</span>
+              <strong id="workflow-state-${demo.id}">Not started</strong>
+            </div>
+            <div class="mini-metric">
+              <span>Alerts / findings</span>
+              <strong id="alerts-${demo.id}">0</strong>
+            </div>
+            <div class="mini-metric">
+              <span>Open PRs</span>
+              <strong id="prs-${demo.id}">0</strong>
+            </div>
+          </div>
+
+          <p style="margin-top:16px;color:var(--muted);line-height:1.65;">${escapeHtml(demo.audienceValue)}</p>
+
+          <div class="button-row">
+            <button class="btn btn-danger" data-action="start" data-demo="${demo.id}"><i class="fa-solid fa-triangle-exclamation"></i> Simulate Incident</button>
+            <button class="btn btn-success" data-action="remediate" data-demo="${demo.id}" id="remediate-btn-${demo.id}" disabled><i class="fa-solid fa-screwdriver-wrench"></i> Remediate</button>
+            <button class="btn btn-neutral" data-action="teardown" data-demo="${demo.id}"><i class="fa-solid fa-broom"></i> Teardown</button>
+          </div>
+
+          <div class="progress-shell">
+            <div class="progress-header">
+              <span id="progress-label-${demo.id}">Ready for orchestration</span>
+              <strong id="progress-value-${demo.id}">0%</strong>
+            </div>
+            <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-track-${demo.id}">
+              <div class="progress-bar" id="progress-bar-${demo.id}"></div>
+            </div>
+          </div>
+
+          <details class="log-panel" id="log-panel-${demo.id}">
+            <summary>Live Output</summary>
+            <div class="log-toolbar">
+              <span id="log-status-${demo.id}">Waiting for activity</span>
+              <a href="#" class="btn btn-link" id="log-link-${demo.id}" style="display:none;padding:0 12px;min-height:34px;" target="_blank" rel="noopener">Open run logs</a>
+            </div>
+            <pre class="log-output" id="log-${demo.id}"><span class="log-line info">[${formatTime()}] Awaiting demo actions for ${escapeHtml(demo.title)}.</span></pre>
+          </details>
+        </article>
+      `).join('');
+
+      grid.addEventListener('click', (event) => {
+        const target = event.target.closest('[data-action]');
+        if (!target) return;
+        const demoId = target.dataset.demo;
+        const action = target.dataset.action;
+        if (action === 'start') startDemo(demoId);
+        if (action === 'remediate') remediateDemo(demoId);
+        if (action === 'teardown') teardownDemo(demoId);
+      });
+    }
+
+    function renderGhasShowcase() {
+      const container = document.getElementById('ghasShowcase');
+      container.innerHTML = GHAS_SECTIONS.map((section) => `
+        <article class="feature-card">
+          <div class="feature-header">
+            <div style="display:flex;gap:16px;align-items:flex-start;">
+              <div class="feature-icon"><i class="${section.icon}"></i></div>
+              <div>
+                <div class="eyebrow" style="margin-bottom:12px;">${escapeHtml(section.eyebrow)}</div>
+                <h4>${escapeHtml(section.title)}</h4>
+                <p>${escapeHtml(section.description)}</p>
+              </div>
+            </div>
+            <a href="${section.link}" target="_blank" rel="noopener" class="btn btn-link" style="min-width:130px;">Learn More <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+          </div>
+          <div class="feature-stats">
+            ${section.stats.map((stat) => `
+              <div class="stat-card">
+                <span>${escapeHtml(stat.label)}</span>
+                <strong>${escapeHtml(stat.value)}</strong>
+                <p>${escapeHtml(section.title)} is strongest when paired with policy, reviews, and automation.</p>
+              </div>
+            `).join('')}
+          </div>
+          <ul>
+            ${section.bullets.map((bullet) => `<li>${escapeHtml(bullet)}</li>`).join('')}
+          </ul>
+        </article>
+      `).join('');
+    }
+
+    function renderBusinessEnterprise() {
+      const container = document.getElementById('businessVsEnterprise');
+      container.innerHTML = `
+        <div class="comparison-stack">
+          <article class="table-shell full">
+            <div class="table-head">
+              <h4>GitHub Business vs GitHub Enterprise</h4>
+              <p>Use this table to anchor the conversation around security, governance, identity, residency, and AI administration. It quickly reframes the decision from price alone to platform risk posture.</p>
+            </div>
+            <div class="table-wrap">
+              <table class="comparison-table">
+                <thead>
+                  <tr>
+                    <th>Feature</th>
+                    <th>GitHub Business</th>
+                    <th class="enterprise-highlight">GitHub Enterprise</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${BUSINESS_ENTERPRISE_ROWS.map((row) => `
+                    <tr>
+                      <td><strong>${escapeHtml(row[0])}</strong></td>
+                      <td>${escapeHtml(row[1])}</td>
+                      <td class="enterprise-highlight">${escapeHtml(row[2])}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+            <div class="table-footnote">
+              <span>Enterprise is where GHAS, enterprise identity, governance, and Copilot administration become one coherent platform story.</span>
+              <span class="chip"><i class="fa-solid fa-briefcase"></i> Position this for security, platform engineering, IT, and procurement audiences</span>
+            </div>
+          </article>
+
+          <article class="callout full">
+            <h4>Why Enterprise?</h4>
+            <p>Enterprise isn't simply a bigger seat SKU. It is the operating model customers choose when software delivery, security, compliance, and AI policy need to be governed together.</p>
+            <div class="why-enterprise-grid" style="margin-top:18px;">
+              ${WHY_ENTERPRISE.map((card) => `
+                <div class="value-card">
+                  <div class="security-card-header">
+                    <div class="security-icon"><i class="${card.icon}"></i></div>
+                    <div>
+                      <h4>${escapeHtml(card.title)}</h4>
+                      <p>${escapeHtml(card.description)}</p>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </article>
+        </div>
+      `;
+    }
+
+    function renderCompetitors() {
+      const toggle = document.getElementById('competitorToggle');
+      const container = document.getElementById('competitorViews');
+      toggle.innerHTML = `
+        <button class="toggle-pill active" data-view="gitlab"><i class="fa-brands fa-gitlab"></i> GitHub Enterprise vs GitLab Ultimate</button>
+        <button class="toggle-pill" data-view="jenkins"><i class="fa-solid fa-gears"></i> GitHub Actions vs Jenkins</button>
+      `;
+
+      container.innerHTML = Object.entries(COMPETITOR_VIEWS).map(([key, view]) => `
+        <div class="subview ${key === 'gitlab' ? 'active' : ''}" data-view="${key}">
+          <article class="table-shell full">
+            <div class="table-head">
+              <h4>${escapeHtml(view.title)}</h4>
+              <p>${escapeHtml(view.description)}</p>
+            </div>
+            <div class="table-wrap">
+              <table class="comparison-table">
+                <thead>
+                  <tr>
+                    ${view.columns.map((column, index) => `<th class="${index === 1 ? 'enterprise-highlight' : ''}">${escapeHtml(column)}</th>`).join('')}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${view.rows.map((row) => `
+                    <tr>
+                      ${row.map((cell, index) => `<td class="${index === 1 ? 'enterprise-highlight' : ''}">${escapeHtml(cell)}</td>`).join('')}
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          ${key === 'gitlab' ? `
+            <article class="callout full">
+              <h4>Why GitHub wins</h4>
+              <p>When the customer evaluates cost, AI capability, ecosystem depth, and platform momentum together, GitHub creates a stronger overall value story.</p>
+              <div class="wins-grid" style="margin-top:18px;">
+                ${view.cards.map((card) => `
+                  <div class="value-card">
+                    <div class="security-card-header">
+                      <div class="security-icon"><i class="${card.icon}"></i></div>
+                      <div>
+                        <h4>${escapeHtml(card.title)}</h4>
+                        <p>${escapeHtml(card.description)}</p>
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </article>
+          ` : `
+            <article class="migration-card full">
+              <h4>${escapeHtml(view.migration.title)}</h4>
+              <p>${escapeHtml(view.migration.description)}</p>
+              <ul>
+                ${view.migration.bullets.map((bullet) => `<li>${escapeHtml(bullet)}</li>`).join('')}
+              </ul>
+            </article>
+          `}
+        </div>
+      `).join('');
+
+      toggle.querySelectorAll('[data-view]').forEach((button) => {
+        button.addEventListener('click', () => switchCompetitorView(button.dataset.view));
+      });
+    }
+
+    function renderCopilotSecurity() {
+      const container = document.getElementById('copilotSecurity');
+      container.innerHTML = `
+        <article class="security-card large">
+          <div class="security-card-header">
+            <div class="security-icon"><i class="fa-solid fa-diagram-project"></i></div>
+            <div>
+              <h4>Data Flow Diagram</h4>
+              <p>Use this diagram to explain that GitHub Copilot sits in the middle as the policy, identity, and routing layer. The model provider changes, but GitHub still provides the primary enterprise control point.</p>
+            </div>
+          </div>
+          <pre class="ascii-diagram">${escapeHtml(DATA_FLOW_ASCII)}</pre>
+          <div class="data-points">
+            <span class="data-point">Prompt → GitHub Proxy → Model Provider → Response</span>
+            <span class="data-point">Policy and filtering happen before model execution</span>
+            <span class="data-point">Redacted MCP output is the safest enterprise pattern</span>
+          </div>
+        </article>
+
+        <article class="table-shell full">
+          <div class="table-head">
+            <h4>Retention by plan tier</h4>
+            <p>Customers usually ask two questions: “Will my prompts train the model?” and “How long is anything retained?” This table keeps the answer clear and plan-aware.</p>
+          </div>
+          <div class="table-wrap">
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th>Plan tier</th>
+                  <th>Prompt / response posture</th>
+                  <th>Training use</th>
+                  <th>Admin / governance controls</th>
+                  <th>What to say in the room</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${RETENTION_ROWS.map((row) => `
+                  <tr>
+                    <td><strong>${escapeHtml(row.tier)}</strong></td>
+                    <td>${escapeHtml(row.prompts)}</td>
+                    <td>${escapeHtml(row.training)}</td>
+                    <td>${escapeHtml(row.controls)}</td>
+                    <td>${escapeHtml(row.note)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="table-shell full">
+          <div class="table-head">
+            <h4>Multi-Model Security</h4>
+            <p>Model choice changes the downstream provider and some retention nuances. That is why Enterprise model controls matter: they let customers align provider choice to their own risk posture.</p>
+          </div>
+          <div class="table-wrap">
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th>Model family</th>
+                  <th>Provider</th>
+                  <th>Route</th>
+                  <th>Training posture</th>
+                  <th>Retention nuance</th>
+                  <th>Context window</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${MULTI_MODEL_ROWS.map((row) => `
+                  <tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join('')}</tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <div class="security-grid">
+          <article class="security-card">
+            <div class="security-card-header">
+              <div class="security-icon"><i class="fa-solid fa-file-shield"></i></div>
+              <div>
+                <h4>Content Exclusion</h4>
+                <p>Show customers that .copilotignore is enforced at the platform layer. It blocks sensitive files from prompt assembly for completions, chat, reviews, and broader context retrieval.</p>
+              </div>
+            </div>
+            <pre class="code-block">${escapeHtml(CONTENT_EXCLUSION_SAMPLE)}</pre>
+            <ul>
+              <li>Best practice: exclude secrets, dumps, fixture files with synthetic PII, credentials, and private keys.</li>
+              <li>This is stronger than natural-language instruction because the file never enters prompt assembly in the first place.</li>
+              <li>Pair exclusion with secret scanning so the same risky asset types are both prevented and detected.</li>
+            </ul>
+          </article>
+
+          <article class="security-card">
+            <div class="security-card-header">
+              <div class="security-icon"><i class="fa-solid fa-expand"></i></div>
+              <div>
+                <h4>1M Context Window</h4>
+                <p>Claude Sonnet gives Copilot the ability to reason over very large codebases in one pass. That is powerful — but it increases the importance of content exclusion, clean repositories, and redacted tool outputs.</p>
+              </div>
+            </div>
+            <ul>
+              <li><strong>Benefit:</strong> repo-wide reasoning, better refactoring, and stronger architecture-level answers.</li>
+              <li><strong>Risk:</strong> larger context means more files can be included if the customer has not excluded sensitive assets.</li>
+              <li><strong>Control:</strong> combine .copilotignore, data hygiene, and redacted MCP servers so larger context windows do not expand exposure.</li>
+              <li><strong>Talking point:</strong> the answer is not to avoid large context — it is to scale security controls along with it.</li>
+            </ul>
+          </article>
+
+          <article class="security-card">
+            <div class="security-card-header">
+              <div class="security-icon"><i class="fa-solid fa-layer-group"></i></div>
+              <div>
+                <h4>Layered Security Model</h4>
+                <p>Use this model when the customer wants a crisp architecture answer for “what are the actual guardrails?”</p>
+              </div>
+            </div>
+            <pre class="ascii-diagram">${escapeHtml(LAYERED_SECURITY_ASCII)}</pre>
+          </article>
+
+          <article class="security-card">
+            <div class="security-card-header">
+              <div class="security-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+              <div>
+                <h4>copilot-instructions.md is NOT a security boundary</h4>
+                <p>Natural language instructions can guide the model, but they cannot replace deterministic controls. This is a critical enterprise message and often resonates strongly with security buyers.</p>
+              </div>
+            </div>
+            <pre class="code-block">${escapeHtml(INSTRUCTIONS_BOUNDARY)}</pre>
+            <ul>
+              <li>Use instructions for style, defaults, and developer guidance — not for compliance guarantees.</li>
+              <li>Protect actual sensitive data with code, policy, and platform-level exclusion, not hopes about prompt obedience.</li>
+              <li>Show the customer how redaction services and audit logging become enforceable controls in the delivery pipeline.</li>
+            </ul>
+          </article>
+        </div>
+
+        <article class="callout full">
+          <h4>Recommended customer takeaway</h4>
+          <p>GitHub Copilot can be adopted securely when the customer understands the control stack: enterprise plan posture, provider-aware model routing, content exclusion, deterministic redaction, audit logging, and platform policy. The strongest message is not “trust the model” — it is “govern the system around the model.”</p>
+          <div class="footnote-list">
+            <div>• Model hosting reference: <a href="https://docs.github.com/en/copilot/reference/ai-models/model-hosting" target="_blank" rel="noopener">GitHub Docs</a></div>
+            <div>• Content exclusion: <a href="https://docs.github.com/en/copilot/how-tos/configure-content-exclusion/exclude-content-from-copilot" target="_blank" rel="noopener">GitHub Docs</a></div>
+            <div>• Copilot Trust Center: <a href="https://resources.github.com/copilot-trust-center/" target="_blank" rel="noopener">GitHub Trust Center</a></div>
+          </div>
+        </article>
+      `;
+    }
+
+    function appendLog(demoId, message, level = 'info') {
+      const pre = document.getElementById(`log-${demoId}`);
+      if (!pre) return;
+      const line = document.createElement('span');
+      line.className = `log-line ${level}`;
+      line.textContent = `[${formatTime()}] ${message}`;
+      pre.appendChild(line);
+      pre.appendChild(document.createTextNode('\n'));
+      pre.scrollTop = pre.scrollHeight;
+      document.getElementById(`log-status-${demoId}`).textContent = message;
+    }
+
+    function parseCardState(statusPayload) {
+      const workflowStatus = statusPayload?.workflow?.status ?? 'not-started';
+      const conclusion = statusPayload?.workflow?.conclusion ?? null;
+      if (workflowStatus === 'completed') {
+        return ['failure', 'cancelled', 'timed_out', 'action_required'].includes(conclusion) ? 'failed' : 'complete';
+      }
+      if (['queued', 'in_progress', 'waiting', 'requested'].includes(workflowStatus)) {
+        return 'running';
+      }
+      if (statusPayload?.branchExists) {
+        return 'running';
+      }
+      return 'ready';
+    }
+
+    function computeProgress(statusPayload, cardState) {
+      if (cardState === 'complete' || cardState === 'failed') return 100;
+      if (!statusPayload?.branchExists) return 0;
+      const workflowStatus = statusPayload?.workflow?.status;
+      if (workflowStatus === 'queued') return 18;
+      if (workflowStatus === 'waiting' || workflowStatus === 'requested') return 28;
+      if (workflowStatus === 'in_progress') {
+        if ((statusPayload?.alerts?.total ?? 0) > 0) return 72;
+        if ((statusPayload?.openPullRequests ?? 0) > 0) return 84;
+        return 56;
+      }
+      if ((statusPayload?.openPullRequests ?? 0) > 0) return 88;
+      return 36;
+    }
+
+    function updateStatusSummary() {
+      const values = Object.values(demoState);
+      const running = values.filter((item) => item.status === 'running').length;
+      const complete = values.filter((item) => item.status === 'complete').length;
+      const ready = values.filter((item) => item.status === 'ready').length;
+      document.getElementById('statusSummaryChip').innerHTML = `<i class="fa-solid fa-chart-line"></i> ${running} running, ${complete} complete, ${ready} ready`;
+    }
+
+    function updateDemoCard(demoId) {
+      const state = demoState[demoId];
+      if (!state) return;
+      const pill = document.getElementById(`status-pill-${demoId}`);
+      const workflowState = document.getElementById(`workflow-state-${demoId}`);
+      const alerts = document.getElementById(`alerts-${demoId}`);
+      const prs = document.getElementById(`prs-${demoId}`);
+      const progressLabel = document.getElementById(`progress-label-${demoId}`);
+      const progressValue = document.getElementById(`progress-value-${demoId}`);
+      const progressTrack = document.getElementById(`progress-track-${demoId}`);
+      const progressBar = document.getElementById(`progress-bar-${demoId}`);
+      const remediateButton = document.getElementById(`remediate-btn-${demoId}`);
+      const logLink = document.getElementById(`log-link-${demoId}`);
+      const openPanel = document.getElementById(`log-panel-${demoId}`);
+
+      const labelMap = {
+        ready: 'Ready',
+        running: 'Running',
+        complete: 'Complete',
+        failed: 'Failed'
+      };
+
+      pill.textContent = labelMap[state.status] || 'Ready';
+      pill.className = `status-pill status-${state.status}`;
+      workflowState.textContent = state.workflow?.status ? String(state.workflow.status).replace(/-/g, ' ') : 'Not started';
+      alerts.textContent = String(state.alerts?.total ?? 0);
+      prs.textContent = String(state.openPullRequests ?? 0);
+      progressLabel.textContent =
+        state.status === 'ready' ? 'Ready for orchestration' :
+        state.status === 'running' ? 'Workflow executing and status polling live' :
+        state.status === 'complete' ? 'Workflow finished successfully' :
+        'Workflow requires attention';
+      progressValue.textContent = `${state.progress}%`;
+      progressTrack.setAttribute('aria-valuenow', String(state.progress));
+      progressBar.style.width = `${state.progress}%`;
+      progressBar.classList.toggle('complete', state.status === 'complete');
+      progressBar.classList.toggle('failed', state.status === 'failed');
+      remediateButton.disabled = !state.branchExists || state.status === 'ready';
+      if (state.status === 'running') {
+        openPanel.open = true;
+      }
+      if (state.workflow?.url) {
+        logLink.style.display = 'inline-flex';
+        logLink.href = state.workflow.url;
+      }
+      updateStatusSummary();
+    }
+
+    function setStateFromStatus(demoId, statusPayload, origin = 'status') {
+      if (!statusPayload) return;
+      const state = demoState[demoId];
+      if (!state) return;
+      const newStatus = parseCardState(statusPayload);
+      const next = {
+        ...state,
+        status: newStatus,
+        progress: computeProgress(statusPayload, newStatus),
+        branchExists: Boolean(statusPayload.branchExists),
+        alerts: statusPayload.alerts || { secretScanning: 0, codeScanning: 0, total: 0 },
+        workflow: statusPayload.workflow || { status: 'not-started', conclusion: null },
+        openPullRequests: statusPayload.openPullRequests || 0,
+        errors: statusPayload.errors || []
+      };
+
+      const statusKey = [next.status, next.workflow.status, next.workflow.conclusion, next.alerts.total, next.openPullRequests].join('|');
+      if (logCache[demoId].lastKey !== statusKey) {
+        if (origin === 'start') {
+          appendLog(demoId, `Started ${statusPayload.name || demoId}. Branch ${statusPayload.branchName || 'pending'} is now active.`, 'info');
+        } else if (next.status === 'running') {
+          appendLog(demoId, `Polling status: ${next.workflow.status || 'processing'}${next.workflow.runId ? ` · run ${next.workflow.runId}` : ''}.`, 'info');
+        } else if (next.status === 'complete') {
+          appendLog(demoId, 'Workflow completed successfully.', 'success');
+        } else if (next.status === 'failed') {
+          appendLog(demoId, `Workflow ended with conclusion ${next.workflow.conclusion || 'failed'}.`, 'error');
+        }
+      }
+
+      if ((next.alerts.total || 0) > (state.alerts?.total || 0)) {
+        appendLog(demoId, `Incident detected: ${next.alerts.total} alert(s) or scanner finding(s) visible.`, 'warning');
+      }
+      if ((next.openPullRequests || 0) > (state.openPullRequests || 0)) {
+        appendLog(demoId, `Remediation evidence is available: ${next.openPullRequests} open pull request(s).`, 'success');
+      }
+      if (next.errors.length && next.errors.join('|') !== (state.errors || []).join('|')) {
+        appendLog(demoId, next.errors[0], 'warning');
+      }
+
+      demoState[demoId] = next;
+      logCache[demoId].lastKey = statusKey;
+      updateDemoCard(demoId);
+      if (next.status === 'complete' || next.status === 'failed') {
+        stopPolling(demoId);
+      }
+    }
+
+    async function apiRequest(path, options = {}) {
+      const response = await fetch(`${API_BASE}${path}`, {
+        headers: { 'Content-Type': 'application/json' },
+        ...options
+      });
+
+      let payload = null;
+      try {
+        payload = await response.json();
+      } catch {
+        payload = null;
+      }
+
+      if (!response.ok || payload?.success === false) {
+        const message = payload?.error || payload?.workflowError || payload?.pullRequestError || `Request failed (${response.status})`;
+        throw new Error(message);
+      }
+
+      return payload;
+    }
+
+    function stopPolling(demoId) {
+      if (pollingIntervals[demoId]) {
+        clearInterval(pollingIntervals[demoId]);
+        delete pollingIntervals[demoId];
+      }
+    }
+
+    function startPolling(demoId) {
+      stopPolling(demoId);
+      pollingIntervals[demoId] = setInterval(() => getDemoStatus(demoId), 3000);
+    }
+
+    function tryDecodeLogs(value) {
+      if (!value) return '';
+      try {
+        const decoded = atob(value);
+        if (/[^\x09\x0A\x0D\x20-\x7E]/.test(decoded.slice(0, 120))) {
+          return '';
+        }
+        return decoded;
+      } catch {
+        return value;
+      }
+    }
+
+    async function syncLogs(demoId) {
+      const state = demoState[demoId];
+      if (!state?.workflow?.runId) return;
+      try {
+        const payload = await apiRequest(`/demos/${demoId}/logs`);
+        if (payload?.run?.htmlUrl) {
+          demoState[demoId].workflow.url = payload.run.htmlUrl;
+        }
+        const link = payload?.logs?.downloadUrl || payload?.run?.htmlUrl;
+        if (link && logCache[demoId].link !== link) {
+          logCache[demoId].link = link;
+          const logLink = document.getElementById(`log-link-${demoId}`);
+          if (logLink) {
+            logLink.href = link;
+            logLink.style.display = 'inline-flex';
+          }
+        }
+        const raw = tryDecodeLogs(payload?.logs?.content);
+        if (raw && raw !== logCache[demoId].raw) {
+          const delta = raw.startsWith(logCache[demoId].raw) ? raw.slice(logCache[demoId].raw.length) : raw;
+          delta.split(/\r?\n/).filter(Boolean).slice(-30).forEach((line) => {
+            const lower = line.toLowerCase();
+            const level = lower.includes('error') || lower.includes('failed') ? 'error' : lower.includes('warning') ? 'warning' : lower.includes('success') || lower.includes('completed') ? 'success' : 'info';
+            appendLog(demoId, line.trim(), level);
+          });
+          logCache[demoId].raw = raw;
+        }
+      } catch (error) {
+        // Logs are best-effort. No toast here to keep the UI clean during polling.
+      }
+    }
+
+    async function startDemo(demoId) {
+      appendLog(demoId, 'Simulate Incident clicked. Creating demo branch and pushing incident files…', 'warning');
+      demoState[demoId].status = 'running';
+      demoState[demoId].progress = 12;
+      updateDemoCard(demoId);
+      try {
+        const payload = await apiRequest(`/demos/${demoId}/start`, { method: 'POST' });
+        setStateFromStatus(demoId, payload.status, 'start');
+        showToast(`${DEMO_BLUEPRINTS.find((item) => item.id === demoId)?.title || demoId} started`, 'success', 'fa-circle-play');
+        await syncLogs(demoId);
+        startPolling(demoId);
+        setApiConnection(true, 'API reachable · orchestration live');
+      } catch (error) {
+        demoState[demoId].status = 'failed';
+        demoState[demoId].progress = 100;
+        updateDemoCard(demoId);
+        appendLog(demoId, error.message, 'error');
+        setApiConnection(false, 'API error · check backend');
+        showToast(error.message, 'error', 'fa-circle-exclamation');
+      }
+    }
+
+    async function getDemoStatus(demoId) {
+      try {
+        const payload = await apiRequest(`/demos/${demoId}/status`);
+        setStateFromStatus(demoId, payload.status, 'status');
+        await syncLogs(demoId);
+        setApiConnection(true, 'API reachable · orchestration live');
+      } catch (error) {
+        appendLog(demoId, `Status check failed: ${error.message}`, 'error');
+        setApiConnection(false, 'API error · check backend');
+        stopPolling(demoId);
+      }
+    }
+
+    async function remediateDemo(demoId) {
+      appendLog(demoId, 'Remediate clicked. Pushing fixed artifacts and opening a pull request…', 'success');
+      try {
+        const payload = await apiRequest(`/demos/${demoId}/remediate`, { method: 'POST' });
+        setStateFromStatus(demoId, payload.status, 'status');
+        if (payload.pullRequest?.htmlUrl) {
+          appendLog(demoId, `Remediation PR ready: ${payload.pullRequest.htmlUrl}`, 'success');
+          demoState[demoId].workflow.url = payload.pullRequest.htmlUrl;
+        }
+        showToast(`${DEMO_BLUEPRINTS.find((item) => item.id === demoId)?.title || demoId} remediation created`, 'success', 'fa-wrench');
+        await syncLogs(demoId);
+        startPolling(demoId);
+      } catch (error) {
+        appendLog(demoId, error.message, 'error');
+        showToast(error.message, 'error', 'fa-circle-exclamation');
+      }
+    }
+
+    async function teardownDemo(demoId) {
+      appendLog(demoId, 'Teardown requested. Closing pull requests, removing workflow runs, and deleting demo branch…', 'info');
+      stopPolling(demoId);
+      try {
+        await apiRequest(`/demos/${demoId}/teardown`, { method: 'POST' });
+        demoState[demoId] = {
+          ...demoState[demoId],
+          status: 'ready',
+          progress: 0,
+          branchExists: false,
+          alerts: { secretScanning: 0, codeScanning: 0, total: 0 },
+          workflow: { status: 'not-started', conclusion: null, runId: null, url: null },
+          openPullRequests: 0,
+          errors: []
+        };
+        logCache[demoId].lastKey = '';
+        logCache[demoId].raw = '';
+        logCache[demoId].link = '';
+        updateDemoCard(demoId);
+        appendLog(demoId, 'Environment reset complete. Demo is ready again.', 'success');
+        showToast(`${DEMO_BLUEPRINTS.find((item) => item.id === demoId)?.title || demoId} torn down`, 'success', 'fa-broom');
+      } catch (error) {
+        appendLog(demoId, error.message, 'error');
+        showToast(error.message, 'error', 'fa-circle-exclamation');
+      }
+    }
+
+    async function teardownAll() {
+      Object.keys(pollingIntervals).forEach(stopPolling);
+      showToast('Teardown requested for all demos', 'warning', 'fa-broom-ball');
+      try {
+        await apiRequest('/demos/teardown-all', { method: 'POST' });
+        DEMO_BLUEPRINTS.forEach((demo) => {
+          demoState[demo.id] = {
+            ...demoState[demo.id],
+            status: 'ready',
+            progress: 0,
+            branchExists: false,
+            alerts: { secretScanning: 0, codeScanning: 0, total: 0 },
+            workflow: { status: 'not-started', conclusion: null, runId: null, url: null },
+            openPullRequests: 0,
+            errors: []
+          };
+          logCache[demo.id] = { raw: '', lastKey: '', link: '' };
+          updateDemoCard(demo.id);
+          appendLog(demo.id, 'Global teardown completed. Awaiting next scenario.', 'info');
+        });
+        showToast('All demo environments torn down', 'success', 'fa-check');
+        setApiConnection(true, 'API reachable · orchestration live');
+      } catch (error) {
+        showToast(error.message, 'error', 'fa-circle-exclamation');
+        setApiConnection(false, 'API error · check backend');
+      }
+    }
+
+    async function refreshAllStatuses(silent = false) {
+      try {
+        const payload = await apiRequest('/demos');
+        (payload.demos || []).forEach((statusPayload) => {
+          setStateFromStatus(statusPayload.id, statusPayload, 'status');
+          if (demoState[statusPayload.id]?.status === 'running') {
+            startPolling(statusPayload.id);
+          } else {
+            stopPolling(statusPayload.id);
+          }
+        });
+        setApiConnection(true, 'API reachable · orchestration live');
+        if (!silent) {
+          showToast('Statuses refreshed', 'success', 'fa-rotate');
+        }
+      } catch (error) {
+        setApiConnection(false, 'API unavailable · serving UI only');
+        if (!silent) {
+          showToast(error.message || 'Status refresh failed', 'warning', 'fa-triangle-exclamation');
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeState();
+      renderNavigation();
+      renderDemoCards();
+      renderGhasShowcase();
+      renderBusinessEnterprise();
+      renderCompetitors();
+      renderCopilotSecurity();
+      updateStatusSummary();
+      document.getElementById('currentYear').textContent = new Date().getFullYear();
+      document.getElementById('sidebarToggle').addEventListener('click', () => document.body.classList.toggle('sidebar-open'));
+      switchCompetitorView('gitlab');
+      refreshAllStatuses(true);
+    });
+  </script>
+</body>
+</html>
