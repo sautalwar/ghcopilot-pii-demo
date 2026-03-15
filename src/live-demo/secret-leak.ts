@@ -1,4 +1,4 @@
-const githubToken = "ghp_live_demo_token_1234567890abcdef";
+const githubToken = process.env.GITHUB_TOKEN ?? "";
 
 export function getGitHubToken(): string {
   return githubToken;
