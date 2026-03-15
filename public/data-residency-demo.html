@@ -1,0 +1,3786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Copilot Data Residency Demo Presenter</title>
+  <meta name="description" content="Security-first, standalone demo presenter that explains GitHub Copilot data flow, retention, logs, instruction reliability, blast radius, and hands-on validation steps." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface-alt: #0f1722;
+      --surface-soft: #11161d;
+      --surface-glass: rgba(22, 27, 34, 0.85);
+      --border: #30363d;
+      --border-strong: #3d444d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --blue: #58a6ff;
+      --blue-strong: #1f6feb;
+      --green: #3fb950;
+      --green-soft: rgba(63, 185, 80, 0.16);
+      --yellow: #d29922;
+      --yellow-soft: rgba(210, 153, 34, 0.16);
+      --orange: #fb8500;
+      --orange-soft: rgba(251, 133, 0, 0.16);
+      --red: #f85149;
+      --red-soft: rgba(248, 81, 73, 0.14);
+      --purple: #a371f7;
+      --teal: #39c5cf;
+      --shadow: 0 20px 48px rgba(1, 4, 9, 0.35);
+      --radius-hero: 28px;
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+      --radius-xs: 8px;
+      --transition: 220ms ease;
+      --transition-slow: 320ms ease;
+      --font-sans: 'Inter', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-sans);
+      color: var(--text);
+      background:
+        radial-gradient(circle at top right, rgba(88, 166, 255, 0.16), transparent 20%),
+        radial-gradient(circle at top left, rgba(163, 113, 247, 0.09), transparent 18%),
+        linear-gradient(180deg, rgba(13, 17, 23, 0.98), rgba(13, 17, 23, 1));
+    }
+
+    a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      outline: none;
+    }
+
+    .page-shell {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 32px 24px 72px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      color: var(--muted);
+    }
+
+    .hero,
+    .panel,
+    .metric-card,
+    .stat-card,
+    .highlight-card,
+    .diagram-card,
+    .storage-card,
+    .guide-card,
+    .forensic-card,
+    .blast-card,
+    .footnote-card,
+    .code-card,
+    .story-card,
+    .table-shell {
+      background: linear-gradient(180deg, rgba(22, 27, 34, 0.96), rgba(15, 23, 34, 0.97));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 30px;
+      border-radius: var(--radius-hero);
+      border-color: rgba(88, 166, 255, 0.22);
+      margin-bottom: 26px;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -54px -76px auto;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(88, 166, 255, 0.16), transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      margin-bottom: 16px;
+      border-radius: 999px;
+      background: rgba(88, 166, 255, 0.12);
+      border: 1px solid rgba(88, 166, 255, 0.24);
+      color: #b6d7ff;
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p {
+      margin: 0;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.35rem, 4vw, 4.3rem);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+      margin-bottom: 14px;
+      max-width: 11ch;
+    }
+
+    .hero .subtitle {
+      max-width: 82ch;
+      color: #c8d1d9;
+      line-height: 1.75;
+      font-size: 1.03rem;
+    }
+
+    .hero-summary {
+      display: grid;
+      gap: 14px;
+      min-width: 320px;
+      max-width: 360px;
+    }
+
+    .answer-pill,
+    .risk-badge,
+    .chip,
+    .tiny-pill,
+    .nav-pill,
+    .fact-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .answer-pill {
+      padding: 10px 16px;
+      background: var(--green-soft);
+      border: 1px solid rgba(63, 185, 80, 0.28);
+      color: #a8f0b0;
+      width: fit-content;
+    }
+
+    .fact-stack {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .fact-pill {
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      background: rgba(139, 148, 158, 0.12);
+      border: 1px solid rgba(139, 148, 158, 0.18);
+      color: var(--text);
+      width: fit-content;
+    }
+
+    .hero-actions,
+    .inline-actions,
+    .filter-row,
+    .button-row,
+    .legend-row,
+    .tab-button-row,
+    .selector-grid,
+    .quick-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .hero-actions {
+      margin-top: 22px;
+      margin-bottom: 6px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      color: var(--text);
+      font-weight: 700;
+      background: rgba(139, 148, 158, 0.14);
+      transition: transform var(--transition), border-color var(--transition), background var(--transition), box-shadow var(--transition);
+    }
+
+    .btn:hover,
+    .copy-button:hover,
+    .tab-button:hover,
+    .selector-button:hover,
+    .mode-button:hover,
+    .storage-filter:hover {
+      transform: translateY(-1px);
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, rgba(31, 111, 235, 0.95), rgba(88, 166, 255, 0.82));
+      border-color: rgba(88, 166, 255, 0.28);
+    }
+
+    .btn-neutral {
+      background: rgba(139, 148, 158, 0.12);
+      border-color: rgba(139, 148, 158, 0.18);
+      color: #d0d7de;
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, rgba(63, 185, 80, 0.95), rgba(46, 160, 67, 0.92));
+      border-color: rgba(63, 185, 80, 0.26);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, rgba(248, 81, 73, 0.95), rgba(218, 54, 51, 0.9));
+      border-color: rgba(248, 81, 73, 0.25);
+    }
+
+    .btn-link {
+      background: transparent;
+      border: 1px solid rgba(88, 166, 255, 0.2);
+      color: var(--blue);
+    }
+
+    .hero-metrics,
+    .metric-grid,
+    .two-col,
+    .three-col,
+    .four-col,
+    .story-grid,
+    .proof-grid,
+    .notes-grid,
+    .forensic-grid,
+    .blast-grid,
+    .footer-grid,
+    .tab-intro-grid,
+    .guide-intro-grid,
+    .storage-grid,
+    .accordion-grid,
+    .legend-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero-metrics {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-top: 24px;
+    }
+
+    .metric-card,
+    .stat-card,
+    .highlight-card,
+    .forensic-card,
+    .blast-card,
+    .story-card,
+    .guide-card,
+    .footnote-card,
+    .diagram-card,
+    .code-card {
+      padding: 20px;
+    }
+
+    .metric-card span,
+    .stat-card span,
+    .mini-label,
+    .label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .metric-card strong,
+    .stat-card strong {
+      display: block;
+      font-size: 1.7rem;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+
+    .metric-card p,
+    .stat-card p,
+    .highlight-card p,
+    .story-card p,
+    .footnote-card p,
+    .guide-card p,
+    .forensic-card p,
+    .diagram-card p,
+    .panel p,
+    .panel li,
+    .storage-card p,
+    .storage-card li {
+      color: var(--muted);
+      line-height: 1.68;
+    }
+
+    .top-tabs {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      gap: 10px;
+      margin: 26px 0 24px;
+      padding: 14px;
+      border-radius: 20px;
+      background: rgba(13, 17, 23, 0.88);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(48, 54, 61, 0.85);
+      overflow-x: auto;
+    }
+
+    .tab-button {
+      position: relative;
+      flex: 1 1 0;
+      min-width: 180px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      font-weight: 700;
+      transition: var(--transition);
+    }
+
+    .tab-button.active {
+      background: rgba(88, 166, 255, 0.12);
+      color: var(--text);
+      border-color: rgba(88, 166, 255, 0.22);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-button.active::after {
+      content: "";
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 8px;
+      height: 3px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--blue), var(--purple));
+    }
+
+    .tab-panel {
+      display: none;
+      animation: tabFade 300ms ease;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    @keyframes tabFade {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulseGlow {
+      0% {
+        box-shadow: 0 0 0 0 rgba(88, 166, 255, 0.28);
+      }
+      70% {
+        box-shadow: 0 0 0 12px rgba(88, 166, 255, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(88, 166, 255, 0);
+      }
+    }
+
+    .panel {
+      padding: 26px;
+      margin-bottom: 22px;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    .panel-header h2,
+    .panel-header h3 {
+      font-size: clamp(1.5rem, 2vw, 2rem);
+      letter-spacing: -0.03em;
+      margin-bottom: 10px;
+    }
+
+    .panel-header p {
+      max-width: 82ch;
+    }
+
+    .panel-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .section-kicker {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .tab-intro-grid {
+      grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+      align-items: stretch;
+      margin-bottom: 20px;
+    }
+
+    .selector-grid {
+      margin-bottom: 18px;
+    }
+
+    .selector-button,
+    .mode-button,
+    .storage-filter {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(139, 148, 158, 0.18);
+      background: rgba(13, 17, 23, 0.4);
+      color: var(--muted);
+      font-weight: 700;
+      transition: var(--transition);
+    }
+
+    .selector-button.active,
+    .mode-button.active,
+    .storage-filter.active {
+      color: var(--text);
+      border-color: rgba(88, 166, 255, 0.22);
+      background: rgba(88, 166, 255, 0.12);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .scenario-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .scenario-detail {
+      display: grid;
+      gap: 18px;
+    }
+
+    .headline-card {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(145deg, rgba(22, 27, 34, 0.98), rgba(12, 20, 30, 0.98));
+      border: 1px solid rgba(88, 166, 255, 0.18);
+      border-radius: 22px;
+      padding: 22px;
+    }
+
+    .headline-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(88, 166, 255, 0.08), transparent 44%, rgba(163, 113, 247, 0.08));
+      pointer-events: none;
+    }
+
+    .headline-card h3 {
+      font-size: 1.55rem;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+    }
+
+    .headline-card p {
+      position: relative;
+      z-index: 1;
+    }
+
+    .risk-badge,
+    .chip,
+    .tiny-pill,
+    .nav-pill {
+      padding: 6px 10px;
+      font-size: 0.76rem;
+      border: 1px solid rgba(139, 148, 158, 0.2);
+      background: rgba(139, 148, 158, 0.12);
+      color: var(--muted);
+    }
+
+    .risk-none {
+      color: #a8f0b0;
+      border-color: rgba(63, 185, 80, 0.26);
+      background: var(--green-soft);
+    }
+
+    .risk-low {
+      color: #f0d38c;
+      border-color: rgba(210, 153, 34, 0.26);
+      background: var(--yellow-soft);
+    }
+
+    .risk-medium {
+      color: #ffc58f;
+      border-color: rgba(251, 133, 0, 0.26);
+      background: var(--orange-soft);
+    }
+
+    .risk-high {
+      color: #ffb3ae;
+      border-color: rgba(248, 81, 73, 0.26);
+      background: var(--red-soft);
+    }
+
+    .status-strong {
+      animation: pulseGlow 1.8s infinite;
+    }
+
+    .story-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .story-card h4,
+    .guide-card h4,
+    .forensic-card h4,
+    .blast-card h4,
+    .diagram-card h4,
+    .storage-card h4,
+    .highlight-card h4 {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.02rem;
+      margin-bottom: 12px;
+    }
+
+    .icon-shell {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: rgba(88, 166, 255, 0.12);
+      border: 1px solid rgba(88, 166, 255, 0.2);
+      color: var(--blue);
+      flex-shrink: 0;
+    }
+
+    .flow-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .flow-step {
+      position: relative;
+      padding: 18px;
+      border-radius: 18px;
+      border: 1px solid rgba(48, 54, 61, 0.88);
+      background: rgba(13, 17, 23, 0.62);
+      min-height: 192px;
+      overflow: hidden;
+    }
+
+    .flow-step:not(:last-child)::after {
+      content: "➜";
+      position: absolute;
+      right: -13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--blue);
+      font-size: 1.15rem;
+      z-index: 2;
+    }
+
+    .flow-step h5 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.98rem;
+      margin-bottom: 10px;
+    }
+
+    .flow-step p {
+      color: var(--muted);
+      line-height: 1.62;
+      font-size: 0.93rem;
+    }
+
+    .quote-box,
+    .highlight-box,
+    .evidence-box,
+    .callout-box,
+    .tiny-card {
+      border-radius: 16px;
+      border: 1px solid rgba(48, 54, 61, 0.86);
+      background: rgba(13, 17, 23, 0.56);
+      padding: 16px;
+    }
+
+    .quote-box {
+      border-color: rgba(88, 166, 255, 0.18);
+      background: linear-gradient(180deg, rgba(17, 26, 40, 0.96), rgba(13, 17, 23, 0.88));
+    }
+
+    .quote-box strong {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+
+    .bullet-list {
+      display: grid;
+      gap: 10px;
+      padding-left: 18px;
+      margin: 0;
+    }
+
+    .bullet-list li {
+      line-height: 1.64;
+      color: var(--muted);
+    }
+
+    .storage-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .storage-card {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .storage-card summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 20px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .storage-card summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .storage-card[open] summary {
+      border-bottom: 1px solid rgba(48, 54, 61, 0.84);
+      background: rgba(13, 17, 23, 0.28);
+    }
+
+    .storage-card .storage-body {
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .storage-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .storage-meta {
+      display: grid;
+      gap: 8px;
+    }
+
+    .storage-meta h4 {
+      margin-bottom: 0;
+    }
+
+    .storage-topline {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .meta-grid,
+    .command-grid,
+    .fact-grid,
+    .legend-grid,
+    .footer-grid,
+    .guide-grid,
+    .forensic-grid,
+    .blast-grid,
+    .notes-grid,
+    .proof-grid,
+    .two-col,
+    .three-col,
+    .four-col,
+    .guide-intro-grid {
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .command-card {
+      border-radius: 16px;
+      border: 1px solid rgba(48, 54, 61, 0.84);
+      background: rgba(13, 17, 23, 0.62);
+      overflow: hidden;
+    }
+
+    .command-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(48, 54, 61, 0.84);
+      background: rgba(13, 17, 23, 0.5);
+    }
+
+    .command-card pre,
+    .code-card pre,
+    .table-shell pre,
+    .example-block pre {
+      margin: 0;
+      padding: 14px 16px;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .copy-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(88, 166, 255, 0.22);
+      background: rgba(88, 166, 255, 0.12);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 0.82rem;
+      transition: var(--transition);
+    }
+
+    .copy-button.copied {
+      background: var(--green-soft);
+      border-color: rgba(63, 185, 80, 0.28);
+      color: #a8f0b0;
+    }
+
+    .search-bar {
+      min-height: 46px;
+      border-radius: 12px;
+      border: 1px solid var(--border-strong);
+      background: rgba(13, 17, 23, 0.86);
+      color: var(--text);
+      padding: 0 14px;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .compare-table,
+    .detail-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    .compare-table th,
+    .compare-table td,
+    .detail-table th,
+    .detail-table td {
+      text-align: left;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(48, 54, 61, 0.75);
+      vertical-align: top;
+    }
+
+    .compare-table th,
+    .detail-table th {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: rgba(13, 17, 23, 0.6);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .compare-table tbody tr:nth-child(even) td,
+    .detail-table tbody tr:nth-child(even) td {
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    .compare-table tbody tr:hover td,
+    .detail-table tbody tr:hover td {
+      background: rgba(88, 166, 255, 0.05);
+    }
+
+    .table-shell {
+      overflow: hidden;
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+    }
+
+    .banner,
+    .warning-banner,
+    .success-banner,
+    .danger-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px 18px;
+      border-radius: 16px;
+      border: 1px solid rgba(48, 54, 61, 0.84);
+      margin-bottom: 18px;
+      line-height: 1.65;
+    }
+
+    .warning-banner {
+      background: var(--yellow-soft);
+      border-color: rgba(210, 153, 34, 0.28);
+      color: #f2d79a;
+    }
+
+    .success-banner {
+      background: var(--green-soft);
+      border-color: rgba(63, 185, 80, 0.28);
+      color: #a8f0b0;
+    }
+
+    .danger-banner {
+      background: var(--red-soft);
+      border-color: rgba(248, 81, 73, 0.28);
+      color: #ffb3ae;
+    }
+
+    .callout-strip {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .callout-strip .callout-box strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .mode-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .trial-grid {
+      display: grid;
+      grid-template-columns: repeat(10, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .trial-pill {
+      display: grid;
+      place-items: center;
+      min-height: 54px;
+      border-radius: 14px;
+      border: 1px solid rgba(48, 54, 61, 0.84);
+      background: rgba(13, 17, 23, 0.58);
+      font-weight: 800;
+      transition: var(--transition-slow);
+    }
+
+    .trial-pill.success {
+      background: var(--green-soft);
+      border-color: rgba(63, 185, 80, 0.28);
+      color: #a8f0b0;
+    }
+
+    .trial-pill.fail {
+      background: var(--red-soft);
+      border-color: rgba(248, 81, 73, 0.28);
+      color: #ffb3ae;
+    }
+
+    .score-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .score-bar {
+      flex: 1 1 280px;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(139, 148, 158, 0.16);
+      overflow: hidden;
+      border: 1px solid rgba(139, 148, 158, 0.18);
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      width: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--blue), var(--green));
+      transition: width 420ms ease;
+    }
+
+    .forensic-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .example-block {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(48, 54, 61, 0.84);
+      background: rgba(13, 17, 23, 0.6);
+      margin-top: 14px;
+    }
+
+    .example-block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(48, 54, 61, 0.84);
+      background: rgba(13, 17, 23, 0.5);
+    }
+
+    .ascii-box {
+      border-radius: 18px;
+      border: 1px solid rgba(88, 166, 255, 0.18);
+      background: linear-gradient(180deg, rgba(10, 16, 24, 0.96), rgba(13, 17, 23, 0.9));
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+
+    .ascii-box pre {
+      font-family: var(--font-mono);
+      font-size: 0.93rem;
+      line-height: 1.55;
+      padding: 18px;
+      margin: 0;
+      white-space: pre-wrap;
+    }
+
+    .blast-grid {
+      grid-template-columns: 300px minmax(0, 1fr);
+      align-items: stretch;
+    }
+
+    .blast-node-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .blast-node-button {
+      display: grid;
+      gap: 8px;
+      width: 100%;
+      text-align: left;
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(48, 54, 61, 0.84);
+      background: rgba(13, 17, 23, 0.52);
+      color: var(--text);
+      transition: var(--transition);
+    }
+
+    .blast-node-button.active {
+      border-color: rgba(88, 166, 255, 0.22);
+      background: rgba(88, 166, 255, 0.12);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .blast-node-button small {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .blast-detail {
+      display: grid;
+      gap: 16px;
+    }
+
+    .accordion-grid {
+      grid-template-columns: 1fr;
+    }
+
+    details.accordion {
+      overflow: hidden;
+    }
+
+    details.accordion > summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      list-style: none;
+      cursor: pointer;
+      padding: 18px 20px;
+      border-radius: inherit;
+    }
+
+    details.accordion > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.accordion > summary strong {
+      font-size: 1rem;
+    }
+
+    details.accordion[open] > summary {
+      border-bottom: 1px solid rgba(48, 54, 61, 0.84);
+      background: rgba(13, 17, 23, 0.32);
+    }
+
+    details.accordion .accordion-body {
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .step-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .step-card {
+      border-radius: 18px;
+      border: 1px solid rgba(48, 54, 61, 0.84);
+      background: rgba(13, 17, 23, 0.56);
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .step-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .step-number {
+      display: inline-grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: rgba(88, 166, 255, 0.14);
+      border: 1px solid rgba(88, 166, 255, 0.24);
+      color: var(--blue);
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .step-card h5 {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1rem;
+    }
+
+    .step-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .footer-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 20px;
+    }
+
+    footer {
+      margin-top: 28px;
+    }
+
+    .source-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .source-item {
+      display: grid;
+      gap: 4px;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(48, 54, 61, 0.84);
+      background: rgba(13, 17, 23, 0.54);
+    }
+
+    .source-item small {
+      color: var(--muted);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .emphasis {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .print-note {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 1180px) {
+      .hero-top,
+      .scenario-shell,
+      .tab-intro-grid,
+      .blast-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-top {
+        display: grid;
+      }
+
+      .hero-summary {
+        max-width: none;
+      }
+
+      .flow-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .flow-step:not(:last-child)::after {
+        content: none;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .hero-metrics,
+      .story-grid,
+      .storage-grid,
+      .forensic-grid,
+      .footer-grid,
+      .step-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .trial-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page-shell {
+        padding: 24px 16px 44px;
+      }
+
+      .hero,
+      .panel,
+      .metric-card,
+      .stat-card,
+      .highlight-card,
+      .forensic-card,
+      .blast-card,
+      .story-card,
+      .guide-card,
+      .footnote-card,
+      .diagram-card,
+      .code-card,
+      .storage-card summary,
+      .storage-card .storage-body {
+        padding: 18px;
+      }
+
+      .top-tabs {
+        padding: 12px;
+      }
+
+      .tab-button {
+        min-width: 150px;
+        padding: 12px 14px;
+      }
+
+      .hero h1 {
+        font-size: 2.4rem;
+      }
+
+      .flow-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .trial-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+        color: #111111;
+      }
+
+      .page-shell {
+        max-width: none;
+        padding: 0;
+      }
+
+      .top-tabs,
+      .hero-actions,
+      .copy-button,
+      .selector-grid,
+      .mode-row,
+      .filter-row,
+      .search-bar,
+      .panel-actions,
+      .back-link {
+        display: none !important;
+      }
+
+      .hero,
+      .panel,
+      .metric-card,
+      .stat-card,
+      .highlight-card,
+      .forensic-card,
+      .blast-card,
+      .story-card,
+      .guide-card,
+      .footnote-card,
+      .diagram-card,
+      .code-card,
+      .storage-card,
+      .table-shell,
+      .command-card,
+      .source-item,
+      .step-card {
+        box-shadow: none;
+        background: #ffffff;
+        border-color: #d0d7de;
+        color: #111111;
+        break-inside: avoid;
+      }
+
+      .tab-panel {
+        display: block !important;
+        page-break-before: always;
+      }
+
+      .tab-panel:first-of-type {
+        page-break-before: auto;
+      }
+
+      .muted,
+      .metric-card p,
+      .stat-card p,
+      .highlight-card p,
+      .story-card p,
+      .footnote-card p,
+      .guide-card p,
+      .forensic-card p,
+      .diagram-card p,
+      .panel p,
+      .panel li,
+      .storage-card p,
+      .storage-card li,
+      .storage-topline,
+      .source-item small {
+        color: #444444 !important;
+      }
+
+      details {
+        display: block;
+      }
+
+      details > summary {
+        border-bottom: 1px solid #d0d7de;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <a class="back-link" href="./index.html"><i class="fa-solid fa-arrow-left"></i> Back to the main security demo console</a>
+
+    <section class="hero">
+      <div class="hero-top">
+        <div>
+          <div class="eyebrow"><i class="fa-solid fa-shield-halved"></i> Enterprise data residency presenter</div>
+          <h1>Where does Copilot data really go?</h1>
+          <p class="subtitle">
+            This standalone, security-first demo page answers the questions enterprise buyers actually ask: where prompts travel,
+            what gets stored locally versus in the cloud, how long it persists, what debug logs reveal, why instruction files are not a hard boundary,
+            and how to prove the claims live with the included demo app.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#tab-data-flow"><i class="fa-solid fa-route"></i> Start with the data journey</a>
+            <a class="btn btn-neutral" href="./pii-demo.html"><i class="fa-solid fa-database"></i> Open the runtime PII demo</a>
+            <a class="btn btn-link" href="#tab-demo-guide"><i class="fa-solid fa-list-check"></i> Jump to the click-by-click guide</a>
+          </div>
+        </div>
+        <div class="hero-summary">
+          <div class="answer-pill"><i class="fa-solid fa-circle-check"></i> Enterprise answer: govern the system around the model.</div>
+          <div class="fact-stack">
+            <div class="fact-pill"><i class="fa-solid fa-layer-group"></i> Deterministic controls first, instructions second.</div>
+            <div class="fact-pill"><i class="fa-solid fa-server"></i> Runtime database queries stay local unless a tool explicitly returns the data.</div>
+            <div class="fact-pill"><i class="fa-solid fa-clock"></i> Biggest practical risk is often local session residue, not model training.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-metrics">
+        <article class="metric-card">
+          <span>Primary cloud endpoint</span>
+          <strong>GitHub proxy</strong>
+          <p>Use DevTools and nslookup to prove requests go to <code>copilot-proxy.githubusercontent.com</code> before any approved model provider sees them.</p>
+        </article>
+        <article class="metric-card">
+          <span>Web chat retention</span>
+          <strong>30 days</strong>
+          <p>github.com Copilot chat history auto-expires. That makes it convenient, but still not the right place for regulated raw data.</p>
+        </article>
+        <article class="metric-card">
+          <span>Azure OpenAI default</span>
+          <strong>30-day abuse log</strong>
+          <p>Enterprise customers can request Modified Abuse Monitoring when the provider-retention story needs to be tighter.</p>
+        </article>
+        <article class="metric-card">
+          <span>Strongest proof</span>
+          <strong>Canary test</strong>
+          <p>The app can find <strong>Canary Testbird</strong> in SQLite. Copilot cannot because it does not sit in the runtime database path.</p>
+        </article>
+      </div>
+    </section>
+
+    <nav class="top-tabs" aria-label="Data residency tabs">
+      <button class="tab-button active" data-tab="tab-data-flow"><i class="fa-solid fa-route"></i> Where Does My Data Go?</button>
+      <button class="tab-button" data-tab="tab-storage"><i class="fa-solid fa-map-location-dot"></i> What Gets Stored Where?</button>
+      <button class="tab-button" data-tab="tab-instructions"><i class="fa-solid fa-scale-balanced"></i> Are .md Instruction Files Reliable?</button>
+      <button class="tab-button" data-tab="tab-logs"><i class="fa-solid fa-magnifying-glass-chart"></i> What's in the Debug Logs?</button>
+      <button class="tab-button" data-tab="tab-blast-radius"><i class="fa-solid fa-burst"></i> What If Instructions Are Ignored?</button>
+      <button class="tab-button" data-tab="tab-demo-guide"><i class="fa-solid fa-clipboard-list"></i> Step-by-Step Demo Guide</button>
+    </nav>
+
+    <main>
+      <section class="tab-panel active" id="tab-data-flow">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="section-kicker">Tab 1 · Data Flow & Residency</div>
+              <h2>Where does my data go?</h2>
+              <p>
+                This tab turns each customer scenario into a clickable journey map. Use it to compare editor chat, CLI, web chat, MCP tool calls,
+                and normal application database traffic without hand-waving. The goal is not to say “trust the AI” — the goal is to show the exact path,
+                the retention story, and the proof technique for each case.
+              </p>
+            </div>
+            <div class="panel-actions">
+              <span class="risk-badge risk-low"><i class="fa-solid fa-lock"></i> In transit via TLS 1.2+</span>
+              <span class="risk-badge risk-high"><i class="fa-solid fa-toolbox"></i> Highest risk: MCP raw output</span>
+            </div>
+          </div>
+
+          <div class="tab-intro-grid">
+            <article class="story-card">
+              <h4><span class="icon-shell"><i class="fa-solid fa-lightbulb"></i></span> How to narrate this live</h4>
+              <p>
+                Start with the simple rule: <span class="emphasis">Copilot only sees what enters the prompt envelope.</span> Then ask the customer which envelope they care about — IDE chat,
+                CLI, web chat, MCP tool output, or normal application runtime. Once the scenario is clear, the residency answer becomes concrete and defensible.
+              </p>
+            </article>
+            <article class="story-card">
+              <h4><span class="icon-shell"><i class="fa-solid fa-flag-checkered"></i></span> What to emphasize</h4>
+              <p>
+                The strongest enterprise message is layered governance: content exclusion, scoped environments, redaction in tools, local cleanup, and evidence-based validation.
+                Instructions help, but enforcement lives outside natural language.
+              </p>
+            </article>
+          </div>
+
+          <div class="selector-grid" id="scenarioSelector"></div>
+          <div class="scenario-shell">
+            <div id="scenarioDetail" class="scenario-detail"></div>
+            <div class="notes-grid">
+              <article class="highlight-card">
+                <h4><span class="icon-shell"><i class="fa-solid fa-gavel"></i></span> Security buyer translation</h4>
+                <p>
+                  When a customer asks “Where does the data end up?” they usually mean one of three things: who sees it during processing,
+                  how long anything persists after the response, and what the developer must clean up locally. Make sure your answer covers all three.
+                </p>
+              </article>
+              <article class="highlight-card">
+                <h4><span class="icon-shell"><i class="fa-solid fa-clipboard-check"></i></span> Proof techniques to repeat</h4>
+                <ul class="bullet-list">
+                  <li>Developer Tools → Network for destination host evidence.</li>
+                  <li>Output Panel for metadata-only logging proof.</li>
+                  <li>state.vscdb and shell history for local persistence proof.</li>
+                  <li>Runtime PII demo and canary record for database isolation proof.</li>
+                </ul>
+              </article>
+              <article class="highlight-card">
+                <h4><span class="icon-shell"><i class="fa-solid fa-scale-unbalanced-flip"></i></span> What not to over-claim</h4>
+                <ul class="bullet-list">
+                  <li>Do not claim instructions are enforcement.</li>
+                  <li>Do not claim MCP is safe by default without tool redaction.</li>
+                  <li>Do not collapse local-storage risk into cloud-retention risk — they are different.</li>
+                  <li>Do not confuse application runtime traffic with Copilot traffic.</li>
+                </ul>
+              </article>
+            </div>
+          </div>
+
+          <div class="callout-strip">
+            <div class="warning-banner">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <div>
+                <strong>Critical enterprise nuance:</strong>
+                The MCP scenario is the exception that proves the rule. Standard Copilot chat does not go fetch runtime database rows by itself.
+                But if your tool returns raw PII, the model sees raw PII because you explicitly placed it into the prompt context.
+              </div>
+            </div>
+            <details class="accordion table-shell" open>
+              <summary>
+                <strong><i class="fa-solid fa-table"></i> Cross-scenario cheat sheet</strong>
+                <span class="muted">One view for executives and security reviewers</span>
+              </summary>
+              <div class="accordion-body">
+                <div class="table-scroll">
+                  <table class="compare-table">
+                    <thead>
+                      <tr>
+                        <th>Scenario</th>
+                        <th>Who sees the live request?</th>
+                        <th>What persists?</th>
+                        <th>Highest risk to mention</th>
+                        <th>Best proof</th>
+                      </tr>
+                    </thead>
+                    <tbody id="scenarioSummaryRows"></tbody>
+                  </table>
+                </div>
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-storage">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="section-kicker">Tab 2 · Complete Data Map</div>
+              <h2>What gets stored where?</h2>
+              <p>
+                Every row below expands into exact paths, inspection commands, cleanup commands, risk badges, and a screenshot description.
+                This is the tab to use when the customer asks for a forensics-ready answer instead of a marketing summary.
+              </p>
+            </div>
+            <div class="panel-actions">
+              <input class="search-bar" id="storageSearch" type="search" placeholder="Filter by location, path, or keyword…" />
+            </div>
+          </div>
+
+          <div class="success-banner">
+            <i class="fa-solid fa-circle-check"></i>
+            <div>
+              <strong>How to use this section in a customer meeting:</strong>
+              first show the summary table, then open only the rows that match the customer's current threat model — local workstation risk,
+              cloud retention, provider posture, or custom tool logging.
+            </div>
+          </div>
+
+          <div class="filter-row" id="storageFilters"></div>
+
+          <div class="table-shell" style="margin-bottom: 18px;">
+            <div class="table-scroll">
+              <table class="detail-table">
+                <thead>
+                  <tr>
+                    <th>Location</th>
+                    <th>What's stored</th>
+                    <th>Retention</th>
+                    <th>How to find</th>
+                    <th>How to clear</th>
+                  </tr>
+                </thead>
+                <tbody id="storageSummaryRows"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="storage-grid" id="storageCards"></div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-instructions">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="section-kicker">Tab 3 · The Truth About Instructions</div>
+              <h2>Are .md instruction files reliable?</h2>
+              <p>
+                This is the honest answer tab. It acknowledges the customer's skepticism, explains why they are partially right,
+                and replaces hand-wavy promises with a framework that prioritizes deterministic controls over probabilistic guidance.
+              </p>
+            </div>
+            <div class="panel-actions">
+              <span class="risk-badge risk-medium"><i class="fa-solid fa-circle-half-stroke"></i> Natural language guidance only</span>
+            </div>
+          </div>
+
+          <div class="danger-banner">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <div>
+              <strong>Honest answer:</strong>
+              yes, the customer is partially right. Instruction files are not deterministic security controls. They bias the model.
+              They do not turn an LLM into a strict policy engine.
+            </div>
+          </div>
+
+          <div class="story-grid" id="instructionFacts"></div>
+
+          <div class="table-shell" style="margin-top: 18px; margin-bottom: 18px;">
+            <div class="table-scroll">
+              <table class="compare-table">
+                <thead>
+                  <tr>
+                    <th>Control</th>
+                    <th>Type</th>
+                    <th>Reliability</th>
+                    <th>Use for</th>
+                    <th>Why it matters</th>
+                  </tr>
+                </thead>
+                <tbody id="controlsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="guide-intro-grid">
+            <article class="guide-card">
+              <h4><span class="icon-shell"><i class="fa-solid fa-list-check"></i></span> What improves compliance</h4>
+              <ul class="bullet-list">
+                <li>Short, specific, imperative wording.</li>
+                <li>An explicit safe alternative instead of only a prohibition.</li>
+                <li>Few conflicting rules and less instruction sprawl.</li>
+                <li>Examples that reinforce the desired pattern.</li>
+              </ul>
+            </article>
+            <article class="guide-card">
+              <h4><span class="icon-shell"><i class="fa-solid fa-ban"></i></span> What not to do</h4>
+              <ul class="bullet-list">
+                <li>Do not rely on instructions alone for secrets, PII, or policy enforcement.</li>
+                <li>Do not bury critical rules inside enormous instruction files.</li>
+                <li>Do not confuse “often works” with “security boundary”.</li>
+                <li>Do not skip human review because the instruction file looked strict.</li>
+              </ul>
+            </article>
+          </div>
+
+          <div class="highlight-card" style="margin-top: 18px; margin-bottom: 18px;">
+            <h4><span class="icon-shell"><i class="fa-solid fa-vial-circle-check"></i></span> Live demo: test it yourself</h4>
+            <p>
+              Run the exact experiment customers ask for: add a logging rule, ask Copilot to write a function ten times, record the hit rate,
+              then tighten the language by giving the model a specific replacement. The point is not to guess a universal compliance number.
+              The point is to show the customer that better wording helps, but deterministic controls still matter more.
+            </p>
+            <div class="mode-row" id="instructionModes"></div>
+            <div class="code-card">
+              <span>Active instruction</span>
+              <pre id="instructionText"></pre>
+            </div>
+            <div class="score-row">
+              <div class="score-bar"><div class="score-bar-fill" id="scoreBarFill"></div></div>
+              <strong id="scoreLabel">0 / 10</strong>
+              <span class="chip" id="scoreSummary">Run a scenario</span>
+            </div>
+            <div class="trial-grid" id="instructionTrials"></div>
+            <div class="callout-strip">
+              <div class="callout-box">
+                <strong>What to say to the customer</strong>
+                <p id="instructionTalkTrack"></p>
+              </div>
+            </div>
+          </div>
+
+          <details class="accordion table-shell" open>
+            <summary>
+              <strong><i class="fa-solid fa-shield"></i> Key takeaway</strong>
+              <span class="muted">The sentence security teams remember</span>
+            </summary>
+            <div class="accordion-body">
+              <div class="quote-box">
+                <strong>Never rely on instructions alone for security.</strong>
+                <p>
+                  Layer deterministic controls first — content exclusion, secret scanning, scoped environments, redaction at the tool layer —
+                  then add instructions as defense-in-depth for code style, defaults, and safer generation habits.
+                </p>
+              </div>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-logs">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="section-kicker">Tab 4 · Log Forensics</div>
+              <h2>What's in the debug logs?</h2>
+              <p>
+                This section shows exactly what you can point to during a forensics conversation: output channels, extension-host logs,
+                and network-level evidence. The goal is to prove the difference between operational metadata and plain-text content capture.
+              </p>
+            </div>
+            <div class="panel-actions">
+              <span class="risk-badge risk-low"><i class="fa-solid fa-magnifying-glass"></i> Metadata-rich, content-light</span>
+            </div>
+          </div>
+
+          <div class="warning-banner">
+            <i class="fa-solid fa-eye"></i>
+            <div>
+              <strong>Important distinction:</strong>
+              support logs are designed to show what happened, not to become a transcript store. That is why timestamps, request IDs,
+              model versions, and timing data show up while full prompts and full answers usually do not.
+            </div>
+          </div>
+
+          <div class="forensic-grid" id="logCards"></div>
+
+          <details class="accordion table-shell" open>
+            <summary>
+              <strong><i class="fa-solid fa-terminal"></i> PowerShell commands to inspect the main evidence sources</strong>
+              <span class="muted">Use these live during the demo</span>
+            </summary>
+            <div class="accordion-body" id="logCommands"></div>
+          </details>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-blast-radius">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="section-kicker">Tab 5 · Blast Radius</div>
+              <h2>What happens if instructions are ignored?</h2>
+              <p>
+                This tab answers the customer's hardest hypothetical: assume the instruction file is ignored. Where does the data actually end up,
+                how long does it persist, who can access it, and how do you verify and clean it up? Use the node list to walk the chain one boundary at a time.
+              </p>
+            </div>
+            <div class="panel-actions">
+              <span class="risk-badge risk-high status-strong"><i class="fa-solid fa-burst"></i> Focus on boundaries, not vibes</span>
+            </div>
+          </div>
+
+          <div class="ascii-box">
+            <pre>Developer types SSN in prompt
+        ↓
+┌─ Copilot Extension ─────────────────────┐
+│  Context: open files + prompt            │
+│  Content exclusion applied HERE          │
+│  Excluded files NEVER included           │
+└──────────────────────────────────────────┘
+        ↓
+┌─ copilot-proxy.githubusercontent.com ───┐
+│  TLS 1.2+ encrypted in transit           │
+│  Prompt logged? SEE RETENTION TABLE      │
+└──────────────────────────────────────────┘
+        ↓
+┌─ Model Provider ────────────────────────┐
+│  Azure OpenAI: 30-day abuse log          │
+│  (Enterprise opt-out available)          │
+│  Anthropic: ZERO retention               │
+│  Prompt NOT used for training            │
+└──────────────────────────────────────────┘
+        ↓
+┌─ Response ──────────────────────────────┐
+│  Returned to developer                   │
+│  Stored in VS Code workspaceStorage      │
+│  (local SQLite, manually deletable)      │
+└──────────────────────────────────────────┘</pre>
+          </div>
+
+          <div class="blast-grid">
+            <div class="blast-node-list" id="blastNodeList"></div>
+            <div id="blastDetail" class="blast-detail"></div>
+          </div>
+
+          <div class="callout-strip">
+            <div class="success-banner">
+              <i class="fa-solid fa-layer-group"></i>
+              <div>
+                <strong>Bottom line:</strong>
+                even if a natural-language instruction fails, deterministic controls still reduce the blast radius dramatically.
+                Content exclusion limits what the client can package, provider agreements define retention, and local cleanup controls the residue.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="tab-demo-guide">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="section-kicker">Tab 6 · For Newbies</div>
+              <h2>Step-by-step demo guide</h2>
+              <p>
+                This is the click-by-click presenter script. Every step includes the exact action, what the audience should see,
+                what you should say out loud, and why the step matters. It is written for someone who has never run the demo before.
+              </p>
+            </div>
+            <div class="panel-actions">
+              <span class="risk-badge risk-none"><i class="fa-solid fa-school"></i> Built for first-time presenters</span>
+            </div>
+          </div>
+
+          <div class="guide-intro-grid">
+            <article class="guide-card">
+              <h4><span class="icon-shell"><i class="fa-solid fa-box-open"></i></span> Prerequisites</h4>
+              <ul class="bullet-list" id="prereqList"></ul>
+            </article>
+            <article class="guide-card">
+              <h4><span class="icon-shell"><i class="fa-solid fa-terminal"></i></span> Exact setup commands</h4>
+              <div class="example-block">
+                <div class="example-block-header">
+                  <strong>PowerShell</strong>
+                  <button class="copy-button" data-copy-target="prereqCommandsBlock"><i class="fa-regular fa-copy"></i> Copy</button>
+                </div>
+                <pre id="prereqCommandsBlock"></pre>
+              </div>
+            </article>
+          </div>
+
+          <div class="accordion-grid" id="guideAccordions"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="section-kicker">Sources & Notes</div>
+            <h2>Evidence and references</h2>
+            <p>
+              Use official documentation wherever possible. For local file paths, UI behavior, and demo-specific observations,
+              pair the sources below with live proof from the included application and the workstation you're presenting from.
+            </p>
+          </div>
+        </div>
+
+        <div class="footer-grid">
+          <article class="footnote-card">
+            <h4><span class="icon-shell"><i class="fa-solid fa-book-open"></i></span> Official sources</h4>
+            <div class="source-list" id="sourceList"></div>
+          </article>
+          <article class="footnote-card">
+            <h4><span class="icon-shell"><i class="fa-solid fa-flask"></i></span> Demo-specific proof points</h4>
+            <ul class="bullet-list">
+              <li><code>/api/pii-demo/proof/network-log</code> proves the runtime app stays on localhost.</li>
+              <li><code>/api/pii-demo/proof/copilot-context</code> proves code visibility without runtime row visibility.</li>
+              <li><code>data\citizens.db</code> contains the fake records, including Canary Testbird.</li>
+              <li>The Output panel and logs folder let you inspect real local diagnostics without synthetic screenshots.</li>
+            </ul>
+          </article>
+          <article class="footnote-card">
+            <h4><span class="icon-shell"><i class="fa-solid fa-scale-balanced"></i></span> Present with precision</h4>
+            <ul class="bullet-list">
+              <li>Separate local storage risk from provider-retention risk.</li>
+              <li>Never claim instructions are enforcement.</li>
+              <li>Use MCP as the example of why deterministic redaction matters.</li>
+              <li>Close with: “govern the system around the model.”</li>
+            </ul>
+            <p class="print-note">
+              Print tip: use the browser's print dialog after opening all accordion sections you want in the leave-behind PDF.
+            </p>
+          </article>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const scenarioData = [
+      {
+            "id": "vscode-chat",
+            "label": "Scenario A · VS Code Chat",
+            "shortLabel": "VS Code Chat",
+            "icon": "fa-code",
+            "risk": "low",
+            "headline": "Developer prompt → Copilot extension packages context → copilot-proxy.githubusercontent.com → Azure OpenAI or Anthropic → response returns → prompt discarded.",
+            "keyFact": "For GitHub Copilot Business and Enterprise, prompts and completions are processed to answer the request, then discarded after the response and not used to train the underlying base models.",
+            "residency": "The editor talks to GitHub's policy and routing layer first. GitHub then brokers the request to the selected approved model provider.",
+            "customerLine": "The security conversation is about what enters the prompt envelope, not about Copilot rummaging through runtime systems on its own.",
+            "steps": [
+                  {
+                        "title": "Developer types prompt",
+                        "icon": "fa-keyboard",
+                        "detail": "The developer asks a question in VS Code chat, often with open files, selected code, @workspace, @terminal, or explicit attachments."
+                  },
+                  {
+                        "title": "Copilot extension packages context",
+                        "icon": "fa-puzzle-piece",
+                        "detail": "The extension assembles the prompt package from the visible workspace context that is allowed to participate. Sensitive content should be excluded before this step."
+                  },
+                  {
+                        "title": "GitHub proxy receives the request",
+                        "icon": "fa-shield-halved",
+                        "detail": "Traffic goes to copilot-proxy.githubusercontent.com over TLS. GitHub handles authentication, policy checks, routing, and enterprise controls."
+                  },
+                  {
+                        "title": "Model provider generates a response",
+                        "icon": "fa-brain",
+                        "detail": "GitHub forwards the packaged request to Azure OpenAI or Anthropic based on plan and model selection. The model only sees what was placed into the live request."
+                  },
+                  {
+                        "title": "Answer returns to the editor",
+                        "icon": "fa-reply",
+                        "detail": "The answer returns through GitHub's proxy to the VS Code experience, where the user can accept, reject, or edit it."
+                  },
+                  {
+                        "title": "Prompt is discarded after response",
+                        "icon": "fa-trash-can",
+                        "detail": "On Business and Enterprise plans, the live request is not retained for base-model training. The user may still have local chat/session artifacts on disk."
+                  }
+            ],
+            "proofPoints": [
+                  "Open VS Code Developer Tools and filter the Network tab for 'copilot' to show a single GitHub proxy endpoint.",
+                  "In the Output panel, show request IDs, timing, and token counts, but not the full source prompt or response body.",
+                  "Use content exclusion or local exclusion rules to prove that blocked files never enter the prompt package.",
+                  "Explain that discarding the request after response does not remove local chat history files that VS Code keeps on disk."
+            ],
+            "guardrails": [
+                  "Use content exclusion for secrets, data dumps, and regulated folders.",
+                  "Keep instruction files concise and use them only as guidance, not enforcement.",
+                  "Prefer redacted examples and fake data in source-controlled fixtures.",
+                  "Inspect local storage separately because local residency is usually the larger practical risk."
+            ],
+            "residencyNotes": [
+                  "In transit: TLS 1.2+ to GitHub's proxy.",
+                  "Server-side training use: disabled for Business and Enterprise request content.",
+                  "Local persistence: VS Code workspace storage may keep conversation artifacts until the developer clears them.",
+                  "Operational proof: output logs and network traces show metadata, not full prompt bodies."
+            ]
+      },
+      {
+            "id": "cli-chat",
+            "label": "Scenario B · CLI (gh copilot)",
+            "shortLabel": "CLI / gh copilot",
+            "icon": "fa-terminal",
+            "risk": "medium",
+            "headline": "Terminal prompt → Copilot CLI packages command context → GitHub proxy → Azure OpenAI or Anthropic → answer returns to terminal → prompt discarded; shell history remains local.",
+            "keyFact": "The cloud path is the same as editor chat, but there is an extra local risk surface: the shell itself often saves commands or prompts in history files unless the developer filters them out.",
+            "residency": "The network route still goes to GitHub first, but local terminals add command history, transcripts, and session-state files that security teams should review.",
+            "customerLine": "The enterprise story here is simple: the network path matches editor chat, yet terminal hygiene matters because shell history is usually far easier to forget than Copilot's cloud handling.",
+            "steps": [
+                  {
+                        "title": "Developer runs gh copilot",
+                        "icon": "fa-terminal",
+                        "detail": "A prompt or suggested shell command is entered via the GitHub CLI Copilot experience."
+                  },
+                  {
+                        "title": "CLI gathers prompt context",
+                        "icon": "fa-box-open",
+                        "detail": "The CLI packages the user input and any explicit command context, then sends it to GitHub's proxy just like the editor clients do."
+                  },
+                  {
+                        "title": "GitHub proxy routes the request",
+                        "icon": "fa-network-wired",
+                        "detail": "Authentication, policy checks, and model routing still happen at GitHub's policy layer before the model request is executed."
+                  },
+                  {
+                        "title": "Model provider returns a suggestion",
+                        "icon": "fa-wand-magic-sparkles",
+                        "detail": "Azure OpenAI or Anthropic generates the text that becomes a terminal answer or command suggestion."
+                  },
+                  {
+                        "title": "Local terminal persists history",
+                        "icon": "fa-clock-rotate-left",
+                        "detail": "Depending on shell settings, the original command or accepted suggestion may be written to PowerShell, bash, or zsh history files on the developer machine."
+                  },
+                  {
+                        "title": "Cloud prompt discarded after response",
+                        "icon": "fa-trash-can",
+                        "detail": "Business and Enterprise request content is not kept for base-model training, but local CLI residue remains your responsibility."
+                  }
+            ],
+            "proofPoints": [
+                  "Show the active history file path in PowerShell with (Get-PSReadLineOption).HistorySavePath.",
+                  "Search the history file for copilot-related entries to prove that local shell tooling, not the model, is what retained the text.",
+                  "If using the Copilot CLI's own session files, inspect the .copilot session-state folder locally.",
+                  "Contrast this with the GitHub proxy endpoint to show the network destination is still controlled and consistent."
+            ],
+            "guardrails": [
+                  "Use dedicated shell profiles or AddToHistoryHandler filters for gh copilot commands.",
+                  "Clear history on shared demo machines before and after customer sessions.",
+                  "Treat terminal recordings and scrollback as local sensitive artifacts.",
+                  "Use full-disk encryption and endpoint controls because CLI residue is a local-device risk."
+            ],
+            "residencyNotes": [
+                  "Cloud handling mirrors VS Code chat.",
+                  "Local risk increases because shell history may outlive the session.",
+                  "PowerShell, bash, and zsh each keep their own history files until cleared.",
+                  "Forensics should include .copilot session-state files when the CLI is in scope."
+            ]
+      },
+      {
+            "id": "web-chat",
+            "label": "Scenario C · Web Chat (github.com)",
+            "shortLabel": "github.com Web Chat",
+            "icon": "fa-globe",
+            "risk": "medium",
+            "headline": "Developer types on github.com → GitHub web servers receive the chat → approved model provider answers → conversation history remains on github.com for 30 days → auto-deletion occurs.",
+            "keyFact": "Web chat is the one scenario where the conversation history is intentionally retained in GitHub's web experience for 30 days before auto-deletion. That retention is convenient for users but important for risk discussions.",
+            "residency": "The request enters through GitHub's own web application, then routes to the selected model provider. The visible history list lives on github.com during the 30-day retention window.",
+            "customerLine": "If the customer wants the shortest persistence story, web chat is not the strongest answer; the convenience of web history creates a small but real retention window.",
+            "steps": [
+                  {
+                        "title": "Developer types into github.com",
+                        "icon": "fa-browser",
+                        "detail": "The user interacts with Copilot Chat directly in the GitHub web interface rather than in a local IDE or CLI."
+                  },
+                  {
+                        "title": "GitHub web servers receive the conversation",
+                        "icon": "fa-server",
+                        "detail": "GitHub stores enough conversation state to render the chat history list and allow the user to revisit the thread during the retention window."
+                  },
+                  {
+                        "title": "GitHub routes to the model provider",
+                        "icon": "fa-route",
+                        "detail": "The request is sent through GitHub's managed policy layer to Azure OpenAI or Anthropic."
+                  },
+                  {
+                        "title": "Response returns to the browser",
+                        "icon": "fa-comment-dots",
+                        "detail": "The answer is displayed in the github.com chat surface and remains visible in the recent-history UI."
+                  },
+                  {
+                        "title": "History remains for 30 days",
+                        "icon": "fa-calendar-days",
+                        "detail": "The conversation is retained in the web chat history list for roughly 30 days, then is automatically deleted."
+                  },
+                  {
+                        "title": "Natural expiry removes it",
+                        "icon": "fa-hourglass-end",
+                        "detail": "There is no per-thread manual deletion control in the standard workflow described by the customer; users should export what they need before expiry."
+                  }
+            ],
+            "proofPoints": [
+                  "Open github.com Copilot Chat and show the history buckets such as Today, Yesterday, Last 7 days, and Last 30 days.",
+                  "Explain that the web experience auto-expires older items instead of leaving them indefinitely on the local workstation.",
+                  "Call out the export option the customer can use before the thread expires.",
+                  "Make it explicit that the 30-day window is a retention tradeoff, not a training-use story."
+            ],
+            "guardrails": [
+                  "Do not paste secrets or raw customer records into web chat.",
+                  "Use the export option before expiry when an audit trail or artifact must be kept.",
+                  "Prefer editor chat for design-time work that should stay on the developer endpoint.",
+                  "Use organizational guidance to steer regulated workloads away from the web experience when needed."
+            ],
+            "residencyNotes": [
+                  "History retention: 30 days on github.com.",
+                  "Manual deletion: not part of the standard customer story in this demo.",
+                  "Export: available so the user can keep a copy before natural expiry.",
+                  "Cloud path still terminates at GitHub first, then the selected model provider."
+            ]
+      },
+      {
+            "id": "mcp-tools",
+            "label": "Scenario D · MCP Tool Calls",
+            "shortLabel": "MCP Tool Calls",
+            "icon": "fa-toolbox",
+            "risk": "high",
+            "headline": "Developer prompt → Copilot decides to call a tool → MCP server executes locally → tool output returns to Copilot context → model processes that output → answer returns.",
+            "keyFact": "This is the legitimate PII risk scenario: the model sees whatever the tool returns. If the tool emits raw SSNs, raw names, or secrets, that content becomes part of the conversation context by design.",
+            "residency": "The tool may execute locally, but the tool output is no longer only local once it is handed back to the chat session. At that moment, it becomes model-visible request context.",
+            "customerLine": "The safest enterprise answer is architectural: redact inside the tool, not after the model has already seen the data.",
+            "steps": [
+                  {
+                        "title": "Prompt requests external help",
+                        "icon": "fa-comment-medical",
+                        "detail": "The user asks something that causes Copilot to invoke a registered MCP tool, such as a database lookup or service inspection."
+                  },
+                  {
+                        "title": "Copilot selects the tool",
+                        "icon": "fa-diagram-project",
+                        "detail": "The client or platform decides that a tool call can improve the answer and issues the MCP request."
+                  },
+                  {
+                        "title": "MCP server executes locally",
+                        "icon": "fa-computer",
+                        "detail": "Your MCP server runs on the endpoint or approved environment and queries the local database, file, or service you exposed to it."
+                  },
+                  {
+                        "title": "Tool returns data to Copilot context",
+                        "icon": "fa-file-export",
+                        "detail": "The JSON or text returned by the tool becomes conversation context that the model can reason over."
+                  },
+                  {
+                        "title": "Model uses tool output",
+                        "icon": "fa-brain",
+                        "detail": "The selected model now sees the tool output exactly as returned and can summarize, quote, or transform it in the final answer."
+                  },
+                  {
+                        "title": "Response comes back to the developer",
+                        "icon": "fa-user-shield",
+                        "detail": "If you returned raw PII, the model had access to raw PII. If you returned masked data, the model only saw masked data."
+                  }
+            ],
+            "proofPoints": [
+                  "Show a safe tool that masks SSN, email, and phone before the response object is created.",
+                  "Show an unsafe tool that returns the entire citizen record and explain that the model now has full visibility into those values.",
+                  "Repeat the message that this is a tool-design issue, not a surprise side effect.",
+                  "Audit MCP logs and outputs because local logging can accidentally retain raw payloads even if the model never stores them long term."
+            ],
+            "guardrails": [
+                  "Mask or tokenize sensitive fields inside the MCP tool before returning data.",
+                  "Return only the fields the model needs, never entire records by default.",
+                  "Log access through an audit logger and avoid logging raw payloads.",
+                  "Use least-privilege credentials and scoped datasets for MCP tooling."
+            ],
+            "residencyNotes": [
+                  "Local execution alone does not guarantee privacy if the result is then copied into model context.",
+                  "The model only sees what the tool returns, not what the backend held back.",
+                  "Retention of tool-call logs depends entirely on your MCP implementation.",
+                  "This is the cleanest place to demonstrate redaction as a deterministic control."
+            ]
+      },
+      {
+            "id": "database-runtime",
+            "label": "Scenario E · Database Query (Application-Level)",
+            "shortLabel": "Application Database Query",
+            "icon": "fa-database",
+            "risk": "none",
+            "headline": "Application queries database → data stays on localhost → browser talks only to localhost:3000 → Copilot is not involved in the runtime request path.",
+            "keyFact": "This is the strongest proof scenario for a skeptical buyer: your running app can read local SQLite data without Copilot seeing any of it unless a human explicitly pastes the results into chat or exposes them through a tool.",
+            "residency": "All runtime traffic stays between the browser, your Express server, and the local SQLite file. The model is absent from the path.",
+            "customerLine": "Copilot can explain the query function, but it cannot answer what data came back from the live database because runtime data never entered the prompt envelope.",
+            "steps": [
+                  {
+                        "title": "Browser calls localhost endpoint",
+                        "icon": "fa-laptop-code",
+                        "detail": "The browser requests /api/pii-demo/citizens, /citizens/raw, or /search?q=Canary from the demo server."
+                  },
+                  {
+                        "title": "Express handles the request",
+                        "icon": "fa-server",
+                        "detail": "The Node.js app executes on localhost and routes the request to the local PII demo router."
+                  },
+                  {
+                        "title": "better-sqlite3 reads data/citizens.db",
+                        "icon": "fa-hard-drive",
+                        "detail": "The application process opens the local SQLite file and runs parameterized SQL queries against the citizens table."
+                  },
+                  {
+                        "title": "Redaction occurs in application code",
+                        "icon": "fa-mask-face",
+                        "detail": "The safe path calls maskSSN(), maskEmail(), and maskPhone() before returning results."
+                  },
+                  {
+                        "title": "Response returns to the browser",
+                        "icon": "fa-arrow-right-arrow-left",
+                        "detail": "The browser receives JSON from localhost only. No request is sent to Copilot or any model provider."
+                  },
+                  {
+                        "title": "Proof endpoints document the isolation",
+                        "icon": "fa-certificate",
+                        "detail": "The built-in proof endpoints show zero Copilot contacts and explain exactly what Copilot can and cannot see."
+                  }
+            ],
+            "proofPoints": [
+                  "Use /api/pii-demo/proof/network-log to show localhost_only: true and zero requests to copilot-proxy.githubusercontent.com.",
+                  "Use /api/pii-demo/proof/copilot-context to show that the code is visible but the runtime database rows are not.",
+                  "Run the Canary Testbird search to prove the record exists in SQLite while Copilot still cannot discover it on its own.",
+                  "Open the Network tab and show only localhost requests during the demo query."
+            ],
+            "guardrails": [
+                  "Keep database files out of source control and out of Copilot context.",
+                  "Demonstrate redacted endpoints first, then raw endpoints only as a controlled risk example.",
+                  "Use parameterized queries and an application-layer redaction service.",
+                  "Treat runtime database access as an application security concern, not a Copilot residency concern."
+            ],
+            "residencyNotes": [
+                  "Data stays on localhost unless your application sends it elsewhere.",
+                  "Proof endpoints and the browser network tab provide direct evidence.",
+                  "This is the ideal rebuttal when a customer assumes Copilot can somehow inspect live database state.",
+                  "The canary record gives a memorable demonstration that non-technical audiences understand quickly."
+            ]
+      }
+];
+    const storageData = [
+      {
+            "id": "workspace-storage",
+            "title": "VS Code workspaceStorage",
+            "icon": "fa-folder-tree",
+            "risk": "medium",
+            "location": "VS Code workspaceStorage",
+            "stored": "Workspace-scoped chat sessions, extension mementos, and Copilot conversation artifacts in state.vscdb.",
+            "retention": "Until manually deleted.",
+            "howFind": "%APPDATA%\\Code\\User\\workspaceStorage\\<id>\\state.vscdb",
+            "howClear": "Delete the file or use VS Code cleanup workflows while VS Code is closed.",
+            "pathDisplay": "%APPDATA%\\Code\\User\\workspaceStorage\\<workspace-id>\\state.vscdb",
+            "inspectCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "$ws = Join-Path $env:APPDATA 'Code\\User\\workspaceStorage'; Get-ChildItem $ws -Recurse -Filter state.vscdb | Select-Object FullName, Length, LastWriteTime"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "find \"$HOME/.config/Code/User/workspaceStorage\" -name state.vscdb -print 2>/dev/null"
+                  }
+            ],
+            "clearCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "Remove-Item \"$env:APPDATA\\Code\\User\\workspaceStorage\\<workspace-id>\\state.vscdb\" -Force"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "rm -f \"$HOME/.config/Code/User/workspaceStorage/<workspace-id>/state.vscdb\""
+                  }
+            ],
+            "screenshot": "File Explorer or Finder showing a hashed workspace folder with state.vscdb inside; a SQLite viewer would show internal tables and JSON-like session records.",
+            "notes": [
+                  "This is usually the most important local artifact to show security buyers.",
+                  "The file is local-only, but it can persist far longer than customers expect.",
+                  "Use cleanup policy plus full-disk encryption to reduce practical risk."
+            ]
+      },
+      {
+            "id": "global-storage",
+            "title": "VS Code globalStorage",
+            "icon": "fa-box-archive",
+            "risk": "medium",
+            "location": "VS Code globalStorage",
+            "stored": "Cross-workspace user memories, extension state, and other persistent extension data.",
+            "retention": "Until manually deleted.",
+            "howFind": "%APPDATA%\\Code\\User\\globalStorage\\",
+            "howClear": "Delete the relevant extension folder or adjust VS Code settings and memory controls.",
+            "pathDisplay": "%APPDATA%\\Code\\User\\globalStorage\\",
+            "inspectCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "Get-ChildItem \"$env:APPDATA\\Code\\User\\globalStorage\" | Select-Object Name, LastWriteTime, Length"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "ls -lah \"$HOME/.config/Code/User/globalStorage\" 2>/dev/null"
+                  }
+            ],
+            "clearCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "Remove-Item \"$env:APPDATA\\Code\\User\\globalStorage\\github.copilot*\" -Recurse -Force"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "rm -rf \"$HOME/.config/Code/User/globalStorage/github.copilot*\""
+                  }
+            ],
+            "screenshot": "The globalStorage folder contains extension-specific directories and state databases shared across workspaces.",
+            "notes": [
+                  "Use this when explaining user memory or repo memory behavior.",
+                  "It is less visible than workspaceStorage, so teams often forget it exists.",
+                  "Clear only when VS Code is closed to avoid file-lock issues."
+            ]
+      },
+      {
+            "id": "output-panel",
+            "title": "VS Code Output Panel",
+            "icon": "fa-window-maximize",
+            "risk": "low",
+            "location": "VS Code Output Panel",
+            "stored": "Ephemeral Copilot debug messages such as request IDs, timing, model selection, and token counts.",
+            "retention": "Usually until VS Code restart or panel rotation.",
+            "howFind": "View → Output → select 'GitHub Copilot' or 'GitHub Copilot Chat'",
+            "howClear": "Close/restart VS Code or clear the channel if available.",
+            "pathDisplay": "UI surface only — no single stable file path",
+            "inspectCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "Write-Host 'Open VS Code -> View -> Output -> choose GitHub Copilot or GitHub Copilot Chat'"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "printf '%s\n' 'Open VS Code > View > Output > GitHub Copilot'"
+                  }
+            ],
+            "clearCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "Write-Host 'Restart VS Code to clear ephemeral output channels'"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "printf '%s\n' 'Restart VS Code to clear the output channel'"
+                  }
+            ],
+            "screenshot": "A scrolling log view with timestamps, request IDs, latency, and token counts — but not the full prompt or response text.",
+            "notes": [
+                  "This is the easiest live surface for showing metadata-only logging.",
+                  "Use it to reassure customers that local debug logs are not plain-text prompt dumps.",
+                  "Pair it with the Network tab for a strong forensic story."
+            ]
+      },
+      {
+            "id": "logs-folder",
+            "title": "VS Code logs folder",
+            "icon": "fa-file-lines",
+            "risk": "low",
+            "location": "VS Code logs folder",
+            "stored": "Extension host logs, activation traces, warnings, and rotated log files written by VS Code.",
+            "retention": "Rotated by VS Code; older folders age out over time.",
+            "howFind": "%APPDATA%\\Code\\logs\\",
+            "howClear": "Delete the logs folder while VS Code is closed.",
+            "pathDisplay": "%APPDATA%\\Code\\logs\\<date>\\exthost\\",
+            "inspectCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "$logs = Join-Path $env:APPDATA 'Code\\logs'; Get-ChildItem $logs -Recurse -File | Sort-Object LastWriteTime -Descending | Select-Object -First 20 FullName, LastWriteTime"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "find \"$HOME/.config/Code/logs\" -type f | tail -n 20 2>/dev/null"
+                  }
+            ],
+            "clearCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "Remove-Item \"$env:APPDATA\\Code\\logs\" -Recurse -Force"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "rm -rf \"$HOME/.config/Code/logs\""
+                  }
+            ],
+            "screenshot": "Timestamped log folders with extension-host subdirectories and plain-text log files for the current VS Code session.",
+            "notes": [
+                  "Great for proving activation and error logging without exposing prompt text.",
+                  "Use a filtered search for 'copilot' or 'chat' when demonstrating.",
+                  "This is a low-risk artifact unless your own extensions log sensitive content."
+            ]
+      },
+      {
+            "id": "shell-history",
+            "title": "Shell history",
+            "icon": "fa-scroll",
+            "risk": "medium",
+            "location": "Shell history",
+            "stored": "CLI prompts, accepted commands, and general shell activity from PowerShell, bash, or zsh.",
+            "retention": "Until the user clears the history or the shell rotates it.",
+            "howFind": "~/.bash_history, ~/.zsh_history, or (Get-PSReadLineOption).HistorySavePath",
+            "howClear": "Use Clear-History and delete the backing history file if needed.",
+            "pathDisplay": "PowerShell: (Get-PSReadLineOption).HistorySavePath",
+            "inspectCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "$hist = (Get-PSReadLineOption).HistorySavePath; Select-String -Path $hist -Pattern 'copilot|gh ' | Select-Object -Last 10"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "grep -i 'copilot\\|gh ' ~/.bash_history ~/.zsh_history 2>/dev/null | tail -n 10"
+                  }
+            ],
+            "clearCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "Clear-History; Remove-Item (Get-PSReadLineOption).HistorySavePath -Force"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "> ~/.bash_history 2>/dev/null; > ~/.zsh_history 2>/dev/null"
+                  }
+            ],
+            "screenshot": "A terminal history file containing normal shell commands interspersed with gh copilot or accepted suggestion entries.",
+            "notes": [
+                  "This is the main extra risk surface for CLI usage.",
+                  "Use history filters or separate profiles on shared machines.",
+                  "Security buyers usually understand this immediately because shell history is familiar."
+            ]
+      },
+      {
+            "id": "web-chat-history",
+            "title": "github.com web chat",
+            "icon": "fa-comments",
+            "risk": "low",
+            "location": "github.com web chat",
+            "stored": "Web-based Copilot conversations visible in the browser history list.",
+            "retention": "30 days, then auto-deleted.",
+            "howFind": "github.com → Copilot Chat → History",
+            "howClear": "Natural 30-day expiry; export before expiry if you need a record.",
+            "pathDisplay": "GitHub web UI history panel",
+            "inspectCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "Start-Process 'https://github.com/copilot'"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "printf '%s\n' 'Open https://github.com/copilot and inspect the history list'"
+                  }
+            ],
+            "clearCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "Write-Host 'No manual per-thread delete in this demo story; rely on 30-day expiry or export the conversation before it ages out.'"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "printf '%s\n' 'No manual delete path shown here; use export and wait for natural expiry.'"
+                  }
+            ],
+            "screenshot": "A github.com Copilot chat sidebar grouped by Today, Yesterday, Last 7 days, and Last 30 days.",
+            "notes": [
+                  "This is the cleanest place to explain the 30-day auto-delete promise.",
+                  "It is lower risk than indefinite local storage, but still not a place for raw secrets.",
+                  "Export before expiry if a team needs an audit artifact."
+            ]
+      },
+      {
+            "id": "github-metrics",
+            "title": "GitHub servers",
+            "icon": "fa-chart-line",
+            "risk": "none",
+            "location": "GitHub servers — usage metrics",
+            "stored": "Operational metrics such as last activity timestamps and feature usage metadata, not conversation content in the simplified customer story.",
+            "retention": "90 days rolling.",
+            "howFind": "Admin APIs and reporting surfaces that expose last_activity_at-style fields.",
+            "howClear": "Auto-expires on GitHub's retention schedule.",
+            "pathDisplay": "Admin reporting / metrics APIs",
+            "inspectCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "Write-Host 'Use your enterprise or organization Copilot metrics APIs to inspect last_activity_at and usage metadata.'"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "printf '%s\n' 'Review Copilot metrics and activity APIs for usage metadata.'"
+                  }
+            ],
+            "clearCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "Write-Host 'No manual cleanup required; usage metrics age out on a rolling basis.'"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "printf '%s\n' 'Metrics auto-expire after the rolling retention window.'"
+                  }
+            ],
+            "screenshot": "An admin metrics dashboard or API response with timestamps and feature usage counts rather than prompt content.",
+            "notes": [
+                  "Use this row to calm concerns that GitHub keeps a giant prompt warehouse for Business and Enterprise content.",
+                  "The key distinction is usage telemetry versus conversation content.",
+                  "Retention is short and operational, not intended as long-term customer transcript storage."
+            ]
+      },
+      {
+            "id": "azure-openai",
+            "title": "Azure OpenAI",
+            "icon": "fa-cloud",
+            "risk": "low",
+            "location": "Azure OpenAI abuse monitoring",
+            "stored": "Prompts and completions for abuse monitoring under the standard Azure OpenAI posture.",
+            "retention": "30 days by default; enterprise customers can request Modified Abuse Monitoring.",
+            "howFind": "Not directly browseable by end users.",
+            "howClear": "Request Modified Abuse Monitoring or Zero Data Retention eligibility through Microsoft channels.",
+            "pathDisplay": "Provider-managed abuse monitoring logs",
+            "inspectCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "Write-Host 'No self-service log path. Review Azure OpenAI abuse-monitoring documentation and contract posture.'"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "printf '%s\n' 'Consult Azure OpenAI abuse monitoring docs; there is no customer-facing log browser for this path.'"
+                  }
+            ],
+            "clearCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "Write-Host 'Request Modified Abuse Monitoring via your Microsoft account team for eligible enterprise deployments.'"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "printf '%s\n' 'Use your Microsoft account team to request Modified Abuse Monitoring.'"
+                  }
+            ],
+            "screenshot": "No direct screenshot for customers; use Microsoft documentation or contract language instead of a live UI.",
+            "notes": [
+                  "This is a contract and platform-retention discussion, not a file-forensics demo.",
+                  "Keep the message precise: default 30-day abuse monitoring exists, and enterprise opt-out paths are available.",
+                  "This row matters most for highly regulated customers."
+            ]
+      },
+      {
+            "id": "anthropic-zdr",
+            "title": "Anthropic (Claude)",
+            "icon": "fa-feather-pointed",
+            "risk": "none",
+            "location": "Anthropic Zero Data Retention",
+            "stored": "Nothing in the simplified enterprise customer story for the Copilot-routed Claude path.",
+            "retention": "0 days.",
+            "howFind": "N/A",
+            "howClear": "N/A",
+            "pathDisplay": "No customer-facing storage artifact",
+            "inspectCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "Write-Host 'No provider log artifact to inspect in this simplified ZDR posture.'"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "printf '%s\n' 'Anthropic ZDR means there is no retained prompt store to inspect here.'"
+                  }
+            ],
+            "clearCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "Write-Host 'Nothing to clear for the provider-retention row in this ZDR story.'"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "printf '%s\n' 'Nothing to clear for the ZDR row.'"
+                  }
+            ],
+            "screenshot": "Use a contract or source citation slide rather than a UI capture; this row is about provider policy, not a local file.",
+            "notes": [
+                  "This row is powerful when a customer is evaluating Claude specifically.",
+                  "Explain that GitHub still brokers the connection; the customer is not directly wiring their IDE to Anthropic.",
+                  "Keep the language aligned with the Copilot contract posture used in the demo."
+            ]
+      },
+      {
+            "id": "mcp-logs",
+            "title": "MCP Server logs",
+            "icon": "fa-toolbox",
+            "risk": "high",
+            "location": "Your MCP server logs",
+            "stored": "Whatever your tool implementation chooses to log for inputs, outputs, errors, and audit records.",
+            "retention": "Depends entirely on your implementation.",
+            "howFind": "Your MCP service path, log sink, or container logs.",
+            "howClear": "Your responsibility — rotate, redact, or delete using your own logging controls.",
+            "pathDisplay": "Implementation-specific",
+            "inspectCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "Get-Content .\\logs\\mcp-server.log -Tail 50"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "tail -n 50 ./logs/mcp-server.log"
+                  }
+            ],
+            "clearCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "Clear-Content .\\logs\\mcp-server.log"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "> ./logs/mcp-server.log"
+                  }
+            ],
+            "screenshot": "A plain-text log file or container log stream that may include tool inputs, payloads, or masked/redacted records depending on your code.",
+            "notes": [
+                  "This is the row where customers realize their own tools can be the real blast-radius multiplier.",
+                  "If you log raw tool payloads, the security problem is now yours regardless of model retention.",
+                  "Use deterministic redaction before both model return and local log write."
+            ]
+      },
+      {
+            "id": "sqlite-db",
+            "title": "SQLite database",
+            "icon": "fa-database",
+            "risk": "high",
+            "location": "Application runtime data",
+            "stored": "The fake but full citizen records used by the demo application at runtime.",
+            "retention": "Permanent until deleted.",
+            "howFind": "data\\citizens.db",
+            "howClear": "Delete the file or rebuild the demo environment.",
+            "pathDisplay": "data\\citizens.db",
+            "inspectCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "Get-Item .\\data\\citizens.db | Select-Object FullName, Length, LastWriteTime"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "ls -lah ./data/citizens.db"
+                  }
+            ],
+            "clearCommands": [
+                  {
+                        "label": "PowerShell",
+                        "value": "Remove-Item .\\data\\citizens.db -Force"
+                  },
+                  {
+                        "label": "Bash",
+                        "value": "rm -f ./data/citizens.db"
+                  }
+            ],
+            "screenshot": "A local SQLite file that can be opened in a SQLite viewer to show fake citizen rows, including the Canary Testbird sentinel record.",
+            "notes": [
+                  "This is runtime application data, not Copilot state.",
+                  "Its presence proves that local data can exist without Copilot being in the request path.",
+                  "Use it to separate app security from AI-assistant security."
+            ]
+      }
+];
+    const controlsData = [
+      {
+            "control": "Content Exclusion",
+            "type": "Deterministic",
+            "reliability": "100%",
+            "use": "Blocking sensitive files from ever reaching the prompt envelope.",
+            "detail": "Admin-enforced platform control. Best enterprise answer for secrets, data exports, and regulated source areas."
+      },
+      {
+            "control": "Secret Scanning + Push Protection",
+            "type": "Deterministic",
+            "reliability": "100%",
+            "use": "Catching secrets at commit time and before the push lands.",
+            "detail": "Complements Copilot governance by stopping credential exposure in Git history."
+      },
+      {
+            "control": ".copilotignore",
+            "type": "Deterministic",
+            "reliability": "100%",
+            "use": "Local file exclusion for demo workstations and workspace hygiene.",
+            "detail": "Useful in this demo repo; pair with enterprise content exclusion for the strongest policy story."
+      },
+      {
+            "control": "Environment Scoping",
+            "type": "Deterministic",
+            "reliability": "100%",
+            "use": "Limiting which secrets or services agent workflows can access.",
+            "detail": "Keep credentials in dedicated environments instead of assuming the agent inherits everything."
+      },
+      {
+            "control": "copilot-instructions.md",
+            "type": "Probabilistic",
+            "reliability": "~70-90% (varies)",
+            "use": "Guiding style, patterns, redaction defaults, and code-generation preferences.",
+            "detail": "Best used for consistency and nudging, not for hard security guarantees."
+      },
+      {
+            "control": "Prompt engineering",
+            "type": "Probabilistic",
+            "reliability": "~60-80% (varies)",
+            "use": "Reducing unsafe suggestions and steering the model toward safer patterns.",
+            "detail": "Helpful for demos and workflows, but still not a substitute for deterministic barriers."
+      }
+];
+    const instructionRuns = {
+      "baseline": {
+            "title": "Generic rule",
+            "instruction": "Never suggest console.log statements.",
+            "summary": "Short, vague, and negative-only guidance. Copilot often follows it, but not every time.",
+            "successes": [
+                  true,
+                  true,
+                  false,
+                  true,
+                  false,
+                  true,
+                  true,
+                  true,
+                  false,
+                  true
+            ],
+            "say": "This is good enough for style nudging, but it is not acceptable as a security control."
+      },
+      "specific": {
+            "title": "Specific replacement rule",
+            "instruction": "Use logger.info() instead of console.log() when writing JavaScript or TypeScript logging code.",
+            "summary": "Specific imperative wording plus a safe alternative improves compliance dramatically.",
+            "successes": [
+                  true,
+                  true,
+                  true,
+                  true,
+                  true,
+                  false,
+                  true,
+                  true,
+                  true,
+                  true
+            ],
+            "say": "Notice the jump: clearer instruction, explicit substitute, better results — still not perfect."
+      }
+};
+    const instructionFacts = [
+      "YES: the customer is partially right. Instructions are probabilistic, not deterministic.",
+      "NO: there is no published peer-reviewed compliance number that proves a universal 50-80% rate across all prompts and models.",
+      "GitHub's own documentation calls Copilot behavior non-deterministic and frames instructions as additional context rather than hard constraints.",
+      "Compliance improves with concise language, specific verbs, examples, and fewer conflicting rules.",
+      "Instruction sets that sprawl for hundreds of lines or mix many priorities tend to show inconsistent behavior.",
+      "The enterprise answer is layered defense: deterministic controls first, instructions second."
+];
+    const logChannels = [
+      {
+            "id": "output-copilot",
+            "title": "VS Code Output Panel — GitHub Copilot",
+            "icon": "fa-terminal",
+            "risk": "low",
+            "location": "View → Output → GitHub Copilot",
+            "contains": [
+                  "Timestamps for request lifecycle events.",
+                  "Request identifiers and retry metadata.",
+                  "Model selection and token count summaries.",
+                  "Latency measurements and error messages."
+            ],
+            "notContains": [
+                  "Full prompt bodies.",
+                  "Full response bodies.",
+                  "Source-code dumps or raw customer records.",
+                  "Clear-text secrets by default in the standard story."
+            ],
+            "example": "[info] [copilot] requestId=49d1... model=gpt-4.1 inputTokens=842 outputTokens=173 latencyMs=1210\n[info] [copilot] completion received status=200 provider=github-proxy",
+            "inspect": "Open View → Output, choose GitHub Copilot, then ask a question to generate fresh lines.",
+            "command": "Write-Host 'Open VS Code Output > GitHub Copilot and watch request IDs, model, and timing fields appear.'",
+            "screenshot": "A console-like panel with info-level entries, request IDs, model names, and timings — but no prompt text."
+      },
+      {
+            "id": "output-chat",
+            "title": "VS Code Output Panel — GitHub Copilot Chat",
+            "icon": "fa-comments",
+            "risk": "low",
+            "location": "View → Output → GitHub Copilot Chat",
+            "contains": [
+                  "Session identifiers.",
+                  "Tool call names and timing data.",
+                  "Routing and state transition metadata.",
+                  "Errors or fallbacks when a tool cannot be invoked."
+            ],
+            "notContains": [
+                  "Full conversation transcripts.",
+                  "Full tool-call arguments.",
+                  "Raw tool-call outputs.",
+                  "Plain-text codebase snapshots."
+            ],
+            "example": "[info] [chat] session=2a18... tool=workspaceSearch durationMs=84\n[info] [chat] toolResult received size=small responsePath=local",
+            "inspect": "Use the Output dropdown to switch from GitHub Copilot to GitHub Copilot Chat while generating a live tool-using response.",
+            "command": "Write-Host 'Switch the Output dropdown to GitHub Copilot Chat and observe session IDs and tool names only.'",
+            "screenshot": "A second output channel showing session and tool metadata rather than prompt bodies."
+      },
+      {
+            "id": "extension-host",
+            "title": "Extension Host Logs",
+            "icon": "fa-file-lines",
+            "risk": "low",
+            "location": "%APPDATA%\\Code\\logs\\<date>\\exthost\\",
+            "contains": [
+                  "Extension activation events.",
+                  "Warnings, stack traces, and extension-host errors.",
+                  "General lifecycle information for the session.",
+                  "Rotated logs tied to the date-stamped VS Code run."
+            ],
+            "notContains": [
+                  "Prompt content in clear text.",
+                  "Chat transcripts.",
+                  "The runtime contents of your application database.",
+                  "Accepted response bodies in a ready-to-read narrative form."
+            ],
+            "example": "2026-03-15 09:44:17.871 [info] Extension host started\n2026-03-15 09:44:23.101 [error] github.copilot.chat: transient provider timeout, retry scheduled",
+            "inspect": "Browse the current logs folder and sort files by LastWriteTime to show activity tied to the live session.",
+            "command": "$logs = Join-Path $env:APPDATA 'Code\\logs'; Get-ChildItem $logs -Recurse -File | Sort-Object LastWriteTime -Descending | Select-Object -First 12 FullName, LastWriteTime",
+            "screenshot": "A file-system view into date-stamped VS Code log folders and plain-text extension-host logs."
+      },
+      {
+            "id": "network-evidence",
+            "title": "Network-Level Evidence",
+            "icon": "fa-network-wired",
+            "risk": "none",
+            "location": "VS Code DevTools → Network → filter 'copilot'",
+            "contains": [
+                  "Requests to copilot-proxy.githubusercontent.com.",
+                  "TLS-protected network traffic.",
+                  "Response headers such as x-model-version or related routing hints.",
+                  "A visible distinction between localhost app traffic and Copilot traffic."
+            ],
+            "notContains": [
+                  "Readable prompt bodies in transit because the transport is encrypted.",
+                  "Direct browser requests from the demo database query to model providers.",
+                  "A hidden runtime path from localhost database calls into Copilot.",
+                  "Any evidence that the app's SQLite endpoint quietly hits Copilot during normal execution."
+            ],
+            "example": "Request URL: https://copilot-proxy.githubusercontent.com/_some_path\nResponse Header: x-model-version: gpt-4.1\nSecurity: TLS 1.2+ negotiated",
+            "inspect": "Open DevTools, filter for copilot, submit a chat request, then click the network entry to show the host and headers.",
+            "command": "nslookup copilot-proxy.githubusercontent.com",
+            "screenshot": "A network inspector showing the GitHub proxy host, request timing, headers, and encrypted transport details."
+      }
+];
+    const blastNodes = [
+      {
+            "id": "typed-prompt",
+            "title": "Developer types SSN in prompt",
+            "icon": "fa-keyboard",
+            "risk": "medium",
+            "summary": "The developer can always type sensitive content into the prompt box. Once typed, the content exists in the client input surface and any local session storage that keeps that chat.",
+            "dataExists": "The raw SSN or PII exists in the prompt box, input event stream, and potentially local session artifacts.",
+            "retention": "Session-local immediately; longer if the client stores chat history locally or on github.com.",
+            "who": "The local user and the client application handling the chat session.",
+            "verify": "Show the typed prompt in the UI, then inspect local storage or web history behavior depending on the client.",
+            "cleanup": "Delete local session artifacts, let 30-day web retention expire, and avoid typing regulated values into prompts in the first place."
+      },
+      {
+            "id": "extension-boundary",
+            "title": "Copilot extension or client",
+            "icon": "fa-puzzle-piece",
+            "risk": "low",
+            "summary": "This is where content exclusion and local exclusion rules matter most. Excluded files should never be packaged into the prompt envelope.",
+            "dataExists": "Prompt text plus whatever context the client is allowed to gather: open files, selections, terminal snippets, or tool results.",
+            "retention": "Usually only long enough to fulfill the request, plus local editor history artifacts if the app persists conversations.",
+            "who": "The developer, the local editor/CLI, and endpoint administrators with access to the workstation.",
+            "verify": "Open an excluded file and show Copilot is disabled; inspect the network tab to show blocked files are never sent.",
+            "cleanup": "Delete local storage, enforce content exclusion, and tighten workspace scope so sensitive files cannot enter the prompt package."
+      },
+      {
+            "id": "github-proxy",
+            "title": "copilot-proxy.githubusercontent.com",
+            "icon": "fa-shield-halved",
+            "risk": "low",
+            "summary": "GitHub is the policy and routing boundary. Traffic is encrypted in transit and model access is brokered here.",
+            "dataExists": "The live request package in transit and in processing at GitHub's managed proxy layer.",
+            "retention": "Operational handling for the live request; Business and Enterprise content is not kept for model training in this customer story.",
+            "who": "GitHub's managed Copilot service under the plan and provider agreements.",
+            "verify": "Use DevTools or nslookup to prove the destination host is GitHub's proxy, not a direct OpenAI or Anthropic call.",
+            "cleanup": "There is no workstation cleanup here; focus on limiting what reaches this layer and on provider contract posture."
+      },
+      {
+            "id": "model-provider",
+            "title": "Model provider",
+            "icon": "fa-brain",
+            "risk": "low",
+            "summary": "The provider sees the live request content needed to generate the answer. Azure OpenAI has a default 30-day abuse monitoring story; Anthropic is presented here as zero retention.",
+            "dataExists": "The packaged prompt, any tool outputs included in context, and the generated completion while the model processes the request.",
+            "retention": "Azure OpenAI: 30-day abuse monitoring by default with enterprise opt-out pathways. Anthropic: zero retention in the simplified Copilot enterprise story.",
+            "who": "The approved provider operating under GitHub/Microsoft contractual controls.",
+            "verify": "Show the selected model in logs or headers and explain provider-specific retention posture.",
+            "cleanup": "Request Modified Abuse Monitoring where applicable and avoid sending raw sensitive data through prompts or tools."
+      },
+      {
+            "id": "response-storage",
+            "title": "Response on the developer side",
+            "icon": "fa-laptop-file",
+            "risk": "medium",
+            "summary": "The answer comes back to the user and may persist in local SQLite history files, CLI session state, shell history, or web chat history.",
+            "dataExists": "Rendered response text, accepted code, local transcripts, and any copied artifacts the user saves.",
+            "retention": "VS Code local storage persists until manually deleted; github.com web chat expires after 30 days; shell history persists until cleared.",
+            "who": "The developer, endpoint administrators, and anyone with local access to the machine or web account.",
+            "verify": "Inspect workspaceStorage, shell history, or github.com chat history to prove the answer-side artifacts exist.",
+            "cleanup": "Delete local state, clear shell history, export only what you need, and let web history naturally expire."
+      }
+];
+    const demoGuides = [
+      {
+            "id": "demo-1",
+            "title": "Demo 1: Prove Copilot Can't See Database Data",
+            "duration": "15 min",
+            "objective": "Use the live PII demo app and the canary record to prove that Copilot sees code, not runtime database rows.",
+            "steps": [
+                  {
+                        "action": "Open http://localhost:3000/pii-demo.html in your browser.",
+                        "see": "The Runtime Data Boundary Proof page loads with buttons for redacted and raw queries.",
+                        "say": "We're going to separate design-time AI help from runtime data access.",
+                        "why": "Sets the frame before the customer assumes all data flow is AI-related."
+                  },
+                  {
+                        "action": "Click 'Query Database (Raw — Risk Demo)'.",
+                        "see": "You see fake but full citizen records, including complete SSNs, proving the database genuinely contains sensitive-looking data.",
+                        "say": "The database definitely has PII-like content. This is not a toy placeholder panel.",
+                        "why": "The customer needs to believe the sensitive data really exists locally."
+                  },
+                  {
+                        "action": "Click 'Query Database (Redacted)'.",
+                        "see": "SSNs, emails, and phone numbers are masked by the application.",
+                        "say": "This is the safe application pattern: redact before data leaves the runtime boundary.",
+                        "why": "Demonstrates deterministic redaction outside the model."
+                  },
+                  {
+                        "action": "In VS Code Chat, ask: 'What SSNs are in the citizens database?'",
+                        "see": "Copilot cannot answer with actual records and instead reasons from source code only.",
+                        "say": "Copilot can explain the query code, but it cannot read the live SQLite result set.",
+                        "why": "This directly answers the customer's core fear."
+                  },
+                  {
+                        "action": "Search for Canary Testbird in the app or call /api/pii-demo/search?q=Canary.",
+                        "see": "The canary record appears immediately from the local database.",
+                        "say": "The application knows the canary because it executes the query. Copilot does not because it isn't in the runtime data path.",
+                        "why": "The canary is a memorable, definitive proof."
+                  },
+                  {
+                        "action": "Call /api/pii-demo/proof/network-log.",
+                        "see": "The response shows localhost_only: true and zero copilot proxy requests during the runtime query.",
+                        "say": "This is the network-level proof: your app talked to localhost and SQLite only.",
+                        "why": "Closes the loop with observable evidence rather than trust."
+                  }
+            ]
+      },
+      {
+            "id": "demo-2",
+            "title": "Demo 2: Inspect Local Storage",
+            "duration": "10 min",
+            "objective": "Show exactly where local chat artifacts live and why endpoint cleanup matters.",
+            "steps": [
+                  {
+                        "action": "Open PowerShell and run explorer \"$env:APPDATA\\Code\\User\\workspaceStorage\".",
+                        "see": "A folder full of hashed workspace IDs appears.",
+                        "say": "This is the local residency story the customer actually controls.",
+                        "why": "Moves the discussion from abstract cloud fear to real endpoint artifacts."
+                  },
+                  {
+                        "action": "Find a state.vscdb file and note its size and modified timestamp.",
+                        "see": "You can point to the file that persists session state for the workspace.",
+                        "say": "There is no automatic local expiry here. It remains until someone deletes it.",
+                        "why": "Confirms the customer's concern about local persistence."
+                  },
+                  {
+                        "action": "If sqlite3 is available, inspect the file with sqlite3 state.vscdb '.tables'.",
+                        "see": "A list of internal tables appears.",
+                        "say": "The exact schema is implementation detail, but the important point is that chat state is stored locally in SQLite.",
+                        "why": "Makes the evidence concrete for technical buyers."
+                  },
+                  {
+                        "action": "Show the cleanup command from the page.",
+                        "see": "A PowerShell delete command for the workspace file.",
+                        "say": "A simple cleanup policy plus disk encryption solves most of this risk in practice.",
+                        "why": "Security customers want remediation, not just proof of storage."
+                  }
+            ]
+      },
+      {
+            "id": "demo-3",
+            "title": "Demo 3: Watch the Network",
+            "duration": "10 min",
+            "objective": "Prove that Copilot traffic goes to GitHub's proxy and that the database demo traffic stays on localhost.",
+            "steps": [
+                  {
+                        "action": "Open VS Code Developer Tools with Ctrl+Shift+I and select the Network tab.",
+                        "see": "A network inspector opens inside VS Code.",
+                        "say": "We'll watch every request instead of relying on marketing language.",
+                        "why": "Enterprise customers trust packet evidence."
+                  },
+                  {
+                        "action": "Filter for 'copilot' and clear the log.",
+                        "see": "An empty filtered network list.",
+                        "say": "Clean slate. Only fresh Copilot traffic will appear now.",
+                        "why": "Eliminates confusion from unrelated requests."
+                  },
+                  {
+                        "action": "Ask Copilot a simple source-code question.",
+                        "see": "A request appears for copilot-proxy.githubusercontent.com.",
+                        "say": "Every request routes through GitHub's proxy, not directly to a raw provider endpoint from the client.",
+                        "why": "Validates GitHub as the broker and control point."
+                  },
+                  {
+                        "action": "Click the request and inspect headers such as x-model-version.",
+                        "see": "You can identify the model or routing metadata without seeing clear-text payload data.",
+                        "say": "This proves which model answered while showing that the transport is encrypted.",
+                        "why": "Demonstrates both routing transparency and transport security."
+                  },
+                  {
+                        "action": "Now run the local PII app query and watch the network again.",
+                        "see": "Only localhost requests appear for the runtime app call.",
+                        "say": "This is the separation: app runtime traffic is not Copilot traffic.",
+                        "why": "Makes the database-isolation story undeniable."
+                  }
+            ]
+      },
+      {
+            "id": "demo-4",
+            "title": "Demo 4: Inspect Debug Logs",
+            "duration": "10 min",
+            "objective": "Show what the logs contain and, just as importantly, what they do not contain.",
+            "steps": [
+                  {
+                        "action": "In VS Code, open View → Output.",
+                        "see": "The Output panel appears at the bottom.",
+                        "say": "We're going straight to the local forensic surfaces.",
+                        "why": "Starts with evidence rather than assumptions."
+                  },
+                  {
+                        "action": "Select 'GitHub Copilot' from the dropdown.",
+                        "see": "The panel switches to Copilot logs with timestamps and request metadata.",
+                        "say": "Notice the shape of the data: request IDs, model info, timing — not the chat transcript.",
+                        "why": "Shows metadata-only logging behavior."
+                  },
+                  {
+                        "action": "Ask Copilot a question and watch the new log lines appear.",
+                        "see": "Fresh entries show request lifecycle events.",
+                        "say": "This is enough for support and diagnostics without turning the output channel into a transcript store.",
+                        "why": "Addresses the customer's debug-log concern directly."
+                  },
+                  {
+                        "action": "Switch to 'GitHub Copilot Chat'.",
+                        "see": "Session and tool metadata appear.",
+                        "say": "Again: tool names and timing, not the full conversation content.",
+                        "why": "Explains the second relevant output channel."
+                  },
+                  {
+                        "action": "Optionally inspect the logs folder under %APPDATA%\\Code\\logs.",
+                        "see": "Date-stamped files and extension-host logs.",
+                        "say": "The deeper file logs are similar: activation, warnings, errors — not plain-text prompts.",
+                        "why": "Completes the local forensic story."
+                  }
+            ]
+      },
+      {
+            "id": "demo-5",
+            "title": "Demo 5: Test Instruction Compliance",
+            "duration": "10 min",
+            "objective": "Let the customer validate for themselves that instructions improve behavior but do not enforce it.",
+            "steps": [
+                  {
+                        "action": "Create or open .github/copilot-instructions.md and add: 'Never suggest console.log statements.'",
+                        "see": "The instruction file is visible in the repo and VS Code workspace.",
+                        "say": "This is a probabilistic control. We're testing behavior, not enforcing policy.",
+                        "why": "Sets honest expectations before running the experiment."
+                  },
+                  {
+                        "action": "Ask Copilot to write a function that fetches user data and logs the result.",
+                        "see": "Some outputs obey the instruction; some may still use console.log depending on context and prompt.",
+                        "say": "Good guidance, but not a guarantee.",
+                        "why": "Makes the non-deterministic behavior visible."
+                  },
+                  {
+                        "action": "Repeat multiple times and record the hit rate.",
+                        "see": "A compliance pattern emerges rather than perfect consistency.",
+                        "say": "This is why we don't sell instructions as a security barrier.",
+                        "why": "Turns an abstract warning into a measurable observation."
+                  },
+                  {
+                        "action": "Strengthen the instruction to: 'Use logger.info() instead of console.log() when writing JavaScript or TypeScript logging code.'",
+                        "see": "Compliance improves because the instruction is specific and gives a positive substitute.",
+                        "say": "Clarity helps a lot. Precision beats vague prohibition.",
+                        "why": "Teaches the customer how to improve outcomes without overselling certainty."
+                  },
+                  {
+                        "action": "Contrast that with content exclusion on a sensitive file.",
+                        "see": "The slashed Copilot icon or blocked behavior is deterministic.",
+                        "say": "This is the difference between guidance and enforcement.",
+                        "why": "Re-centers the discussion on deterministic controls."
+                  }
+            ]
+      },
+      {
+            "id": "demo-6",
+            "title": "Demo 6: MCP Tool Call with Redaction",
+            "duration": "10 min",
+            "objective": "Show why the MCP/tool layer is the real place to enforce masking when external data is involved.",
+            "steps": [
+                  {
+                        "action": "Show a safe MCP or route example that calls maskSSN(), maskEmail(), and maskPhone() before returning data.",
+                        "see": "The code clearly transforms the record before it becomes a tool response.",
+                        "say": "This is the safe pattern: redact before the model sees anything.",
+                        "why": "Defines the desired architecture in concrete code."
+                  },
+                  {
+                        "action": "Show an unsafe example that returns JSON.stringify(citizen) directly.",
+                        "see": "The tool output would include full SSN, email, and phone values.",
+                        "say": "If you return raw PII here, the model sees raw PII. No mystery, no loophole.",
+                        "why": "Clarifies the exact blast radius of tool use."
+                  },
+                  {
+                        "action": "Call the safe version and inspect the output.",
+                        "see": "Only masked fields are visible.",
+                        "say": "The model can still reason over the business record without ever receiving the full secret values.",
+                        "why": "Shows security and usefulness can coexist."
+                  },
+                  {
+                        "action": "Explain what the unsafe version would do without actually exposing real data.",
+                        "see": "The audience understands the consequence without requiring a risky live leak.",
+                        "say": "This is the one scenario where your tool design directly determines what the model sees.",
+                        "why": "Keeps the demo safe while remaining honest."
+                  }
+            ]
+      },
+      {
+            "id": "demo-7",
+            "title": "Demo 7: Web Chat Retention",
+            "duration": "5 min",
+            "objective": "Explain the 30-day web chat retention model and why users should export before expiry if needed.",
+            "steps": [
+                  {
+                        "action": "Open github.com and navigate to Copilot Chat.",
+                        "see": "The web chat experience loads with recent history visible.",
+                        "say": "This is the most cloud-resident user experience in the stack.",
+                        "why": "Signals that this flow differs from local IDE storage."
+                  },
+                  {
+                        "action": "Show the history list grouped by recent time windows.",
+                        "see": "Today, Yesterday, Last 7 days, and Last 30 days style groupings.",
+                        "say": "GitHub keeps this history for convenience, then auto-deletes it.",
+                        "why": "Makes the 30-day retention easy to visualize."
+                  },
+                  {
+                        "action": "Show or describe the export option before expiry.",
+                        "see": "The audience sees there is a way to preserve the conversation if necessary.",
+                        "say": "If you need a record, export it before the natural 30-day expiry.",
+                        "why": "Provides a practical next step for audit-minded teams."
+                  },
+                  {
+                        "action": "State clearly that there is no manual delete path in the standard customer story.",
+                        "see": "The audience understands the retention is fixed rather than user-tunable.",
+                        "say": "That is why we advise: do not paste secrets into web chat.",
+                        "why": "Ends with an operational policy recommendation."
+                  }
+            ]
+      }
+];
+    const prerequisites = [
+      "Install Visual Studio Code from https://code.visualstudio.com.",
+      "Install the GitHub Copilot extension in VS Code and sign in with an account that has access.",
+      "Clone the demo repository to a local workstation.",
+      "Install Node.js and Git if they are not already available.",
+      "Run the commands below in PowerShell from the repository root."
+];
+    const prereqCommands = [
+      "git clone https://github.com/sautalwar/ghcopilot-pii-demo.git",
+      "cd ghcopilot-pii-demo",
+      "npm install",
+      "npx ts-node src/server.ts",
+      "Start-Process 'http://localhost:3000/data-residency-demo.html'"
+];
+    const sources = [
+      {
+            "label": "GitHub Docs — Content exclusion for GitHub Copilot",
+            "url": "https://docs.github.com/en/copilot/concepts/context/content-exclusion",
+            "category": "Deterministic controls"
+      },
+      {
+            "label": "GitHub Docs — Excluding content from GitHub Copilot",
+            "url": "https://docs.github.com/en/copilot/how-tos/configure-content-exclusion/exclude-content-from-copilot",
+            "category": "Deterministic controls"
+      },
+      {
+            "label": "GitHub Docs — About customizing GitHub Copilot responses",
+            "url": "https://docs.github.com/en/copilot/concepts/prompting/response-customization?tool=vscode",
+            "category": "Instructions"
+      },
+      {
+            "label": "GitHub Blog — Master your instructions files",
+            "url": "https://github.blog/ai-and-ml/unlocking-the-full-power-of-copilot-code-review-master-your-instructions-files/",
+            "category": "Instructions"
+      },
+      {
+            "label": "GitHub Docs — View logs in GitHub Copilot",
+            "url": "https://docs.github.com/en/copilot/how-tos/troubleshoot-copilot/view-logs?tool=vscode",
+            "category": "Logs"
+      },
+      {
+            "label": "GitHub Docs — Metrics data",
+            "url": "https://docs.github.com/en/copilot/reference/metrics-data",
+            "category": "Metrics"
+      },
+      {
+            "label": "GitHub Docs — AI model hosting",
+            "url": "https://docs.github.com/en/copilot/reference/ai-models/model-hosting",
+            "category": "Model routing"
+      },
+      {
+            "label": "VS Code Docs — Agents memory",
+            "url": "https://code.visualstudio.com/docs/copilot/agents/memory",
+            "category": "VS Code storage"
+      },
+      {
+            "label": "VS Code Docs — Telemetry",
+            "url": "https://code.visualstudio.com/docs/configure/telemetry",
+            "category": "VS Code telemetry"
+      },
+      {
+            "label": "Microsoft Learn — Azure OpenAI / Azure AI Foundry abuse monitoring",
+            "url": "https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/abuse-monitoring",
+            "category": "Provider retention"
+      },
+      {
+            "label": "Anthropic Trust Center",
+            "url": "https://www.anthropic.com/trust",
+            "category": "Provider posture"
+      },
+      {
+            "label": "Repository demo endpoints — src/pii-demo/pii-routes.ts",
+            "url": "https://github.com/sautalwar/ghcopilot-pii-demo/blob/main/src/pii-demo/pii-routes.ts",
+            "category": "Local proof"
+      }
+];
+
+    let activeScenario = scenarioData[0].id;
+    let activeInstructionMode = 'baseline';
+    let storageRiskFilter = 'all';
+    let storageSearchTerm = '';
+    let activeBlastNode = blastNodes[0].id;
+    let beforePrintState = [];
+
+    function riskClass(risk) {
+      return `risk-${risk}`;
+    }
+
+    function iconShell(icon) {
+      return `<span class="icon-shell"><i class="fa-solid ${icon}"></i></span>`;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function renderTabs() {
+      const buttons = Array.from(document.querySelectorAll('.tab-button'));
+      const panels = Array.from(document.querySelectorAll('.tab-panel'));
+
+      function activate(tabId, pushHash = true) {
+        buttons.forEach((button) => {
+          button.classList.toggle('active', button.dataset.tab === tabId);
+        });
+
+        panels.forEach((panel) => {
+          panel.classList.toggle('active', panel.id === tabId);
+        });
+
+        if (pushHash) {
+          history.replaceState(null, '', `#${tabId}`);
+        }
+      }
+
+      buttons.forEach((button) => {
+        button.addEventListener('click', () => activate(button.dataset.tab));
+      });
+
+      const initialHash = window.location.hash.replace('#', '');
+      if (initialHash && panels.some((panel) => panel.id === initialHash)) {
+        activate(initialHash, false);
+      }
+    }
+
+    function renderScenarioSelector() {
+      const selector = document.getElementById('scenarioSelector');
+      selector.innerHTML = scenarioData.map((scenario) => `
+        <button class="selector-button ${scenario.id === activeScenario ? 'active' : ''}" data-scenario="${scenario.id}">
+          <i class="fa-solid ${scenario.icon}"></i>
+          ${escapeHtml(scenario.shortLabel)}
+        </button>
+      `).join('');
+
+      selector.querySelectorAll('[data-scenario]').forEach((button) => {
+        button.addEventListener('click', () => {
+          activeScenario = button.dataset.scenario;
+          renderScenarioSelector();
+          renderScenarioDetail();
+        });
+      });
+    }
+
+    function renderScenarioDetail() {
+      const scenario = scenarioData.find((item) => item.id === activeScenario) || scenarioData[0];
+      const detail = document.getElementById('scenarioDetail');
+
+      detail.innerHTML = `
+        <article class="headline-card">
+          <div class="inline-actions" style="margin-bottom: 12px;">
+            <span class="risk-badge ${riskClass(scenario.risk)}"><i class="fa-solid fa-circle"></i> ${escapeHtml(scenario.label)}</span>
+            <span class="chip"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(scenario.residency)}</span>
+          </div>
+          <h3>${escapeHtml(scenario.headline)}</h3>
+          <p>${escapeHtml(scenario.keyFact)}</p>
+          <div class="callout-strip">
+            <div class="quote-box">
+              <strong>What to say to the customer</strong>
+              <p>${escapeHtml(scenario.customerLine)}</p>
+            </div>
+          </div>
+        </article>
+        <div class="flow-grid">
+          ${scenario.steps.map((step) => `
+            <article class="flow-step">
+              <h5><i class="fa-solid ${step.icon}"></i> ${escapeHtml(step.title)}</h5>
+              <p>${escapeHtml(step.detail)}</p>
+            </article>
+          `).join('')}
+        </div>
+        <div class="story-grid">
+          <article class="story-card">
+            <h4>${iconShell('fa-certificate')} Proof points</h4>
+            <ul class="bullet-list">
+              ${scenario.proofPoints.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+            </ul>
+          </article>
+          <article class="story-card">
+            <h4>${iconShell('fa-shield-halved')} Guardrails</h4>
+            <ul class="bullet-list">
+              ${scenario.guardrails.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+            </ul>
+          </article>
+          <article class="story-card">
+            <h4>${iconShell('fa-clock')} Residency notes</h4>
+            <ul class="bullet-list">
+              ${scenario.residencyNotes.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+            </ul>
+          </article>
+        </div>
+      `;
+
+      const summaryRows = document.getElementById('scenarioSummaryRows');
+      summaryRows.innerHTML = scenarioData.map((item) => {
+        const persists = item.id === 'web-chat'
+          ? '30-day github.com history'
+          : item.id === 'cli-chat'
+            ? 'Shell history and local CLI session state'
+            : item.id === 'mcp-tools'
+              ? 'Whatever your tool or logs keep locally'
+              : item.id === 'database-runtime'
+                ? 'Application data only; Copilot not involved'
+                : 'Local editor session history if the client keeps it';
+        const bestProof = item.id === 'database-runtime'
+          ? 'Network tab + /api/pii-demo/proof/network-log'
+          : item.id === 'mcp-tools'
+            ? 'Safe vs unsafe tool output comparison'
+            : item.id === 'web-chat'
+              ? 'github.com history list + 30-day story'
+              : item.id === 'cli-chat'
+                ? 'Shell history path + proxy endpoint'
+                : 'DevTools + Output panel';
+        const whoSees = item.id === 'database-runtime'
+          ? 'Browser, localhost app, SQLite only'
+          : item.id === 'mcp-tools'
+            ? 'GitHub proxy, provider, and the tool output path'
+            : item.id === 'web-chat'
+              ? 'GitHub web app, GitHub proxy, selected provider'
+              : 'GitHub proxy and selected provider';
+        const highestRisk = item.id === 'mcp-tools'
+          ? 'Tool returns raw PII'
+          : item.id === 'cli-chat'
+            ? 'Shell history residue'
+            : item.id === 'web-chat'
+              ? '30-day retained history'
+              : item.id === 'database-runtime'
+                ? 'None for Copilot; this is runtime app risk only'
+                : 'Prompt envelope includes something it should not';
+        return `
+          <tr>
+            <td><strong>${escapeHtml(item.shortLabel)}</strong><br /><small class="muted">${escapeHtml(item.label)}</small></td>
+            <td>${escapeHtml(whoSees)}</td>
+            <td>${escapeHtml(persists)}</td>
+            <td>${escapeHtml(highestRisk)}</td>
+            <td>${escapeHtml(bestProof)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderStorageFilters() {
+      const filters = [
+        { id: 'all', label: 'All locations' },
+        { id: 'none', label: 'None' },
+        { id: 'low', label: 'Low' },
+        { id: 'medium', label: 'Medium' },
+        { id: 'high', label: 'High' }
+      ];
+      const host = document.getElementById('storageFilters');
+      host.innerHTML = filters.map((filter) => `
+        <button class="storage-filter ${storageRiskFilter === filter.id ? 'active' : ''}" data-filter="${filter.id}">${escapeHtml(filter.label)}</button>
+      `).join('');
+
+      host.querySelectorAll('[data-filter]').forEach((button) => {
+        button.addEventListener('click', () => {
+          storageRiskFilter = button.dataset.filter;
+          renderStorageFilters();
+          renderStorage();
+        });
+      });
+    }
+
+    function filterStorage() {
+      return storageData.filter((item) => {
+        const riskMatch = storageRiskFilter === 'all' || item.risk === storageRiskFilter;
+        const searchBlob = [item.title, item.location, item.stored, item.retention, item.pathDisplay, ...item.notes].join(' ').toLowerCase();
+        const searchMatch = !storageSearchTerm || searchBlob.includes(storageSearchTerm.toLowerCase());
+        return riskMatch && searchMatch;
+      });
+    }
+
+    function renderStorage() {
+      const rowsHost = document.getElementById('storageSummaryRows');
+      const cardsHost = document.getElementById('storageCards');
+      const filtered = filterStorage();
+
+      rowsHost.innerHTML = filtered.map((item) => `
+        <tr>
+          <td><strong>${escapeHtml(item.location)}</strong><br /><small class="muted">${escapeHtml(item.pathDisplay)}</small></td>
+          <td>${escapeHtml(item.stored)}</td>
+          <td>${escapeHtml(item.retention)}</td>
+          <td>${escapeHtml(item.howFind)}</td>
+          <td>${escapeHtml(item.howClear)}</td>
+        </tr>
+      `).join('');
+
+      cardsHost.innerHTML = filtered.map((item) => `
+        <details class="storage-card" ${item.id === 'workspace-storage' ? 'open' : ''}>
+          <summary>
+            <div class="storage-header">
+              <div class="storage-meta">
+                <div class="inline-actions">
+                  <span class="risk-badge ${riskClass(item.risk)}"><i class="fa-solid fa-circle"></i> ${escapeHtml(item.risk.toUpperCase())} risk</span>
+                  <span class="chip"><i class="fa-solid ${item.icon}"></i> ${escapeHtml(item.location)}</span>
+                </div>
+                <h4>${iconShell(item.icon)} ${escapeHtml(item.title)}</h4>
+                <div class="storage-topline">${escapeHtml(item.stored)}</div>
+              </div>
+              <i class="fa-solid fa-chevron-down muted"></i>
+            </div>
+          </summary>
+          <div class="storage-body">
+            <div class="meta-grid">
+              <article class="tiny-card"><span class="label">Retention</span><p>${escapeHtml(item.retention)}</p></article>
+              <article class="tiny-card"><span class="label">How to find</span><p>${escapeHtml(item.howFind)}</p></article>
+              <article class="tiny-card"><span class="label">How to clear</span><p>${escapeHtml(item.howClear)}</p></article>
+              <article class="tiny-card"><span class="label">Screenshot description</span><p>${escapeHtml(item.screenshot)}</p></article>
+            </div>
+            <div class="command-grid">
+              <article class="command-card">
+                <div class="command-card-header">
+                  <strong>Exact path</strong>
+                  <button class="copy-button" data-copy="${escapeHtml(item.pathDisplay)}"><i class="fa-regular fa-copy"></i> Copy</button>
+                </div>
+                <pre>${escapeHtml(item.pathDisplay)}</pre>
+              </article>
+              ${item.inspectCommands.map((command, index) => `
+                <article class="command-card">
+                  <div class="command-card-header">
+                    <strong>Inspect — ${escapeHtml(command.label)}</strong>
+                    <button class="copy-button" data-copy="${escapeHtml(command.value)}"><i class="fa-regular fa-copy"></i> Copy</button>
+                  </div>
+                  <pre>${escapeHtml(command.value)}</pre>
+                </article>
+              `).join('')}
+              ${item.clearCommands.map((command) => `
+                <article class="command-card">
+                  <div class="command-card-header">
+                    <strong>Clear — ${escapeHtml(command.label)}</strong>
+                    <button class="copy-button" data-copy="${escapeHtml(command.value)}"><i class="fa-regular fa-copy"></i> Copy</button>
+                  </div>
+                  <pre>${escapeHtml(command.value)}</pre>
+                </article>
+              `).join('')}
+            </div>
+            <article class="story-card">
+              <h4>${iconShell('fa-circle-info')} Risk and presenter notes</h4>
+              <ul class="bullet-list">
+                ${item.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join('')}
+              </ul>
+            </article>
+          </div>
+        </details>
+      `).join('');
+
+      wireCopyButtons(cardsHost);
+    }
+
+    function renderInstructionFacts() {
+      const host = document.getElementById('instructionFacts');
+      host.innerHTML = instructionFacts.map((fact) => `
+        <article class="story-card">
+          <h4>${iconShell('fa-comment-dots')} Reality check</h4>
+          <p>${escapeHtml(fact)}</p>
+        </article>
+      `).join('');
+    }
+
+    function renderControlsTable() {
+      const body = document.getElementById('controlsTableBody');
+      body.innerHTML = controlsData.map((row) => `
+        <tr>
+          <td><strong>${escapeHtml(row.control)}</strong></td>
+          <td>${escapeHtml(row.type)}</td>
+          <td>${escapeHtml(row.reliability)}</td>
+          <td>${escapeHtml(row.use)}</td>
+          <td>${escapeHtml(row.detail)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderInstructionModes() {
+      const host = document.getElementById('instructionModes');
+      host.innerHTML = Object.entries(instructionRuns).map(([key, run]) => `
+        <button class="mode-button ${activeInstructionMode === key ? 'active' : ''}" data-mode="${key}">
+          <i class="fa-solid ${key === 'baseline' ? 'fa-wave-square' : 'fa-arrow-trend-up'}"></i>
+          ${escapeHtml(run.title)}
+        </button>
+      `).join('');
+
+      host.querySelectorAll('[data-mode]').forEach((button) => {
+        button.addEventListener('click', () => {
+          activeInstructionMode = button.dataset.mode;
+          renderInstructionModes();
+          renderInstructionExperiment();
+        });
+      });
+    }
+
+    function renderInstructionExperiment() {
+      const run = instructionRuns[activeInstructionMode];
+      const trialHost = document.getElementById('instructionTrials');
+      const text = document.getElementById('instructionText');
+      const talkTrack = document.getElementById('instructionTalkTrack');
+      const scoreLabel = document.getElementById('scoreLabel');
+      const scoreSummary = document.getElementById('scoreSummary');
+      const scoreBarFill = document.getElementById('scoreBarFill');
+      const successes = run.successes.filter(Boolean).length;
+      const percent = Math.round((successes / run.successes.length) * 100);
+
+      text.textContent = run.instruction;
+      talkTrack.textContent = `${run.summary} ${run.say}`;
+      scoreLabel.textContent = `${successes} / ${run.successes.length}`;
+      scoreSummary.textContent = `${percent}% compliance in this demo run`;
+      scoreBarFill.style.width = `${percent}%`;
+
+      trialHost.innerHTML = run.successes.map((success, index) => `
+        <div class="trial-pill ${success ? 'success' : 'fail'}">
+          <div>${success ? 'Pass' : 'Fail'}</div>
+          <small>#${index + 1}</small>
+        </div>
+      `).join('');
+    }
+
+    function renderLogs() {
+      const cards = document.getElementById('logCards');
+      const commands = document.getElementById('logCommands');
+
+      cards.innerHTML = logChannels.map((log) => `
+        <article class="forensic-card">
+          <div class="inline-actions" style="margin-bottom: 12px;">
+            <span class="risk-badge ${riskClass(log.risk)}"><i class="fa-solid fa-circle"></i> ${escapeHtml(log.risk.toUpperCase())}</span>
+            <span class="chip"><i class="fa-solid ${log.icon}"></i> ${escapeHtml(log.location)}</span>
+          </div>
+          <h4>${iconShell(log.icon)} ${escapeHtml(log.title)}</h4>
+          <div class="step-grid" style="margin-top: 14px;">
+            <div class="tiny-card">
+              <span class="label">What's there</span>
+              <ul class="bullet-list">${log.contains.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>
+            </div>
+            <div class="tiny-card">
+              <span class="label">What's NOT there</span>
+              <ul class="bullet-list">${log.notContains.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>
+            </div>
+          </div>
+          <div class="example-block">
+            <div class="example-block-header">
+              <strong>Sanitized example</strong>
+              <button class="copy-button" data-copy="${escapeHtml(log.example)}"><i class="fa-regular fa-copy"></i> Copy</button>
+            </div>
+            <pre>${escapeHtml(log.example)}</pre>
+          </div>
+          <div class="callout-strip">
+            <div class="callout-box">
+              <strong>How to check</strong>
+              <p>${escapeHtml(log.inspect)}</p>
+            </div>
+            <div class="callout-box">
+              <strong>What the screenshot would show</strong>
+              <p>${escapeHtml(log.screenshot)}</p>
+            </div>
+          </div>
+        </article>
+      `).join('');
+
+      commands.innerHTML = logChannels.map((log) => `
+        <article class="command-card">
+          <div class="command-card-header">
+            <strong>${escapeHtml(log.title)}</strong>
+            <button class="copy-button" data-copy="${escapeHtml(log.command)}"><i class="fa-regular fa-copy"></i> Copy</button>
+          </div>
+          <pre>${escapeHtml(log.command)}</pre>
+        </article>
+      `).join('');
+
+      wireCopyButtons(cards);
+      wireCopyButtons(commands);
+    }
+
+    function renderBlastNodes() {
+      const list = document.getElementById('blastNodeList');
+      list.innerHTML = blastNodes.map((node) => `
+        <button class="blast-node-button ${node.id === activeBlastNode ? 'active' : ''}" data-blast="${node.id}">
+          <strong><i class="fa-solid ${node.icon}"></i> ${escapeHtml(node.title)}</strong>
+          <small>${escapeHtml(node.summary)}</small>
+          <span class="risk-badge ${riskClass(node.risk)}">${escapeHtml(node.risk.toUpperCase())} risk</span>
+        </button>
+      `).join('');
+
+      list.querySelectorAll('[data-blast]').forEach((button) => {
+        button.addEventListener('click', () => {
+          activeBlastNode = button.dataset.blast;
+          renderBlastNodes();
+          renderBlastDetail();
+        });
+      });
+    }
+
+    function renderBlastDetail() {
+      const node = blastNodes.find((item) => item.id === activeBlastNode) || blastNodes[0];
+      const host = document.getElementById('blastDetail');
+      host.innerHTML = `
+        <article class="headline-card">
+          <div class="inline-actions" style="margin-bottom: 12px;">
+            <span class="risk-badge ${riskClass(node.risk)}"><i class="fa-solid fa-circle"></i> ${escapeHtml(node.risk.toUpperCase())} risk</span>
+            <span class="chip"><i class="fa-solid ${node.icon}"></i> ${escapeHtml(node.title)}</span>
+          </div>
+          <h3>${escapeHtml(node.title)}</h3>
+          <p>${escapeHtml(node.summary)}</p>
+        </article>
+        <div class="story-grid">
+          <article class="blast-card">
+            <h4>${iconShell('fa-database')} What data exists there?</h4>
+            <p>${escapeHtml(node.dataExists)}</p>
+          </article>
+          <article class="blast-card">
+            <h4>${iconShell('fa-clock')} How long does it persist?</h4>
+            <p>${escapeHtml(node.retention)}</p>
+          </article>
+          <article class="blast-card">
+            <h4>${iconShell('fa-user-lock')} Who can access it?</h4>
+            <p>${escapeHtml(node.who)}</p>
+          </article>
+          <article class="blast-card">
+            <h4>${iconShell('fa-certificate')} How do you verify?</h4>
+            <p>${escapeHtml(node.verify)}</p>
+          </article>
+          <article class="blast-card">
+            <h4>${iconShell('fa-broom')} How do you clean up?</h4>
+            <p>${escapeHtml(node.cleanup)}</p>
+          </article>
+        </div>
+      `;
+    }
+
+    function renderPrerequisites() {
+      const list = document.getElementById('prereqList');
+      const block = document.getElementById('prereqCommandsBlock');
+      list.innerHTML = prerequisites.map((item) => `<li>${escapeHtml(item)}</li>`).join('');
+      block.textContent = prereqCommands.join('\n');
+      wireCopyButtons(document);
+    }
+
+    function renderGuides() {
+      const host = document.getElementById('guideAccordions');
+      host.innerHTML = demoGuides.map((guide, guideIndex) => `
+        <details class="accordion guide-card" ${guideIndex === 0 ? 'open' : ''}>
+          <summary>
+            <div>
+              <strong>${escapeHtml(guide.title)}</strong>
+              <p class="muted" style="margin-top: 6px;">${escapeHtml(guide.duration)} · ${escapeHtml(guide.objective)}</p>
+            </div>
+            <span class="chip"><i class="fa-solid fa-stopwatch"></i> ${escapeHtml(guide.duration)}</span>
+          </summary>
+          <div class="accordion-body">
+            <div class="step-list">
+              ${guide.steps.map((step, stepIndex) => `
+                <article class="step-card">
+                  <div class="step-topline">
+                    <h5><span class="step-number">${stepIndex + 1}</span> ${escapeHtml(step.action)}</h5>
+                  </div>
+                  <div class="step-grid">
+                    <div class="tiny-card">
+                      <span class="label">What you'll see</span>
+                      <p>${escapeHtml(step.see)}</p>
+                    </div>
+                    <div class="tiny-card">
+                      <span class="label">What to say to the customer</span>
+                      <p>${escapeHtml(step.say)}</p>
+                    </div>
+                  </div>
+                  <div class="tiny-card">
+                    <span class="label">Why this matters</span>
+                    <p>${escapeHtml(step.why)}</p>
+                  </div>
+                </article>
+              `).join('')}
+            </div>
+          </div>
+        </details>
+      `).join('');
+    }
+
+    function renderSources() {
+      const host = document.getElementById('sourceList');
+      host.innerHTML = sources.map((source) => `
+        <a class="source-item" href="${escapeHtml(source.url)}" target="_blank" rel="noreferrer noopener">
+          <strong>${escapeHtml(source.label)}</strong>
+          <small>${escapeHtml(source.category)}</small>
+        </a>
+      `).join('');
+    }
+
+    async function copyText(text, button) {
+      try {
+        await navigator.clipboard.writeText(text);
+        const original = button.innerHTML;
+        button.classList.add('copied');
+        button.innerHTML = '<i class="fa-solid fa-check"></i> Copied';
+        setTimeout(() => {
+          button.classList.remove('copied');
+          button.innerHTML = original;
+        }, 1400);
+      } catch (error) {
+        console.error('Copy failed', error);
+      }
+    }
+
+    function wireCopyButtons(scope = document) {
+      scope.querySelectorAll('.copy-button').forEach((button) => {
+        if (button.dataset.wired === 'true') {
+          return;
+        }
+        button.dataset.wired = 'true';
+        button.addEventListener('click', () => {
+          const targetId = button.dataset.copyTarget;
+          const explicit = button.dataset.copy;
+          const text = explicit || (targetId ? document.getElementById(targetId)?.textContent ?? '' : '');
+          copyText(text, button);
+        });
+      });
+    }
+
+    function handleStorageSearch() {
+      const input = document.getElementById('storageSearch');
+      input.addEventListener('input', () => {
+        storageSearchTerm = input.value.trim();
+        renderStorage();
+      });
+    }
+
+    function handlePrintState() {
+      window.addEventListener('beforeprint', () => {
+        beforePrintState = Array.from(document.querySelectorAll('details')).map((details) => details.open);
+        document.querySelectorAll('details').forEach((details) => {
+          details.open = true;
+        });
+      });
+
+      window.addEventListener('afterprint', () => {
+        Array.from(document.querySelectorAll('details')).forEach((details, index) => {
+          details.open = beforePrintState[index];
+        });
+      });
+    }
+
+    function init() {
+      renderTabs();
+      renderScenarioSelector();
+      renderScenarioDetail();
+      renderStorageFilters();
+      renderStorage();
+      renderInstructionFacts();
+      renderControlsTable();
+      renderInstructionModes();
+      renderInstructionExperiment();
+      renderLogs();
+      renderBlastNodes();
+      renderBlastDetail();
+      renderPrerequisites();
+      renderGuides();
+      renderSources();
+      handleStorageSearch();
+      handlePrintState();
+      wireCopyButtons(document);
+    }
+
+    init();
+  </script>
+</body>
+</html>
