@@ -12,6 +12,7 @@ pnpm-debug.log*
 .DS_Store
 *.tsbuildinfo
 data/
+data/*.db
 *.db
 *.sqlite
 session-output.pdf

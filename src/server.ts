@@ -4,6 +4,7 @@ import express, { type NextFunction, type Request, type Response } from "express
 import path from "node:path";
 
 import demoRoutes from "./api/demo-routes";
+import { piiDemoRouter } from "./pii-demo/pii-routes";
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.get("/api/health", (_request: Request, response: Response) => {
 });
 
 app.use("/api/demos", demoRoutes);
+app.use("/api/pii-demo", piiDemoRouter);
 
 app.use((error: unknown, _request: Request, response: Response, _next: NextFunction) => {
   const message = error instanceof Error ? error.message : "Unexpected server error";

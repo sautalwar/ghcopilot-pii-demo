@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Copilot Runtime Data Proof Demo</title>
+  <meta
+    name="description"
+    content="End-to-end demo proving GitHub Copilot can help write code without ever seeing runtime database data or local SQLite query results."
+  />
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface-alt: #0f1722;
+      --surface-soft: #11161d;
+      --border: #30363d;
+      --border-strong: #3d444d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --blue: #58a6ff;
+      --blue-strong: #1f6feb;
+      --green: #3fb950;
+      --green-soft: rgba(63, 185, 80, 0.16);
+      --red: #f85149;
+      --red-soft: rgba(248, 81, 73, 0.14);
+      --yellow: #d29922;
+      --yellow-soft: rgba(210, 153, 34, 0.14);
+      --purple: #a371f7;
+      --shadow: 0 20px 48px rgba(1, 4, 9, 0.35);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+      --transition: 220ms ease;
+      --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-sans);
+      color: var(--text);
+      background:
+        radial-gradient(circle at top right, rgba(88, 166, 255, 0.15), transparent 20%),
+        radial-gradient(circle at top left, rgba(163, 113, 247, 0.09), transparent 18%),
+        linear-gradient(180deg, rgba(13, 17, 23, 0.98), rgba(13, 17, 23, 1));
+    }
+
+    a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .page-shell {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 32px 24px 56px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      color: var(--muted);
+    }
+
+    .hero,
+    .panel,
+    .proof-card,
+    .step-card,
+    .stat-card,
+    .compare-card {
+      background: linear-gradient(180deg, rgba(22, 27, 34, 0.95), rgba(15, 23, 34, 0.96));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 28px;
+      margin-bottom: 26px;
+      border-color: rgba(88, 166, 255, 0.2);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      color: var(--blue);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      margin: 0;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.4rem, 5vw, 4.1rem);
+      line-height: 1.04;
+      margin-bottom: 12px;
+    }
+
+    .hero .answer {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: var(--green-soft);
+      border: 1px solid rgba(63, 185, 80, 0.3);
+      color: #9ae6b4;
+      font-weight: 800;
+      margin: 6px 0 18px;
+    }
+
+    .hero p {
+      max-width: 880px;
+      color: var(--muted);
+      font-size: 1.04rem;
+      line-height: 1.7;
+      margin: 0 0 22px;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 46px;
+      padding: 0 18px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      color: var(--text);
+      cursor: pointer;
+      transition: transform var(--transition), border-color var(--transition), background var(--transition);
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, rgba(31, 111, 235, 0.95), rgba(88, 166, 255, 0.82));
+    }
+
+    .btn-neutral {
+      background: rgba(139, 148, 158, 0.11);
+      border-color: rgba(139, 148, 158, 0.22);
+    }
+
+    .btn-danger {
+      background: rgba(248, 81, 73, 0.14);
+      border-color: rgba(248, 81, 73, 0.26);
+      color: #ffb3ae;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: wait;
+      transform: none;
+    }
+
+    .diagram-grid,
+    .stat-grid,
+    .database-grid,
+    .proof-grid,
+    .architecture-grid,
+    .steps-grid,
+    .compare-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .diagram-grid {
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      align-items: stretch;
+      margin-top: 18px;
+    }
+
+    .diagram-box,
+    .stat-card,
+    .proof-card,
+    .step-card,
+    .compare-card {
+      padding: 20px;
+    }
+
+    .diagram-box {
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: rgba(13, 17, 23, 0.5);
+    }
+
+    .diagram-box h3 {
+      margin-bottom: 10px;
+      font-size: 1.05rem;
+    }
+
+    .diagram-box p,
+    .diagram-box li,
+    .proof-card li,
+    .step-card li,
+    .compare-card li,
+    .panel p,
+    .panel li {
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .diagram-arrow {
+      display: grid;
+      place-items: center;
+      font-size: 2rem;
+      color: var(--blue);
+      min-height: 100%;
+    }
+
+    section {
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      margin-bottom: 16px;
+    }
+
+    .section-title h2 {
+      margin-bottom: 6px;
+      font-size: 1.7rem;
+    }
+
+    .section-title p {
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.65;
+    }
+
+    .panel {
+      padding: 24px;
+    }
+
+    .stat-grid {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      margin-bottom: 18px;
+    }
+
+    .stat-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+
+    .stat-card strong {
+      font-size: 1.6rem;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .safe {
+      border-color: rgba(63, 185, 80, 0.26);
+      background: linear-gradient(180deg, rgba(12, 28, 20, 0.95), rgba(11, 22, 18, 0.95));
+    }
+
+    .risk {
+      border-color: rgba(248, 81, 73, 0.26);
+      background: linear-gradient(180deg, rgba(37, 14, 14, 0.96), rgba(24, 12, 12, 0.95));
+    }
+
+    .database-grid,
+    .architecture-grid {
+      grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr);
+    }
+
+    .schema-box,
+    .result-box,
+    .meta-box,
+    .code-block,
+    .log-box,
+    .mini-box {
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: rgba(13, 17, 23, 0.6);
+      padding: 18px;
+    }
+
+    .code-block,
+    .schema-box pre,
+    .result-box pre,
+    .meta-box pre,
+    .log-item code,
+    .mini-box code {
+      font-family: var(--font-mono);
+      font-size: 0.92rem;
+    }
+
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin: 18px 0;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .search-row input {
+      flex: 1 1 240px;
+      min-height: 46px;
+      border-radius: 12px;
+      border: 1px solid var(--border-strong);
+      background: rgba(13, 17, 23, 0.85);
+      color: var(--text);
+      padding: 0 14px;
+    }
+
+    .banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(63, 185, 80, 0.24);
+      background: var(--green-soft);
+      color: #a8f0b0;
+      margin-bottom: 16px;
+      font-weight: 700;
+    }
+
+    .banner.risk {
+      border-color: rgba(248, 81, 73, 0.24);
+      background: var(--red-soft);
+      color: #ffb3ae;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.94rem;
+      margin-top: 12px;
+    }
+
+    .data-table th,
+    .data-table td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(48, 54, 61, 0.7);
+      vertical-align: top;
+    }
+
+    .data-table th {
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      border: 1px solid rgba(139, 148, 158, 0.2);
+      background: rgba(139, 148, 158, 0.12);
+      color: var(--muted);
+    }
+
+    .pill.green {
+      color: #a8f0b0;
+      border-color: rgba(63, 185, 80, 0.25);
+      background: var(--green-soft);
+    }
+
+    .pill.red {
+      color: #ffb3ae;
+      border-color: rgba(248, 81, 73, 0.25);
+      background: var(--red-soft);
+    }
+
+    .proof-grid,
+    .compare-grid,
+    .steps-grid {
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+
+    .proof-card h3,
+    .step-card h3,
+    .compare-card h3 {
+      margin-bottom: 12px;
+      font-size: 1.08rem;
+    }
+
+    .proof-card ul,
+    .step-card ol,
+    .compare-card ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .proof-card .mini-box,
+    .compare-card .mini-box {
+      margin-top: 14px;
+    }
+
+    .log-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .log-item {
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(48, 54, 61, 0.85);
+      background: rgba(13, 17, 23, 0.64);
+    }
+
+    .log-item strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .log-item small {
+      display: block;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(13, 17, 23, 0.55);
+    }
+
+    .compare-table th,
+    .compare-table td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(48, 54, 61, 0.75);
+      vertical-align: top;
+    }
+
+    .compare-table th {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      background: rgba(22, 27, 34, 0.88);
+    }
+
+    .check {
+      color: #a8f0b0;
+      font-weight: 700;
+    }
+
+    .cross {
+      color: #ffb3ae;
+      font-weight: 700;
+    }
+
+    .footer-note {
+      text-align: center;
+      color: var(--muted);
+      margin-top: 26px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 980px) {
+      .database-grid,
+      .architecture-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page-shell {
+        padding: 24px 16px 40px;
+      }
+
+      .hero,
+      .panel,
+      .proof-card,
+      .step-card,
+      .stat-card,
+      .compare-card {
+        padding: 18px;
+      }
+
+      .hero h1 {
+        font-size: 2.4rem;
+      }
+
+      .data-table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <a class="back-link" href="./index.html"><i class="fa-solid fa-arrow-left"></i> Back to the main security demo console</a>
+
+    <section class="hero">
+      <div class="eyebrow"><i class="fa-solid fa-database"></i> Runtime data boundary proof</div>
+      <h1>Does Copilot See My Database Data?</h1>
+      <div class="answer"><i class="fa-solid fa-circle-check"></i> NO. Here's the proof.</div>
+      <p>
+        GitHub Copilot can absolutely help write the application code that queries your database. But when the app is actually running,
+        Copilot is not in the request path. Your browser calls your server. Your server reads your local SQLite file. The runtime data stays
+        on your infrastructure unless you deliberately send it somewhere else.
+      </p>
+      <div class="button-row">
+        <button class="btn btn-primary" id="queryRedactedButton"><i class="fa-solid fa-shield"></i> Query Database (Redacted)</button>
+        <button class="btn btn-danger" id="queryRawButton"><i class="fa-solid fa-triangle-exclamation"></i> Query Database (Raw — Risk Demo)</button>
+        <button class="btn btn-neutral" id="refreshProofButton"><i class="fa-solid fa-rotate"></i> Refresh Proof Panels</button>
+      </div>
+
+      <div class="diagram-grid">
+        <div class="diagram-box">
+          <h3><i class="fa-solid fa-code"></i> Design-time only</h3>
+          <p><strong>[Your Code] ↔ [Copilot]</strong></p>
+          <ul>
+            <li>Copilot sees source code patterns, function signatures, and types.</li>
+            <li>It can explain what <code>getCitizenById()</code> does because that is design-time code.</li>
+            <li>It does not execute your running app and it does not read your live database results.</li>
+          </ul>
+        </div>
+        <div class="diagram-arrow"><i class="fa-solid fa-down-long"></i></div>
+        <div class="diagram-box">
+          <h3><i class="fa-solid fa-server"></i> Runtime only</h3>
+          <p><strong>[Your App] ↔ [Your Database]</strong></p>
+          <ul>
+            <li>Your Express server executes on localhost.</li>
+            <li>Your app queries <code>data\citizens.db</code> with <code>better-sqlite3</code>.</li>
+            <li>Copilot is <strong>not</strong> in this runtime data flow.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>1. Live Database Panel</h2>
+        <p>Use this panel during the demo to show the database file, schema, redacted query results, and the intentional raw PII risk endpoint.</p>
+      </div>
+      <div class="panel">
+        <div class="stat-grid" id="databaseStats">
+          <article class="stat-card">
+            <span>Database file</span>
+            <strong id="dbPath">Loading…</strong>
+            <p id="dbExists">Checking local SQLite file.</p>
+          </article>
+          <article class="stat-card safe">
+            <span>Seeded citizens</span>
+            <strong id="citizenCount">—</strong>
+            <p>All records are fake demo-only citizens with obviously fake 000-XX-XXXX SSNs.</p>
+          </article>
+          <article class="stat-card">
+            <span>Canary test citizen</span>
+            <strong id="canaryName">—</strong>
+            <p>Ask Copilot if this citizen exists. It will not know unless a human pastes the answer into chat.</p>
+          </article>
+          <article class="stat-card safe">
+            <span>Copilot contacts during query</span>
+            <strong id="copilotCalls">0</strong>
+            <p>No requests to <code>copilot-proxy.githubusercontent.com</code> during local DB access.</p>
+          </article>
+        </div>
+
+        <div class="database-grid">
+          <div>
+            <div class="schema-box">
+              <div class="banner"><i class="fa-solid fa-hard-drive"></i> Local runtime asset: <strong id="dbAbsolutePath">Loading absolute path…</strong></div>
+              <h3 style="margin-bottom: 10px;">SQLite schema</h3>
+              <pre id="schemaOutput">Loading schema…</pre>
+            </div>
+
+            <div class="control-grid">
+              <div class="mini-box">
+                <h3 style="margin-bottom: 8px;">Safe query</h3>
+                <p>The default endpoint returns masked SSN, email, and phone values.</p>
+                <button class="btn btn-primary" id="queryRedactedButtonSecondary"><i class="fa-solid fa-eye-low-vision"></i> GET /api/pii-demo/citizens</button>
+              </div>
+              <div class="mini-box">
+                <h3 style="margin-bottom: 8px;">Risk demo</h3>
+                <p>This intentionally shows what happens when redaction is skipped.</p>
+                <button class="btn btn-danger" id="queryRawButtonSecondary"><i class="fa-solid fa-skull-crossbones"></i> GET /api/pii-demo/citizens/raw</button>
+              </div>
+            </div>
+
+            <div class="mini-box">
+              <h3 style="margin-bottom: 8px;">Search citizens by name</h3>
+              <p>Type a first name, last name, or the canary name. Search results are always redacted.</p>
+              <div class="search-row">
+                <input id="searchInput" type="text" placeholder="Try: Avery, Demo, Canary Testbird" />
+                <button class="btn btn-neutral" id="searchButton"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+                <button class="btn btn-neutral" id="canaryButton"><i class="fa-solid fa-feather-pointed"></i> Run Canary Test</button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="result-box" style="margin-bottom: 18px;">
+              <h3 style="margin-bottom: 10px;">Query results</h3>
+              <div id="resultBanner" class="banner"><i class="fa-solid fa-circle-info"></i> Run a query to show runtime data coming from your local SQLite database.</div>
+              <div id="resultOutput"><p style="margin: 0; color: var(--muted);">Waiting for your first query…</p></div>
+            </div>
+            <div class="meta-box">
+              <h3 style="margin-bottom: 10px;">Metadata / proof</h3>
+              <pre id="metaOutput">{
+  "source": "local SQLite database (data/citizens.db)",
+  "copilot_involved": false,
+  "data_sent_to_cloud": false
+}</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>2. Proof — Copilot Was NOT Contacted</h2>
+        <p>These panels combine live evidence from the app with presenter instructions you can follow live in VS Code.</p>
+      </div>
+      <div class="proof-grid">
+        <article class="proof-card">
+          <h3>Proof 1: Network Evidence</h3>
+          <ul>
+            <li>Open <strong>VS Code Developer Tools → Network</strong>.</li>
+            <li>Run a query from this page.</li>
+            <li>Observe that the browser only talks to <code>localhost:3000</code>.</li>
+            <li>There are no requests to <code>copilot-proxy.githubusercontent.com</code> during the API call.</li>
+          </ul>
+          <div class="mini-box">
+            <strong>Live network summary</strong>
+            <pre id="networkSummary">Loading network proof…</pre>
+          </div>
+        </article>
+
+        <article class="proof-card">
+          <h3>Proof 2: VS Code Output Logs</h3>
+          <ul>
+            <li>Open the <strong>Output</strong> panel in VS Code and select <strong>GitHub Copilot</strong>.</li>
+            <li>Run database queries from this page.</li>
+            <li>There should be zero new Copilot log entries created by the database query itself.</li>
+            <li>Copilot is idle while the app executes locally.</li>
+          </ul>
+          <div class="mini-box">
+            <strong>What you should say</strong>
+            <p style="margin: 8px 0 0;">“If Copilot were involved in runtime data access, we'd see Copilot activity here. We don't.”</p>
+          </div>
+        </article>
+
+        <article class="proof-card">
+          <h3>Proof 3: Ask Copilot Directly</h3>
+          <ul>
+            <li>Ask Copilot Chat: <code>What SSNs are stored in the citizens database?</code></li>
+            <li>Copilot cannot know. It has no access to the SQLite file or query results.</li>
+            <li>Then ask: <code>What does getCitizenById do?</code></li>
+            <li>Copilot can answer that because it can see the source code pattern.</li>
+          </ul>
+          <div class="mini-box">
+            <strong>Copilot context preview</strong>
+            <pre id="copilotContextSummary">Loading Copilot context proof…</pre>
+          </div>
+        </article>
+
+        <article class="proof-card">
+          <h3>Proof 4: The Canary Test</h3>
+          <ul>
+            <li>The database includes a canary citizen named <strong>Canary Testbird</strong>.</li>
+            <li>Ask Copilot: <code>Is there a citizen named Canary Testbird in the database?</code></li>
+            <li>Copilot will not know, because it cannot inspect <code>data\citizens.db</code> at runtime.</li>
+            <li>Use the “Run Canary Test” button above to show the app can find the citizen locally while Copilot remains blind to the data.</li>
+          </ul>
+          <div class="mini-box">
+            <strong>Content exclusion proof</strong>
+            <pre id="contentExclusionOutput">Loading .copilotignore proof…</pre>
+          </div>
+        </article>
+      </div>
+
+      <div class="panel" style="margin-top: 18px;">
+        <h3 style="margin-bottom: 12px;">Local query log</h3>
+        <p style="margin-top: 0;">Every query below was executed against your local SQLite file. The log explicitly records that Copilot was not contacted.</p>
+        <div class="log-list" id="queryLogOutput">
+          <div class="log-item">
+            <strong>Waiting for queries…</strong>
+            <small>Query the database above to populate this log.</small>
+            <code>No entries yet.</code>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>3. What Copilot DOES See vs What It DOESN'T</h2>
+        <p>This is the key distinction to make with customers: design-time code visibility is not the same thing as runtime data access.</p>
+      </div>
+      <div class="panel">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>Copilot CAN See (Design-Time)</th>
+              <th>Copilot CANNOT See (Runtime)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="check">✅</span> Function names: <code>getCitizenById()</code></td>
+              <td><span class="cross">❌</span> Actual citizen records</td>
+            </tr>
+            <tr>
+              <td><span class="check">✅</span> SQL patterns: <code>SELECT * FROM citizens</code></td>
+              <td><span class="cross">❌</span> Query results (SSNs, names)</td>
+            </tr>
+            <tr>
+              <td><span class="check">✅</span> Type definitions: <code>interface Citizen</code></td>
+              <td><span class="cross">❌</span> Database file contents</td>
+            </tr>
+            <tr>
+              <td><span class="check">✅</span> Variable names: <code>citizen.ssn</code></td>
+              <td><span class="cross">❌</span> Values like <code>000-12-3456</code></td>
+            </tr>
+            <tr>
+              <td><span class="check">✅</span> Code in <code>.ts</code> / <code>.js</code> files</td>
+              <td><span class="cross">❌</span> Data in <code>.db</code> / <code>.sqlite</code> files</td>
+            </tr>
+            <tr>
+              <td><span class="check">✅</span> Test fixtures if you place them in source code</td>
+              <td><span class="cross">❌</span> Production or runtime data stored locally</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>4. The Safe Architecture</h2>
+        <p>Recommended pattern: let the application read raw PII locally, redact it on the server, and only allow safe outputs beyond that boundary.</p>
+      </div>
+      <div class="architecture-grid">
+        <div class="panel">
+          <ol style="margin: 0; padding-left: 20px; line-height: 1.9; color: var(--muted);">
+            <li>Application code queries the database and receives raw PII on your infrastructure.</li>
+            <li>A redaction layer masks SSN, email, and phone values before returning data.</li>
+            <li>If a Copilot agent or MCP tool is involved later, it should only ever receive the redacted output.</li>
+            <li>Content exclusion rules block the local database file from design-time context.</li>
+          </ol>
+        </div>
+        <div class="code-block">
+<pre>// Copilot helped write THIS CODE — but never sees the DATA it returns
+app.get('/citizens', (req, res) => {
+  const citizens = getAllCitizens();  // Raw PII from database
+  const safe = citizens.map(c => ({
+    ...c,
+    ssn: maskSSN(c.ssn),
+    email: maskEmail(c.email),
+    phone: maskPhone(c.phone)
+  }));
+  res.json(safe);  // Only redacted data leaves the server
+});</pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>5. Step-by-Step Demo Script</h2>
+        <p>Use this script to walk the customer from concern → proof → architectural recommendation.</p>
+      </div>
+      <div class="steps-grid">
+        <article class="step-card">
+          <h3>Presenter flow</h3>
+          <ol>
+            <li>Show the database: <code>sqlite3 data/citizens.db "SELECT * FROM citizens LIMIT 3"</code></li>
+            <li>Show the code: open <code>src/pii-demo/pii-routes.ts</code>. Copilot helped write this code.</li>
+            <li>Query the API: click <strong>Query Database (Redacted)</strong>.</li>
+            <li>Check the Network tab: no Copilot requests during the query.</li>
+            <li>Check the GitHub Copilot Output panel: no activity during the query.</li>
+            <li>Ask Copilot: “What SSNs are in the database?” It doesn't know.</li>
+            <li>Ask Copilot: “What does the getCitizenById function do?” It can answer code questions.</li>
+            <li>Run the Canary Test: ask about <strong>Canary Testbird</strong>. Copilot is clueless.</li>
+            <li>Show content exclusion: <code>.copilotignore</code> blocks <code>data/**</code> and <code>*.db</code>.</li>
+          </ol>
+        </article>
+
+        <article class="step-card">
+          <h3>Key talking points</h3>
+          <ul>
+            <li>Copilot is a design-time assistant, not a runtime data processor.</li>
+            <li>Database queries happen inside your app, not inside Copilot.</li>
+            <li>The risk is not “Copilot reading the DB.” The risk is developers returning raw PII if they skip redaction.</li>
+            <li>The safe architecture is local execution + redaction + content exclusion + output controls.</li>
+          </ul>
+        </article>
+
+        <article class="step-card">
+          <h3>Customer takeaway</h3>
+          <ul>
+            <li>Copilot can improve developer velocity without gaining automatic access to runtime data.</li>
+            <li>Runtime data isolation is enforced by architecture, not by hoping the model behaves.</li>
+            <li>Masking, audit logging, and content exclusion provide deterministic guardrails.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <p class="footer-note">
+      Built to prove a simple point: <strong>Copilot can help write the code, but it does not see your live database data unless you explicitly send that data into Copilot yourself.</strong>
+    </p>
+  </div>
+
+  <script>
+    const resultOutput = document.getElementById('resultOutput');
+    const resultBanner = document.getElementById('resultBanner');
+    const metaOutput = document.getElementById('metaOutput');
+    const schemaOutput = document.getElementById('schemaOutput');
+    const queryLogOutput = document.getElementById('queryLogOutput');
+    const networkSummary = document.getElementById('networkSummary');
+    const copilotContextSummary = document.getElementById('copilotContextSummary');
+    const contentExclusionOutput = document.getElementById('contentExclusionOutput');
+    const dbPath = document.getElementById('dbPath');
+    const dbExists = document.getElementById('dbExists');
+    const dbAbsolutePath = document.getElementById('dbAbsolutePath');
+    const citizenCount = document.getElementById('citizenCount');
+    const canaryName = document.getElementById('canaryName');
+    const copilotCalls = document.getElementById('copilotCalls');
+    const searchInput = document.getElementById('searchInput');
+
+    const actionButtons = [
+      document.getElementById('queryRedactedButton'),
+      document.getElementById('queryRawButton'),
+      document.getElementById('refreshProofButton'),
+      document.getElementById('queryRedactedButtonSecondary'),
+      document.getElementById('queryRawButtonSecondary'),
+      document.getElementById('searchButton'),
+      document.getElementById('canaryButton'),
+    ];
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    async function fetchJson(url) {
+      const response = await fetch(url);
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error || `Request failed: ${response.status}`);
+      }
+
+      return payload;
+    }
+
+    function setButtonsDisabled(disabled) {
+      actionButtons.forEach((button) => {
+        if (button) {
+          button.disabled = disabled;
+        }
+      });
+    }
+
+    function setBanner(message, risk = false) {
+      resultBanner.className = risk ? 'banner risk' : 'banner';
+      resultBanner.innerHTML = `${risk ? '<i class="fa-solid fa-triangle-exclamation"></i>' : '<i class="fa-solid fa-circle-check"></i>'} ${message}`;
+    }
+
+    function renderRows(rows) {
+      if (!rows.length) {
+        return '<p style="margin: 0; color: var(--muted);">No records returned.</p>';
+      }
+
+      const columns = Object.keys(rows[0]);
+      const head = columns.map((column) => `<th>${escapeHtml(column)}</th>`).join('');
+      const body = rows
+        .map((row) => {
+          const cells = columns
+            .map((column) => `<td>${escapeHtml(row[column])}</td>`)
+            .join('');
+          return `<tr>${cells}</tr>`;
+        })
+        .join('');
+
+      return `<table class="data-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+    }
+
+    function renderMeta(meta) {
+      metaOutput.textContent = JSON.stringify(meta, null, 2);
+    }
+
+    function renderQueryLog(entries) {
+      if (!entries.length) {
+        queryLogOutput.innerHTML = `
+          <div class="log-item">
+            <strong>Waiting for queries…</strong>
+            <small>Query the database above to populate this log.</small>
+            <code>No entries yet.</code>
+          </div>
+        `;
+        return;
+      }
+
+      queryLogOutput.innerHTML = entries
+        .slice(-8)
+        .reverse()
+        .map((entry) => `
+          <div class="log-item">
+            <strong>${escapeHtml(entry.operation)}</strong>
+            <small>${escapeHtml(entry.timestamp)} · rows=${escapeHtml(entry.rows_returned)} · Copilot contacted=${escapeHtml(entry.copilot_contacted)}</small>
+            <code>${escapeHtml(entry.sql.trim())}</code>
+            <div style="margin-top: 8px; color: var(--muted);">${escapeHtml(entry.note)}</div>
+          </div>
+        `)
+        .join('');
+    }
+
+    function renderSchema(schema) {
+      const formatted = schema
+        .map((column) => `${column.name.padEnd(14, ' ')} ${column.type.padEnd(8, ' ')} required=${column.required} primary_key=${column.primary_key}`)
+        .join('\n');
+      schemaOutput.textContent = formatted;
+    }
+
+    async function loadProofPanels() {
+      const [contextPayload, networkPayload] = await Promise.all([
+        fetchJson('/api/pii-demo/proof/copilot-context'),
+        fetchJson('/api/pii-demo/proof/network-log'),
+      ]);
+
+      const database = contextPayload.data.database;
+      dbPath.textContent = database.path;
+      dbExists.textContent = database.exists ? 'Exists locally on disk.' : 'Database file missing.';
+      dbAbsolutePath.textContent = database.absolute_path;
+      citizenCount.textContent = String(database.citizen_count);
+      canaryName.textContent = database.canary_name;
+      copilotCalls.textContent = String(networkPayload.data.copilot_proxy_requests_observed);
+      renderSchema(database.schema);
+      renderQueryLog(networkPayload.data.query_log || []);
+
+      networkSummary.textContent = JSON.stringify(
+        {
+          localhost_only: networkPayload.data.localhost_only,
+          copilot_proxy_requests_observed: networkPayload.data.copilot_proxy_requests_observed,
+          outbound_requests_observed: networkPayload.data.outbound_requests_observed,
+        },
+        null,
+        2,
+      );
+
+      copilotContextSummary.textContent = JSON.stringify(
+        {
+          copilot_can_see: contextPayload.data.copilot_can_see,
+          copilot_cannot_see: contextPayload.data.copilot_cannot_see,
+          visible_source_examples: contextPayload.data.visible_source_examples,
+        },
+        null,
+        2,
+      );
+
+      contentExclusionOutput.textContent = JSON.stringify(contextPayload.data.content_exclusion, null, 2);
+    }
+
+    async function runCitizensQuery(mode) {
+      setButtonsDisabled(true);
+      resultOutput.innerHTML = '<p style="margin: 0; color: var(--muted);">Querying local SQLite database…</p>';
+      setBanner(mode === 'raw' ? 'Loading raw PII risk demo from localhost only…' : 'Loading redacted data from localhost only…', mode === 'raw');
+
+      try {
+        const payload = await fetchJson(mode === 'raw' ? '/api/pii-demo/citizens/raw' : '/api/pii-demo/citizens');
+        const rows = Array.isArray(payload.data) ? payload.data : payload.data.results || [];
+        resultOutput.innerHTML = renderRows(rows);
+        renderMeta(payload.meta);
+        setBanner(
+          mode === 'raw'
+            ? 'RISK DEMO: Raw PII is visible because the server intentionally skipped redaction. Copilot still was not contacted.'
+            : 'SAFE: Data came from the local SQLite file and was redacted on the server before being returned.',
+          mode === 'raw',
+        );
+        await loadProofPanels();
+      } catch (error) {
+        resultOutput.innerHTML = `<p style="margin:0;color:#ffb3ae;">${escapeHtml(error.message)}</p>`;
+        setBanner('The request failed. See the error message below.', true);
+      } finally {
+        setButtonsDisabled(false);
+      }
+    }
+
+    async function runSearch(query) {
+      const searchTerm = query.trim();
+
+      if (!searchTerm) {
+        setBanner('Enter a search term first.', true);
+        return;
+      }
+
+      setButtonsDisabled(true);
+      resultOutput.innerHTML = '<p style="margin: 0; color: var(--muted);">Searching local SQLite data…</p>';
+      setBanner(`Searching for “${escapeHtml(searchTerm)}” in the local database only…`);
+
+      try {
+        const payload = await fetchJson(`/api/pii-demo/search?q=${encodeURIComponent(searchTerm)}`);
+        const rows = Array.isArray(payload.data) ? payload.data : [];
+        resultOutput.innerHTML = renderRows(rows);
+        renderMeta(payload.meta);
+        setBanner(`Search complete. Results were redacted and returned from localhost only.`);
+        await loadProofPanels();
+      } catch (error) {
+        resultOutput.innerHTML = `<p style="margin:0;color:#ffb3ae;">${escapeHtml(error.message)}</p>`;
+        setBanner('Search failed. See the error message below.', true);
+      } finally {
+        setButtonsDisabled(false);
+      }
+    }
+
+    document.getElementById('queryRedactedButton').addEventListener('click', () => runCitizensQuery('redacted'));
+    document.getElementById('queryRawButton').addEventListener('click', () => runCitizensQuery('raw'));
+    document.getElementById('queryRedactedButtonSecondary').addEventListener('click', () => runCitizensQuery('redacted'));
+    document.getElementById('queryRawButtonSecondary').addEventListener('click', () => runCitizensQuery('raw'));
+    document.getElementById('refreshProofButton').addEventListener('click', async () => {
+      setButtonsDisabled(true);
+      try {
+        await loadProofPanels();
+        setBanner('Proof panels refreshed. No Copilot activity was needed to load local proof data.');
+      } catch (error) {
+        setBanner(`Failed to refresh proof panels: ${escapeHtml(error.message)}`, true);
+      } finally {
+        setButtonsDisabled(false);
+      }
+    });
+    document.getElementById('searchButton').addEventListener('click', () => runSearch(searchInput.value));
+    document.getElementById('canaryButton').addEventListener('click', () => {
+      searchInput.value = 'Canary Testbird';
+      runSearch(searchInput.value);
+    });
+    searchInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        runSearch(searchInput.value);
+      }
+    });
+
+    loadProofPanels().catch((error) => {
+      setBanner(`Failed to load proof data: ${escapeHtml(error.message)}`, true);
+      metaOutput.textContent = JSON.stringify({ error: error.message }, null, 2);
+    });
+  </script>
+</body>
+</html>

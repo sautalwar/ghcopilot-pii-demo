@@ -14,7 +14,7 @@
 src/demo-incidents/secret-leak.ts
 src/demo-incidents/pii-data-leak.ts
 
-# Database dumps and data exports
+# Database dumps, local SQLite PII demo files, and data exports
 *.sql
 *.csv
 *.dump
