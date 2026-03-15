@@ -25,6 +25,8 @@
       --red-soft: rgba(248, 81, 73, 0.14);
       --yellow: #d29922;
       --yellow-soft: rgba(210, 153, 34, 0.14);
+      --orange: #fb8500;
+      --orange-soft: rgba(251, 133, 0, 0.14);
       --purple: #a371f7;
       --teal: #39c5cf;
       --shadow: 0 20px 48px rgba(1, 4, 9, 0.35);
@@ -1018,6 +1020,259 @@
       gap: 18px;
     }
 
+    .section-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      color: var(--blue);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .accent-card {
+      border-left: 4px solid var(--blue);
+    }
+
+    .accent-card.github-accent {
+      border-left-color: var(--blue);
+    }
+
+    .accent-card.gitlab-accent {
+      border-left-color: var(--orange);
+    }
+
+    .accent-card.green-accent {
+      border-left-color: var(--green);
+    }
+
+    .accent-card.gitlab-accent .security-icon,
+    .accent-card.gitlab-accent .icon-shell {
+      background: var(--orange-soft);
+      border-color: rgba(251, 133, 0, 0.22);
+      color: #ffb86b;
+    }
+
+    .accent-card.green-accent .security-icon,
+    .accent-card.green-accent .icon-shell {
+      background: var(--green-soft);
+      border-color: rgba(63, 185, 80, 0.22);
+      color: #7ee787;
+    }
+
+    .competitor-emoji {
+      font-size: 1.25rem;
+    }
+
+    .insight-box {
+      margin-top: 18px;
+      padding: 18px 20px;
+      border-radius: 18px;
+      border-left: 4px solid var(--purple);
+      background: linear-gradient(180deg, rgba(22, 27, 34, 0.98), rgba(15, 23, 34, 0.94));
+      border-top: 1px solid rgba(163, 113, 247, 0.2);
+      border-right: 1px solid rgba(163, 113, 247, 0.2);
+      border-bottom: 1px solid rgba(163, 113, 247, 0.2);
+      color: #d8e6ff;
+      line-height: 1.7;
+    }
+
+    .venn-shell {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      align-items: center;
+      margin-top: 18px;
+    }
+
+    .venn-circle,
+    .venn-overlap {
+      min-height: 100%;
+    }
+
+    .venn-circle {
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      border-radius: 999px;
+      min-height: 220px;
+      text-align: center;
+      border: 1px solid rgba(48, 54, 61, 0.92);
+      background: rgba(13, 17, 23, 0.62);
+    }
+
+    .venn-circle strong {
+      display: block;
+      font-size: 1.05rem;
+      margin-bottom: 8px;
+    }
+
+    .venn-circle span {
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 220px;
+    }
+
+    .venn-circle.left {
+      background: radial-gradient(circle at center, rgba(88, 166, 255, 0.2), rgba(13, 17, 23, 0.72));
+      border-color: rgba(88, 166, 255, 0.2);
+    }
+
+    .venn-circle.right {
+      background: radial-gradient(circle at center, rgba(251, 133, 0, 0.16), rgba(13, 17, 23, 0.72));
+      border-color: rgba(251, 133, 0, 0.2);
+    }
+
+    .venn-overlap {
+      position: relative;
+      z-index: 1;
+      padding: 22px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(22, 27, 34, 0.98), rgba(15, 23, 34, 0.98));
+      border: 1px solid rgba(63, 185, 80, 0.22);
+      box-shadow: var(--shadow);
+      border-left: 4px solid var(--green);
+    }
+
+    .overlap-list {
+      list-style: none;
+      margin: 16px 0 0;
+      padding: 0;
+      display: grid;
+      gap: 12px;
+    }
+
+    .overlap-list li {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(13, 17, 23, 0.52);
+      border: 1px solid rgba(48, 54, 61, 0.92);
+      color: #dbe6f3;
+      line-height: 1.6;
+    }
+
+    .vendor-grid,
+    .workflow-demo-grid,
+    .code-pair {
+      display: grid;
+      gap: 18px;
+    }
+
+    .vendor-grid,
+    .workflow-demo-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .code-pair {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .code-inline {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(88, 166, 255, 0.08);
+      border: 1px solid rgba(88, 166, 255, 0.18);
+      color: #cfe5ff;
+      font-family: var(--font-mono);
+      font-size: 0.84rem;
+    }
+
+    .workflow-demo-card .button-row {
+      grid-template-columns: 1fr;
+    }
+
+    .demo-input-group {
+      display: grid;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .demo-input-group label {
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .demo-input-control {
+      width: 100%;
+      min-height: 44px;
+      padding: 0 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(48, 54, 61, 0.92);
+      background: rgba(13, 17, 23, 0.9);
+      color: var(--text);
+    }
+
+    .workflow-demo-status {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(48, 54, 61, 0.92);
+      background: rgba(13, 17, 23, 0.68);
+    }
+
+    .workflow-demo-status strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 1rem;
+    }
+
+    .workflow-demo-status p {
+      margin: 0;
+    }
+
+    .workflow-demo-highlights {
+      margin: 12px 0 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+      color: #c8d1d9;
+      line-height: 1.6;
+    }
+
+    .workflow-demo-link {
+      margin-top: 14px;
+    }
+
+    .marketplace-stat {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(88, 166, 255, 0.08);
+      border: 1px solid rgba(88, 166, 255, 0.18);
+    }
+
+    .marketplace-stat strong {
+      font-size: 1.35rem;
+      letter-spacing: -0.03em;
+    }
+
+    .summary-banner {
+      border-left: 4px solid var(--blue);
+      background: linear-gradient(135deg, rgba(31, 111, 235, 0.18), rgba(22, 27, 34, 0.96));
+    }
+
+    .summary-list {
+      margin: 16px 0 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 10px;
+      color: #dbe6f3;
+      line-height: 1.6;
+    }
+
     .security-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -1155,7 +1410,11 @@
       .cards-grid,
       .detail-grid,
       .mini-stats,
-      .button-row {
+      .button-row,
+      .vendor-grid,
+      .workflow-demo-grid,
+      .venn-shell,
+      .code-pair {
         grid-template-columns: 1fr;
       }
     }
@@ -1662,6 +1921,153 @@
       }
     };
 
+    const SAST_DAST_SECTIONS = [
+      {
+        icon: '🔬',
+        accent: 'github-accent',
+        title: 'SAST (Static Application Security Testing)',
+        description: 'Analyzes SOURCE CODE without running the application',
+        finds: 'SQL injection patterns, XSS sinks, insecure crypto, hardcoded secrets',
+        tools: 'CodeQL (GitHub), Semgrep, SonarQube, GitLab SAST',
+        when: 'Every push/PR, before deployment'
+      },
+      {
+        icon: '🌐',
+        accent: 'gitlab-accent',
+        title: 'DAST (Dynamic Application Security Testing)',
+        description: 'Tests a RUNNING APPLICATION from outside (like a hacker)',
+        finds: 'XSS (reflected/stored), SQL injection via HTTP, authentication bypass, insecure headers, CSRF',
+        tools: 'OWASP ZAP, Burp Suite, StackHawk, GitLab DAST',
+        when: 'After deployment to staging/testing environment'
+      }
+    ];
+
+    const GITLAB_OVERLAP_ITEMS = [
+      '✅ Secret Scanning (GitHub: 200+ patterns, GitLab: built-in)',
+      '✅ SAST/Code Scanning (GitHub: CodeQL, GitLab: native SAST)',
+      '✅ Dependency Scanning (GitHub: Dependabot, GitLab: built-in)',
+      '✅ Self-Hosted Option (GitHub: GHES, GitLab: self-managed)',
+      '✅ SAML SSO & SCIM',
+      '✅ Audit Logs'
+    ];
+
+    const GITLAB_NATIVE_FEATURES = [
+      {
+        id: 'container-scan',
+        icon: '🐳',
+        title: 'Container Scanning',
+        gitlab: 'Built-in container scanner',
+        github: '`aquasecurity/trivy-action` + `anchore/scan-action` (Grype)',
+        advantage: 'Run 2 scanners for 40% better coverage. Not locked into one vendor.',
+        demo: 'container-scan.yml workflow — runs Trivy + Grype + generates SBOM'
+      },
+      {
+        id: 'license-compliance',
+        icon: '📜',
+        title: 'License Compliance',
+        gitlab: 'Built-in license compliance',
+        github: '`license-checker` + FOSSA or ScanCode',
+        advantage: 'Define YOUR license policy in YAML. Allow MIT/Apache, flag LGPL, block GPL.',
+        demo: 'license-compliance.yml workflow — scans all deps, reports violations'
+      },
+      {
+        id: 'dast-scan',
+        icon: '🌐',
+        title: 'DAST (Dynamic Testing)',
+        gitlab: 'Built-in DAST (proprietary)',
+        github: 'OWASP ZAP via `zaproxy/action-baseline`',
+        advantage: 'OWASP ZAP is the #1 DAST tool worldwide. Open-source, free, more scan types.',
+        demo: 'dast-scan.yml workflow — baseline, full, and API scanning'
+      }
+    ];
+
+    const COMPETITOR_WORKFLOW_DEMOS = [
+      {
+        id: 'container-scan',
+        icon: '🐳',
+        title: 'Container Scan Demo',
+        description: 'Run a GitHub Actions workflow that scans a container image with a best-of-breed toolchain.',
+        inputLabel: 'Docker image name',
+        inputName: 'image',
+        inputType: 'text',
+        inputDefault: 'node:18-alpine',
+        workflow: 'container-scan.yml',
+        shows: 'Trivy + Grype results, SBOM artifact'
+      },
+      {
+        id: 'license-compliance',
+        icon: '📜',
+        title: 'License Compliance Demo',
+        description: 'Evaluate dependency licenses against a warn or fail policy without leaving the presenter view.',
+        inputLabel: 'Policy mode',
+        inputName: 'policyMode',
+        inputType: 'select',
+        options: ['warn', 'fail'],
+        inputDefault: 'warn',
+        workflow: 'license-compliance.yml',
+        shows: 'Approved vs flagged packages'
+      },
+      {
+        id: 'dast-scan',
+        icon: '🌐',
+        title: 'DAST Demo',
+        description: 'Kick off OWASP ZAP scanning against a live URL or staging endpoint from the competitor tab.',
+        inputLabel: 'Target URL',
+        inputName: 'targetUrl',
+        inputType: 'text',
+        inputDefault: 'https://juice-shop.herokuapp.com',
+        workflow: 'dast-scan.yml',
+        shows: 'ZAP findings by severity'
+      }
+    ];
+
+    const SECURITY_MONITOR_AGENT = `# Security Monitor Agent
+You are a security monitoring agent. On every push:
+1. Run container scan on any Dockerfile changes
+2. Check license compliance on dependency changes  
+3. Trigger DAST scan on deployment
+4. Generate weekly security report`;
+
+    const NIGHTLY_SECURITY_SWEEP = `name: Nightly Security Sweep
+on:
+  schedule:
+    - cron: '0 2 * * *'  # 2 AM daily
+  workflow_dispatch:
+jobs:
+  security-sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Container Scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: 'fs'
+          severity: 'CRITICAL,HIGH'
+      - name: License Check
+        run: npx license-checker --failOn 'GPL-3.0'
+      - name: DAST Baseline
+        uses: zaproxy/action-baseline@v0.13.0
+        with:
+          target: 'https://staging.yourapp.com'`;
+
+    const CUSTOM_SECURITY_TASKS = `# Add ANY security tool to your pipeline:
+- name: Custom PII Scanner
+  run: grep -rn '[0-9]{3}-[0-9]{2}-[0-9]{4}' src/ && exit 1
+
+- name: SBOM Generation
+  uses: anchore/sbom-action@v0
+
+- name: Infrastructure Security (Checkov)
+  uses: bridgecrewio/checkov-action@v12
+
+- name: API Security (42Crunch)
+  uses: 42Crunch/api-security-audit-action@v3
+
+- name: Container Hardening (Dockle)
+  uses: erzz/dockle-action@v1`;
+
+    const GITLAB_DEEP_DIVE_INSIGHT = "SAST reads your code. DAST attacks your app. You need BOTH for comprehensive security. GitHub has native SAST (CodeQL). For DAST, GitHub uses the industry-standard OWASP ZAP via GitHub Actions — which is actually MORE flexible than GitLab's proprietary scanner.";
+
     const RETENTION_ROWS = [
       {
         tier: 'Individual',
@@ -1703,6 +2109,8 @@
     const demoState = {};
     const pollingIntervals = {};
     const logCache = {};
+    const workflowDemoState = {};
+    const workflowDemoPollingIntervals = {};
     let competitorView = 'gitlab';
 
     const API_BASE = window.location.origin + '/api';
@@ -1758,6 +2166,26 @@
           errors: []
         };
         logCache[demo.id] = { raw: '', lastKey: '', link: '' };
+      });
+    }
+
+    function initializeWorkflowDemoState() {
+      COMPETITOR_WORKFLOW_DEMOS.forEach((demo) => {
+        workflowDemoState[demo.id] = {
+          id: demo.id,
+          status: 'ready',
+          progress: 0,
+          workflow: { status: 'not-started', conclusion: null, runId: null, url: null },
+          summary: 'Ready to trigger',
+          details: `Shows: ${demo.shows}`,
+          lastInput: `${demo.inputLabel}: ${demo.inputDefault}`,
+          highlights: [
+            `Workflow: ${demo.workflow}`,
+            `Default input: ${demo.inputLabel}: ${demo.inputDefault}`,
+            `Shows: ${demo.shows}`
+          ],
+          errors: []
+        };
       });
     }
 
@@ -1968,6 +2396,461 @@
       `;
     }
 
+    function renderCodeInline(value) {
+      return `<span class="code-inline">${escapeHtml(value)}</span>`;
+    }
+
+    function renderWorkflowDemoInputControl(demo) {
+      if (demo.inputType === 'select') {
+        return `
+          <select class="demo-input-control" id="workflow-input-${demo.id}">
+            ${demo.options.map((option) => `<option value="${escapeHtml(option)}" ${option === demo.inputDefault ? 'selected' : ''}>${escapeHtml(option)}</option>`).join('')}
+          </select>
+        `;
+      }
+
+      return `<input class="demo-input-control" id="workflow-input-${demo.id}" type="text" value="${escapeHtml(demo.inputDefault)}" />`;
+    }
+
+    function renderGitLabDeepDive() {
+      return `
+        <article class="callout full">
+          <div class="section-kicker"><i class="fa-solid fa-flask"></i> Section 1</div>
+          <h4>Understanding SAST vs DAST</h4>
+          <p>Use this explainer to separate code scanning from running-application testing. Customers often lump these together, but the buying conversation gets much sharper when you show where each approach fits.</p>
+          <div class="detail-grid" style="margin-top:18px;">
+            ${SAST_DAST_SECTIONS.map((section) => `
+              <article class="value-card accent-card ${section.accent}">
+                <div class="security-card-header">
+                  <div class="security-icon competitor-emoji">${section.icon}</div>
+                  <div>
+                    <h4>${escapeHtml(section.title)}</h4>
+                    <p>${escapeHtml(section.description)}</p>
+                  </div>
+                </div>
+                <ul>
+                  <li><strong>Finds:</strong> ${escapeHtml(section.finds)}</li>
+                  <li><strong>Tools:</strong> ${escapeHtml(section.tools)}</li>
+                  <li><strong>When:</strong> ${escapeHtml(section.when)}</li>
+                </ul>
+              </article>
+            `).join('')}
+          </div>
+          <div class="insight-box"><strong>Key insight:</strong> ${escapeHtml(GITLAB_DEEP_DIVE_INSIGHT)}</div>
+        </article>
+
+        <article class="callout full">
+          <div class="section-kicker"><i class="fa-solid fa-circle-nodes"></i> Section 2</div>
+          <h4>Where GitHub and GitLab Overlap</h4>
+          <p>Both platforms cover the core enterprise security checklist. The question is less about whether capabilities exist and more about which operating model gives the customer the best long-term leverage.</p>
+          <div class="venn-shell">
+            <div class="venn-circle left">
+              <div>
+                <strong>GitHub Enterprise</strong>
+                <span>Native platform for source control, Actions, GHAS, and Copilot-driven automation.</span>
+              </div>
+            </div>
+            <div class="venn-overlap">
+              <div class="section-kicker" style="color:var(--green);"><i class="fa-solid fa-handshake-angle"></i> Both Have Natively</div>
+              <ul class="overlap-list">
+                ${GITLAB_OVERLAP_ITEMS.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+              </ul>
+            </div>
+            <div class="venn-circle right">
+              <div>
+                <strong>GitLab Ultimate</strong>
+                <span>Built-in scanners and self-managed options packaged as a more opinionated stack.</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="callout full">
+          <div class="section-kicker"><i class="fa-solid fa-puzzle-piece"></i> Section 3</div>
+          <h4>What GitLab Has That GitHub Doesn't (Natively)</h4>
+          <p>This is the part of the conversation where GitHub's composable model becomes a strength. GitLab bundles these capabilities. GitHub lets you choose the best tool for the workload and evolve the stack over time.</p>
+          <div class="vendor-grid" style="margin-top:18px;">
+            ${GITLAB_NATIVE_FEATURES.map((feature) => `
+              <article class="value-card accent-card gitlab-accent">
+                <div class="security-card-header">
+                  <div class="security-icon competitor-emoji">${feature.icon}</div>
+                  <div>
+                    <h4>${escapeHtml(feature.title)}</h4>
+                    <p>GitLab bundles it. GitHub composes it with Actions and marketplace integrations.</p>
+                  </div>
+                </div>
+                <ul>
+                  <li><strong>GitLab:</strong> ${escapeHtml(feature.gitlab)}</li>
+                  <li><strong>GitHub:</strong> ${escapeHtml(feature.github)}</li>
+                  <li><strong>GitHub Advantage:</strong> ${escapeHtml(feature.advantage)}</li>
+                  <li><strong>Demo:</strong> ${escapeHtml(feature.demo)}</li>
+                </ul>
+              </article>
+            `).join('')}
+          </div>
+        </article>
+
+        <article class="callout full">
+          <div class="section-kicker"><i class="fa-solid fa-play"></i> Section 4</div>
+          <h4>Live Demo Workflows — Run These Now!</h4>
+          <p>These cards mirror the live-demo experience: enter an input, fire the workflow, and let the page poll the same orchestration API pattern used elsewhere in the presenter.</p>
+          <div class="workflow-demo-grid" style="margin-top:18px;">
+            ${COMPETITOR_WORKFLOW_DEMOS.map((demo) => {
+              const state = workflowDemoState[demo.id];
+              return `
+                <article class="demo-card workflow-demo-card accent-card github-accent">
+                  <div class="demo-card-header">
+                    <div class="demo-title">
+                      <div class="icon-shell competitor-emoji">${demo.icon}</div>
+                      <div>
+                        <h4>${escapeHtml(demo.title)}</h4>
+                        <p>${escapeHtml(demo.description)}</p>
+                      </div>
+                    </div>
+                    <span class="status-pill status-${state.status}" id="workflow-demo-pill-${demo.id}">${escapeHtml(state.summary === 'Ready to trigger' ? 'Ready' : state.status.charAt(0).toUpperCase() + state.status.slice(1))}</span>
+                  </div>
+                  <div class="demo-meta">
+                    <span class="badge"><i class="fa-solid fa-gears"></i> ${escapeHtml(demo.workflow)}</span>
+                    <span class="badge"><i class="fa-solid fa-link"></i> ${escapeHtml(`/api/demos/${demo.id}/start`)}</span>
+                  </div>
+                  <div class="demo-input-group">
+                    <label for="workflow-input-${demo.id}">${escapeHtml(demo.inputLabel)}</label>
+                    ${renderWorkflowDemoInputControl(demo)}
+                  </div>
+                  <div class="button-row">
+                    <button class="btn btn-primary" id="workflow-demo-button-${demo.id}" data-workflow-demo="${demo.id}"><i class="fa-solid fa-play"></i> ▶️ Run Demo</button>
+                  </div>
+                  <div class="progress-shell">
+                    <div class="progress-header">
+                      <span id="workflow-demo-progress-label-${demo.id}">Status polling starts after trigger</span>
+                      <strong id="workflow-demo-progress-value-${demo.id}">${state.progress}%</strong>
+                    </div>
+                    <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${state.progress}" id="workflow-demo-progress-track-${demo.id}">
+                      <div class="progress-bar" id="workflow-demo-progress-bar-${demo.id}" style="width:${state.progress}%"></div>
+                    </div>
+                  </div>
+                  <div class="workflow-demo-status">
+                    <strong id="workflow-demo-summary-${demo.id}">${escapeHtml(state.summary)}</strong>
+                    <p id="workflow-demo-details-${demo.id}">${escapeHtml(state.details)}</p>
+                    <ul class="workflow-demo-highlights" id="workflow-demo-highlights-${demo.id}">
+                      ${state.highlights.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+                    </ul>
+                    <a href="#" class="btn btn-link workflow-demo-link" id="workflow-demo-link-${demo.id}" style="display:none;" target="_blank" rel="noopener">Open workflow run</a>
+                  </div>
+                </article>
+              `;
+            }).join('')}
+          </div>
+        </article>
+
+        <article class="callout full">
+          <div class="section-kicker"><i class="fa-solid fa-robot"></i> Section 5</div>
+          <h4>Custom Agents for Continuous Monitoring</h4>
+          <p>Copilot custom agents plus GitHub Actions runners turn GitHub from a point-in-time scan engine into a continuous monitoring fabric that can react on schedule, on deployment, or on any security-relevant change.</p>
+          <div class="detail-grid" style="margin-top:18px;">
+            <article class="security-card accent-card github-accent">
+              <h4>What are Custom Agents?</h4>
+              <ul>
+                <li>Markdown-defined AI assistants that specialize in security tasks.</li>
+                <li>Run on GitHub Actions runners (self-hosted or cloud).</li>
+                <li>Can be triggered on schedule, push, PR, or manually.</li>
+                <li>Chain multiple agents for end-to-end security.</li>
+              </ul>
+            </article>
+            <article class="security-card accent-card green-accent">
+              <h4>Why this matters</h4>
+              <p>Instead of waiting for a single vendor roadmap, teams can combine scanning, policy, remediation, reporting, and Copilot guidance in one workflow graph.</p>
+              <ul>
+                <li>Security automation stays versioned in the repository.</li>
+                <li>Runners let you keep scanning close to internal environments.</li>
+                <li>Agent outputs can feed reports, pull requests, or tickets automatically.</li>
+              </ul>
+            </article>
+          </div>
+          <div class="code-pair" style="margin-top:18px;">
+            <article class="security-card accent-card github-accent">
+              <h4>Example: Security Monitoring Agent</h4>
+              <pre class="code-block">${escapeHtml(SECURITY_MONITOR_AGENT)}</pre>
+            </article>
+            <article class="security-card accent-card github-accent">
+              <h4>Example: Scheduled Security Workflow</h4>
+              <pre class="code-block">${escapeHtml(NIGHTLY_SECURITY_SWEEP)}</pre>
+            </article>
+          </div>
+        </article>
+
+        <article class="callout full">
+          <div class="section-kicker"><i class="fa-solid fa-screwdriver-wrench"></i> Section 6</div>
+          <h4>Extensibility — Add Your Own Tasks</h4>
+          <p>GitHub's model is not “take what we ship.” It is “compose the security pipeline your team actually wants.” That matters when customers need custom PII checks, infrastructure scanners, or API governance that fit their own environment.</p>
+          <div class="detail-grid" style="margin-top:18px;">
+            <article class="security-card accent-card github-accent">
+              <h4>Your Workflow, Your Rules</h4>
+              <pre class="code-block">${escapeHtml(CUSTOM_SECURITY_TASKS)}</pre>
+            </article>
+            <article class="security-card accent-card green-accent">
+              <h4>Marketplace leverage</h4>
+              <p>Teams are free to standardize on one scanner or run multiple tools side by side until they are satisfied with coverage, speed, and reporting quality.</p>
+              <div class="marketplace-stat">
+                <div>
+                  <span style="display:block;color:var(--muted);font-size:0.8rem;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">GitHub Actions Marketplace</span>
+                  <strong>15,000+ reusable actions</strong>
+                </div>
+                <div style="color:var(--muted);max-width:260px;line-height:1.6;">vs GitLab's limited marketplace</div>
+              </div>
+              <ul>
+                <li>Add scanners for code, containers, APIs, IaC, SBOMs, or internal policy gates.</li>
+                <li>Define policy in YAML so legal, security, and platform teams can all review it.</li>
+                <li>Reuse the same building blocks across hundreds of repositories.</li>
+              </ul>
+            </article>
+          </div>
+        </article>
+
+        <article class="callout full summary-banner">
+          <div class="section-kicker"><i class="fa-solid fa-flag-checkered"></i> Section 7</div>
+          <h4>Bottom Line: GitHub's Composable Approach</h4>
+          <p>GitLab tells an “all-in-one” story. GitHub tells a “best-of-breed” story. For many enterprise buyers, the winning answer is the one that keeps costs down while letting teams adopt the strongest tool in each category.</p>
+          <ul class="summary-list">
+            <li><strong>GitLab:</strong> “All-in-one” — everything built-in but locked to their tools.</li>
+            <li><strong>GitHub:</strong> “Best-of-breed” — pick the best tool for each job.</li>
+            <li><strong>Result:</strong> GitHub is MORE customizable, MORE extensible, and 4.7x CHEAPER ($21 vs $99/user/month).</li>
+            <li><strong>AI edge:</strong> With Copilot + custom agents, you get AI-powered automation that GitLab Duo can't match.</li>
+          </ul>
+        </article>
+      `;
+    }
+
+    function parseWorkflowDemoCardState(statusPayload) {
+      const workflowStatus = statusPayload?.workflow?.status ?? statusPayload?.status ?? 'not-started';
+      const conclusion = statusPayload?.workflow?.conclusion ?? statusPayload?.conclusion ?? null;
+      if (workflowStatus === 'completed') {
+        return ['failure', 'cancelled', 'timed_out', 'action_required'].includes(conclusion) ? 'failed' : 'complete';
+      }
+      if (['queued', 'in_progress', 'waiting', 'requested', 'running'].includes(workflowStatus)) {
+        return 'running';
+      }
+      return 'ready';
+    }
+
+    function computeWorkflowDemoProgress(statusPayload, cardState) {
+      if (cardState === 'complete' || cardState === 'failed') return 100;
+      const workflowStatus = statusPayload?.workflow?.status ?? statusPayload?.status;
+      if (workflowStatus === 'queued') return 18;
+      if (workflowStatus === 'waiting' || workflowStatus === 'requested') return 36;
+      if (workflowStatus === 'in_progress' || workflowStatus === 'running') return 72;
+      return 12;
+    }
+
+    function buildWorkflowDemoSummary(demoId, statusPayload) {
+      const workflowStatus = statusPayload?.workflow?.status ?? statusPayload?.status ?? 'not-started';
+      const conclusion = statusPayload?.workflow?.conclusion ?? statusPayload?.conclusion ?? null;
+      if (workflowStatus === 'completed') {
+        return ['failure', 'cancelled', 'timed_out', 'action_required'].includes(conclusion) ? 'Demo completed with issues' : 'Demo completed successfully';
+      }
+      if (['queued', 'in_progress', 'waiting', 'requested', 'running'].includes(workflowStatus)) {
+        return 'Workflow running and status polling live';
+      }
+      return 'Ready to trigger';
+    }
+
+    function buildWorkflowDemoDetails(demoId, statusPayload) {
+      const config = COMPETITOR_WORKFLOW_DEMOS.find((demo) => demo.id === demoId);
+      if (!config) return 'Ready.';
+      if (statusPayload?.errors?.length) {
+        return statusPayload.errors[0];
+      }
+      const workflow = statusPayload?.workflow;
+      if (workflow?.status && workflow?.runId) {
+        return `Workflow ${String(workflow.status).replace(/_/g, ' ')} · run ${workflow.runId}.`;
+      }
+      if (workflow?.status) {
+        return `Workflow ${String(workflow.status).replace(/_/g, ' ')}.`;
+      }
+      return `Shows: ${config.shows}`;
+    }
+
+    function buildWorkflowDemoHighlights(demoId, statusPayload) {
+      const config = COMPETITOR_WORKFLOW_DEMOS.find((demo) => demo.id === demoId);
+      if (!config) return [];
+      const state = workflowDemoState[demoId];
+      const highlights = [
+        `Workflow: ${config.workflow}`,
+        `Endpoint: POST /api/demos/${demoId}/start`,
+        `Input: ${state?.lastInput || `${config.inputLabel}: ${config.inputDefault}`}`,
+        `Shows: ${config.shows}`
+      ];
+      if (statusPayload?.workflow?.runId) {
+        highlights.splice(2, 0, `Workflow run: ${statusPayload.workflow.runId}`);
+      }
+      if (statusPayload?.workflow?.conclusion) {
+        highlights.push(`Conclusion: ${String(statusPayload.workflow.conclusion).replace(/_/g, ' ')}`);
+      }
+      return highlights;
+    }
+
+    function updateWorkflowDemoCard(demoId) {
+      const state = workflowDemoState[demoId];
+      if (!state) return;
+      const pill = document.getElementById(`workflow-demo-pill-${demoId}`);
+      const summary = document.getElementById(`workflow-demo-summary-${demoId}`);
+      const details = document.getElementById(`workflow-demo-details-${demoId}`);
+      const highlights = document.getElementById(`workflow-demo-highlights-${demoId}`);
+      const progressLabel = document.getElementById(`workflow-demo-progress-label-${demoId}`);
+      const progressValue = document.getElementById(`workflow-demo-progress-value-${demoId}`);
+      const progressTrack = document.getElementById(`workflow-demo-progress-track-${demoId}`);
+      const progressBar = document.getElementById(`workflow-demo-progress-bar-${demoId}`);
+      const triggerButton = document.getElementById(`workflow-demo-button-${demoId}`);
+      const link = document.getElementById(`workflow-demo-link-${demoId}`);
+
+      if (!pill || !summary || !details || !highlights || !progressLabel || !progressValue || !progressTrack || !progressBar || !triggerButton || !link) {
+        return;
+      }
+
+      const labelMap = {
+        ready: 'Ready',
+        running: 'Running',
+        complete: 'Complete',
+        failed: 'Failed'
+      };
+
+      pill.textContent = labelMap[state.status] || 'Ready';
+      pill.className = `status-pill status-${state.status}`;
+      summary.textContent = state.summary;
+      details.textContent = state.details;
+      highlights.innerHTML = state.highlights.map((item) => `<li>${escapeHtml(item)}</li>`).join('');
+      progressLabel.textContent =
+        state.status === 'ready' ? 'Status polling starts after trigger' :
+        state.status === 'running' ? 'Workflow executing and status polling live' :
+        state.status === 'complete' ? 'Workflow finished successfully' :
+        'Workflow requires attention';
+      progressValue.textContent = `${state.progress}%`;
+      progressTrack.setAttribute('aria-valuenow', String(state.progress));
+      progressBar.style.width = `${state.progress}%`;
+      progressBar.classList.toggle('complete', state.status === 'complete');
+      progressBar.classList.toggle('failed', state.status === 'failed');
+      triggerButton.disabled = state.status === 'running';
+
+      if (state.workflow?.url) {
+        link.href = state.workflow.url;
+        link.style.display = 'inline-flex';
+      } else {
+        link.style.display = 'none';
+      }
+    }
+
+    function setWorkflowDemoStateFromStatus(demoId, statusPayload) {
+      const state = workflowDemoState[demoId];
+      if (!state) return;
+      const nextStatus = parseWorkflowDemoCardState(statusPayload);
+      workflowDemoState[demoId] = {
+        ...state,
+        status: nextStatus,
+        progress: computeWorkflowDemoProgress(statusPayload, nextStatus),
+        workflow: statusPayload?.workflow || state.workflow,
+        summary: buildWorkflowDemoSummary(demoId, statusPayload),
+        details: buildWorkflowDemoDetails(demoId, statusPayload),
+        highlights: buildWorkflowDemoHighlights(demoId, statusPayload),
+        errors: statusPayload?.errors || []
+      };
+      updateWorkflowDemoCard(demoId);
+      if (nextStatus === 'complete' || nextStatus === 'failed') {
+        stopWorkflowDemoPolling(demoId);
+      }
+    }
+
+    function stopWorkflowDemoPolling(demoId) {
+      if (workflowDemoPollingIntervals[demoId]) {
+        clearInterval(workflowDemoPollingIntervals[demoId]);
+        delete workflowDemoPollingIntervals[demoId];
+      }
+    }
+
+    function startWorkflowDemoPolling(demoId) {
+      stopWorkflowDemoPolling(demoId);
+      workflowDemoPollingIntervals[demoId] = setInterval(() => getWorkflowDemoStatus(demoId), 3000);
+    }
+
+    function getWorkflowDemoInputPayload(demoId) {
+      const config = COMPETITOR_WORKFLOW_DEMOS.find((demo) => demo.id === demoId);
+      if (!config) return {};
+      const input = document.getElementById(`workflow-input-${demoId}`);
+      const rawValue = input?.value?.trim();
+      const value = rawValue || config.inputDefault;
+      workflowDemoState[demoId].lastInput = `${config.inputLabel}: ${value}`;
+      return { [config.inputName]: value };
+    }
+
+    async function startWorkflowDemo(demoId) {
+      const config = COMPETITOR_WORKFLOW_DEMOS.find((demo) => demo.id === demoId);
+      if (!config) return;
+      const inputs = getWorkflowDemoInputPayload(demoId);
+      const inputValue = inputs[config.inputName];
+      workflowDemoState[demoId] = {
+        ...workflowDemoState[demoId],
+        status: 'running',
+        progress: 12,
+        summary: 'Trigger requested',
+        details: `Calling POST /api/demos/${demoId}/start with ${config.inputLabel.toLowerCase()}: ${inputValue}`,
+        highlights: [
+          `Workflow: ${config.workflow}`,
+          `Endpoint: POST /api/demos/${demoId}/start`,
+          `Input: ${config.inputLabel}: ${inputValue}`,
+          `Shows: ${config.shows}`
+        ],
+        errors: []
+      };
+      updateWorkflowDemoCard(demoId);
+
+      try {
+        const payload = await apiRequest(`/demos/${demoId}/start`, {
+          method: 'POST',
+          body: JSON.stringify({ inputs })
+        });
+        setWorkflowDemoStateFromStatus(demoId, payload?.status || payload);
+        showToast(`${config.title} started`, 'success', 'fa-circle-play');
+        startWorkflowDemoPolling(demoId);
+        setApiConnection(true, 'API reachable · orchestration live');
+      } catch (error) {
+        workflowDemoState[demoId] = {
+          ...workflowDemoState[demoId],
+          status: 'failed',
+          progress: 100,
+          summary: 'Demo trigger failed',
+          details: error.message,
+          highlights: [
+            `Endpoint: POST /api/demos/${demoId}/start`,
+            `Input: ${config.inputLabel}: ${inputValue}`,
+            `Shows: ${config.shows}`
+          ],
+          errors: [error.message]
+        };
+        updateWorkflowDemoCard(demoId);
+        setApiConnection(false, 'API error · check backend');
+        showToast(error.message, 'error', 'fa-circle-exclamation');
+      }
+    }
+
+    async function getWorkflowDemoStatus(demoId) {
+      try {
+        const payload = await apiRequest(`/demos/${demoId}/status`);
+        setWorkflowDemoStateFromStatus(demoId, payload?.status || payload);
+        setApiConnection(true, 'API reachable · orchestration live');
+      } catch (error) {
+        workflowDemoState[demoId] = {
+          ...workflowDemoState[demoId],
+          status: 'failed',
+          progress: 100,
+          summary: 'Status polling failed',
+          details: error.message,
+          highlights: buildWorkflowDemoHighlights(demoId),
+          errors: [error.message]
+        };
+        updateWorkflowDemoCard(demoId);
+        stopWorkflowDemoPolling(demoId);
+      }
+    }
+
     function renderCompetitors() {
       const toggle = document.getElementById('competitorToggle');
       const container = document.getElementById('competitorViews');
@@ -2002,6 +2885,7 @@
           </article>
 
           ${key === 'gitlab' ? `
+            ${renderGitLabDeepDive()}
             <article class="callout full">
               <h4>Why GitHub wins</h4>
               <p>When the customer evaluates cost, AI capability, ecosystem depth, and platform momentum together, GitHub creates a stronger overall value story.</p>
@@ -2033,6 +2917,9 @@
 
       toggle.querySelectorAll('[data-view]').forEach((button) => {
         button.addEventListener('click', () => switchCompetitorView(button.dataset.view));
+      });
+      container.querySelectorAll('[data-workflow-demo]').forEach((button) => {
+        button.addEventListener('click', () => startWorkflowDemo(button.dataset.workflowDemo));
       });
     }
 
@@ -2173,7 +3060,222 @@
           </article>
         </div>
 
-        <article class="callout full">
+        
+        <article class="callout full" style="border-left:3px solid var(--purple);margin-top:2rem;">
+          <h4><i class="fa-solid fa-route" style="color:var(--purple);margin-right:8px;"></i>Prompt Journey — Simple Explanation</h4>
+          <p style="font-size:1.05em;line-height:1.75;margin-bottom:1.2em;">Think of GitHub Copilot like a <strong>secure courier service with a sorting room</strong>. When you type a prompt, here is exactly what happens — no magic, no hidden routes:</p>
+          <div style="display:grid;grid-template-columns:48px 1fr;gap:0;margin:0 0 1.5em 0;">
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div style="width:36px;height:36px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85em;color:#000;">1</div>
+              <div style="width:2px;flex:1;background:var(--border);"></div>
+            </div>
+            <div style="padding:4px 0 20px 12px;">
+              <strong style="color:var(--blue);">You Write the Letter (Local Machine)</strong>
+              <p style="margin:4px 0 0;color:var(--muted);">Your prompt + code context is assembled locally by the VS Code Copilot extension. <em>Nothing has left your machine yet.</em> Content exclusion rules are checked here — blocked files never enter the envelope.</p>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div style="width:36px;height:36px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85em;color:#000;">2</div>
+              <div style="width:2px;flex:1;background:var(--border);"></div>
+            </div>
+            <div style="padding:4px 0 20px 12px;">
+              <strong style="color:var(--green);">Secure Courier Picks Up (TLS Encrypted)</strong>
+              <p style="margin:4px 0 0;color:var(--muted);">The prompt travels over <strong>TLS 1.2+</strong> encrypted HTTPS to <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">copilot-proxy.githubusercontent.com</code> — GitHub's own infrastructure on Azure. Verify with <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">nslookup</code> (see demo steps below).</p>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div style="width:36px;height:36px;border-radius:50%;background:var(--yellow);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85em;color:#000;">3</div>
+              <div style="width:2px;flex:1;background:var(--border);"></div>
+            </div>
+            <div style="padding:4px 0 20px 12px;">
+              <strong style="color:var(--yellow);">The Sorting Room (GitHub Copilot Proxy)</strong>
+              <p style="margin:4px 0 0;color:var(--muted);">GitHub's proxy authenticates your identity, enforces org policy, applies content filtering, writes audit events, and <strong>decides which model provider</strong> handles your request. This is the enterprise control plane.</p>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div style="width:36px;height:36px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85em;color:#000;">4</div>
+              <div style="width:2px;flex:1;background:var(--border);"></div>
+            </div>
+            <div style="padding:4px 0 20px 12px;">
+              <strong style="color:var(--purple);">Delivery to the AI (Model Inference)</strong>
+              <p style="margin:4px 0 0;color:var(--muted);">The proxy forwards to: <strong>Azure OpenAI</strong> (GPT-4.1/GPT-5), <strong>Anthropic</strong> (Claude Sonnet/Opus), or <strong>Google Cloud</strong> (Gemini). You never connect directly — GitHub is always the intermediary. Zero data retention on Business/Enterprise.</p>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div style="width:36px;height:36px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85em;color:#000;">5</div>
+            </div>
+            <div style="padding:4px 0 8px 12px;">
+              <strong style="color:var(--teal);">Reply Returns the Same Way</strong>
+              <p style="margin:4px 0 0;color:var(--muted);">The AI response returns through GitHub's policy layer and is delivered to VS Code / CLI / PR. On Business/Enterprise, the prompt and response are then <strong>discarded</strong> — not stored, not trained on.</p>
+            </div>
+          </div>
+          <div class="data-points" style="margin-bottom:1em;">
+            <span class="data-point" style="background:var(--red-soft);border-color:var(--red);">⚠️ MCP Risk: If a tool call returns raw PII, that data enters the model context</span>
+            <span class="data-point" style="background:var(--green-soft);border-color:var(--green);">✅ Mitigation: Redact in MCP server or app layer BEFORE it reaches the model</span>
+          </div>
+          <div style="background:var(--surface-alt);border-radius:var(--radius-sm);padding:1em 1.2em;border:1px solid var(--border);">
+            <strong style="color:var(--text);">5 Key Takeaways for the Customer:</strong>
+            <ol style="margin:.6em 0 0;padding-left:1.4em;color:var(--muted);line-height:1.8;">
+              <li><strong style="color:var(--text);">GitHub is always the intermediary</strong> — you never connect directly to OpenAI, Anthropic, or Google.</li>
+              <li><strong style="color:var(--text);">Content exclusion happens locally</strong> — blocked files never enter the prompt, period.</li>
+              <li><strong style="color:var(--text);">Zero data retention on Business/Enterprise</strong> — prompts are discarded after the response.</li>
+              <li><strong style="color:var(--text);">Every hop is TLS-encrypted</strong> — data is encrypted in transit at every stage.</li>
+              <li><strong style="color:var(--text);">You control MCP output</strong> — redact PII in your tool server code before it ever reaches the model.</li>
+            </ol>
+          </div>
+        </article>
+
+        <article class="security-card large" style="margin-top:1.5rem;">
+          <div class="security-card-header">
+            <div class="security-icon" style="background:rgba(163,113,247,.16);"><i class="fa-solid fa-shoe-prints" style="color:var(--purple);"></i></div>
+            <div>
+              <h4>🔬 Step-by-Step: Trace the Prompt Journey (Live Demo)</h4>
+              <p>Follow these exact steps in VS Code and your terminal to PROVE each hop in the data flow. This is the evidence your security team needs.</p>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:1.2em;">
+            <details style="background:var(--surface-alt);border-radius:var(--radius-sm);border:1px solid var(--border);overflow:hidden;">
+              <summary style="padding:1em 1.2em;cursor:pointer;font-weight:600;color:var(--blue);display:flex;align-items:center;gap:10px;"><span style="background:var(--blue);color:#000;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.8em;font-weight:700;flex-shrink:0;">1</span> See What VS Code Sends — Extension Output Logs</summary>
+              <div style="padding:0 1.2em 1.2em;">
+                <table style="width:100%;margin:.8em 0;font-size:.9em;"><tbody>
+                  <tr><td style="color:var(--muted);width:110px;vertical-align:top;padding:4px 8px 4px 0;"><strong>Do:</strong></td><td>Open VS Code → <strong>View → Output</strong> → Select <strong>"GitHub Copilot"</strong> from the dropdown</td></tr>
+                  <tr><td style="color:var(--muted);vertical-align:top;padding:4px 8px 4px 0;"><strong>Then:</strong></td><td>Open Copilot Chat and type: <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">What is a SQL injection attack?</code></td></tr>
+                  <tr><td style="color:var(--muted);vertical-align:top;padding:4px 8px 4px 0;"><strong>See:</strong></td><td>Output panel shows request IDs, timestamps, model selection, token counts — but <strong>NOT</strong> the full prompt content</td></tr>
+                  <tr><td style="color:var(--muted);vertical-align:top;padding:4px 8px 4px 0;"><strong>Say:</strong></td><td><em>"These local logs prove the prompt goes through the extension first. No raw prompt data in these logs — just metadata."</em></td></tr>
+                </tbody></table>
+                <pre class="code-block" style="font-size:.82em;">VS Code Output Panel (GitHub Copilot):
+[info] Request sent to copilot-proxy.githubusercontent.com
+[info] Model: gpt-4.1   Tokens sent: 847
+[info] Response received in 1,204ms   Tokens: 312
+[info] Content filter: passed</pre>
+              </div>
+            </details>
+            <details style="background:var(--surface-alt);border-radius:var(--radius-sm);border:1px solid var(--border);overflow:hidden;">
+              <summary style="padding:1em 1.2em;cursor:pointer;font-weight:600;color:var(--green);display:flex;align-items:center;gap:10px;"><span style="background:var(--green);color:#000;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.8em;font-weight:700;flex-shrink:0;">2</span> Verify Network Destination — CLI Proof</summary>
+              <div style="padding:0 1.2em 1.2em;">
+                <p style="color:var(--muted);margin:.8em 0 .4em;font-size:.9em;">Open PowerShell and run:</p>
+                <pre class="code-block" style="font-size:.82em;"># Resolve the Copilot proxy endpoint
+nslookup copilot-proxy.githubusercontent.com
+
+# Expected: resolves to GitHub/Azure infrastructure
+# Name:    github-copilot-proxy-XYZ.azurewebsites.net
+# Address: 20.XX.XX.XX  (Azure IP range)
+
+# Verify TLS certificate (proves it's GitHub)
+curl -vI https://copilot-proxy.githubusercontent.com 2>&amp;1
+# Expected: issuer = DigiCert, subject = *.githubusercontent.com
+# HTTP 403 (no auth) but TLS handshake proves the endpoint</pre>
+                <table style="width:100%;margin:.8em 0;font-size:.9em;"><tbody>
+                  <tr><td style="color:var(--muted);width:110px;vertical-align:top;padding:4px 8px 4px 0;"><strong>Say:</strong></td><td><em>"This proves prompts go to GitHub's own infrastructure on Azure — not directly to OpenAI or Anthropic."</em></td></tr>
+                </tbody></table>
+              </div>
+            </details>
+            <details style="background:var(--surface-alt);border-radius:var(--radius-sm);border:1px solid var(--border);overflow:hidden;">
+              <summary style="padding:1em 1.2em;cursor:pointer;font-weight:600;color:var(--yellow);display:flex;align-items:center;gap:10px;"><span style="background:var(--yellow);color:#000;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.8em;font-weight:700;flex-shrink:0;">3</span> See Which Model Processed Your Prompt</summary>
+              <div style="padding:0 1.2em 1.2em;">
+                <table style="width:100%;margin:.8em 0;font-size:.9em;"><tbody>
+                  <tr><td style="color:var(--muted);width:110px;vertical-align:top;padding:4px 8px 4px 0;"><strong>Do:</strong></td><td>VS Code → <strong>Help → Toggle Developer Tools</strong> → <strong>Network</strong> tab</td></tr>
+                  <tr><td style="color:var(--muted);vertical-align:top;padding:4px 8px 4px 0;"><strong>Then:</strong></td><td>Type a Copilot Chat prompt. Filter requests for <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">copilot</code></td></tr>
+                  <tr><td style="color:var(--muted);vertical-align:top;padding:4px 8px 4px 0;"><strong>See:</strong></td><td>Click request → Response Headers → <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">x-model-version</code></td></tr>
+                </tbody></table>
+                <pre class="code-block" style="font-size:.82em;">Network Tab Response Headers:
+  x-model-version: gpt-4.1-2025-04-14
+  x-request-id: abc-123-def-456
+  x-ratelimit-remaining: 98
+
+💡 Claude: x-model-version shows "claude-sonnet-4"
+💡 URL is always copilot-proxy — never openai.com or anthropic.com</pre>
+                <table style="width:100%;margin:.8em 0;font-size:.9em;"><tbody>
+                  <tr><td style="color:var(--muted);width:110px;vertical-align:top;padding:4px 8px 4px 0;"><strong>Say:</strong></td><td><em>"The response header proves which model ran. The URL is GitHub's proxy — your org never connects directly to model providers."</em></td></tr>
+                </tbody></table>
+              </div>
+            </details>
+            <details style="background:var(--surface-alt);border-radius:var(--radius-sm);border:1px solid var(--border);overflow:hidden;">
+              <summary style="padding:1em 1.2em;cursor:pointer;font-weight:600;color:var(--purple);display:flex;align-items:center;gap:10px;"><span style="background:var(--purple);color:#000;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.8em;font-weight:700;flex-shrink:0;">4</span> Content Exclusion — Prove Files Are Blocked</summary>
+              <div style="padding:0 1.2em 1.2em;">
+                <pre class="code-block" style="font-size:.82em;"># Create a decoy secrets file
+mkdir secrets 2>$null
+Set-Content -Path "secrets/test-credentials.txt" -Value @"
+AWS_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE
+DB_PASSWORD=SuperSecret123!
+"@
+
+# Add to .copilotignore
+Add-Content -Path ".copilotignore" -Value "secrets/**"</pre>
+                <table style="width:100%;margin:.8em 0;font-size:.9em;"><tbody>
+                  <tr><td style="color:var(--muted);width:110px;vertical-align:top;padding:4px 8px 4px 0;"><strong>Ask Copilot:</strong></td><td><code style="background:var(--surface);padding:2px 6px;border-radius:4px;">@workspace What credentials or API keys are in this project?</code></td></tr>
+                  <tr><td style="color:var(--muted);vertical-align:top;padding:4px 8px 4px 0;"><strong>See:</strong></td><td>Copilot does <strong>NOT</strong> mention the secrets file — it is excluded.</td></tr>
+                  <tr><td style="color:var(--muted);vertical-align:top;padding:4px 8px 4px 0;"><strong>Prove:</strong></td><td>Remove <code>secrets/**</code> from .copilotignore, reload, ask again — now it sees the file.</td></tr>
+                  <tr><td style="color:var(--muted);vertical-align:top;padding:4px 8px 4px 0;"><strong>Say:</strong></td><td><em>"Content exclusion is enforced BEFORE prompt assembly. The blocked file never leaves this machine."</em></td></tr>
+                </tbody></table>
+              </div>
+            </details>
+            <details style="background:var(--surface-alt);border-radius:var(--radius-sm);border:1px solid var(--border);overflow:hidden;">
+              <summary style="padding:1em 1.2em;cursor:pointer;font-weight:600;color:var(--teal);display:flex;align-items:center;gap:10px;"><span style="background:var(--teal);color:#000;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.8em;font-weight:700;flex-shrink:0;">5</span> Prove Zero Retention — Stateless Sessions</summary>
+              <div style="padding:0 1.2em 1.2em;">
+                <table style="width:100%;margin:.8em 0;font-size:.9em;"><tbody>
+                  <tr><td style="color:var(--muted);width:110px;vertical-align:top;padding:4px 8px 4px 0;"><strong>Do:</strong></td><td>In Copilot Chat: <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">Please remember the code word "pineapple42"</code></td></tr>
+                  <tr><td style="color:var(--muted);vertical-align:top;padding:4px 8px 4px 0;"><strong>Then:</strong></td><td>Close the chat session (✕ or start new thread)</td></tr>
+                  <tr><td style="color:var(--muted);vertical-align:top;padding:4px 8px 4px 0;"><strong>Then:</strong></td><td>New session → <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">What code word did I tell you?</code></td></tr>
+                  <tr><td style="color:var(--muted);vertical-align:top;padding:4px 8px 4px 0;"><strong>See:</strong></td><td>Copilot has <strong>NO idea</strong> — proves stateless, zero retention.</td></tr>
+                  <tr><td style="color:var(--muted);vertical-align:top;padding:4px 8px 4px 0;"><strong>Say:</strong></td><td><em>"Each session is stateless. When it ends, prompt and response are discarded. No persistent memory of your data."</em></td></tr>
+                </tbody></table>
+              </div>
+            </details>
+            <details style="background:var(--surface-alt);border-radius:var(--radius-sm);border:1px solid var(--border);overflow:hidden;">
+              <summary style="padding:1em 1.2em;cursor:pointer;font-weight:600;color:var(--red);display:flex;align-items:center;gap:10px;"><span style="background:var(--red);color:#fff;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.8em;font-weight:700;flex-shrink:0;">6</span> Network Inspection — Full Transparency (Advanced)</summary>
+              <div style="padding:0 1.2em 1.2em;">
+                <table style="width:100%;margin:.8em 0;font-size:.9em;"><tbody>
+                  <tr><td style="color:var(--muted);width:110px;vertical-align:top;padding:4px 8px 4px 0;"><strong>Do:</strong></td><td>VS Code → <strong>Help → Toggle Developer Tools</strong> → <strong>Network</strong> tab</td></tr>
+                  <tr><td style="color:var(--muted);vertical-align:top;padding:4px 8px 4px 0;"><strong>Then:</strong></td><td>Type a prompt. Filter for <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">copilot</code></td></tr>
+                </tbody></table>
+                <pre class="code-block" style="font-size:.82em;">What to inspect:
+✅ Request URL     → copilot-proxy.githubusercontent.com (NOT openai.com)
+✅ Request Headers → Authorization, x-copilot-* feature flags
+✅ Response Headers → x-model-version (confirms LLM), x-request-id (audit trace)
+✅ Timing          → round-trip latency (500ms–3s typical)
+⚠️ Request Payload → the assembled prompt. If PII is in context, it shows here.</pre>
+                <table style="width:100%;margin:.8em 0;font-size:.9em;"><tbody>
+                  <tr><td style="color:var(--muted);width:110px;vertical-align:top;padding:4px 8px 4px 0;"><strong>Say:</strong></td><td><em>"Your security team can inspect every request. Full network transparency, right in VS Code."</em></td></tr>
+                </tbody></table>
+              </div>
+            </details>
+            <details style="background:var(--surface-alt);border-radius:var(--radius-sm);border:1px solid var(--border);overflow:hidden;">
+              <summary style="padding:1em 1.2em;cursor:pointer;font-weight:600;color:var(--blue);display:flex;align-items:center;gap:10px;"><span style="background:var(--blue);color:#000;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.8em;font-weight:700;flex-shrink:0;">7</span> GitHub Audit Log — Enterprise Governance</summary>
+              <div style="padding:0 1.2em 1.2em;">
+                <table style="width:100%;margin:.8em 0;font-size:.9em;"><tbody>
+                  <tr><td style="color:var(--muted);width:110px;vertical-align:top;padding:4px 8px 4px 0;"><strong>Do:</strong></td><td>Navigate to <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">github.com/orgs/{org}/settings/audit-log</code></td></tr>
+                  <tr><td style="color:var(--muted);vertical-align:top;padding:4px 8px 4px 0;"><strong>Filter:</strong></td><td><code style="background:var(--surface);padding:2px 6px;border-radius:4px;">action:copilot</code></td></tr>
+                  <tr><td style="color:var(--muted);vertical-align:top;padding:4px 8px 4px 0;"><strong>See:</strong></td><td>Who used Copilot, when, which feature — but <strong>NOT</strong> prompt content</td></tr>
+                  <tr><td style="color:var(--muted);vertical-align:top;padding:4px 8px 4px 0;"><strong>Say:</strong></td><td><em>"Governance without surveillance. Usage metadata, never prompt content."</em></td></tr>
+                </tbody></table>
+              </div>
+            </details>
+            <details style="background:var(--surface-alt);border-radius:var(--radius-sm);border:1px solid var(--border);overflow:hidden;">
+              <summary style="padding:1em 1.2em;cursor:pointer;font-weight:600;color:var(--green);display:flex;align-items:center;gap:10px;"><span style="background:var(--green);color:#000;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.8em;font-weight:700;flex-shrink:0;">8</span> MCP Tool Call — The Risk &amp; The Fix</summary>
+              <div style="padding:0 1.2em 1.2em;">
+                <p style="color:var(--muted);margin:.8em 0 .4em;font-size:.9em;">When Copilot agent mode calls an MCP server that returns raw PII, that data enters the model context:</p>
+                <pre class="code-block" style="font-size:.82em;">// ❌ BAD: MCP server returns raw PII
+async function searchCitizens(name: string) {
+  const results = await db.query("SELECT * FROM citizens WHERE name = @name", { name });
+  return results;  // SSN: 123-45-6789 goes straight to the LLM!
+}
+
+// ✅ GOOD: MCP server redacts before returning
+async function searchCitizens(name: string) {
+  const results = await db.query("SELECT * FROM citizens WHERE name = @name", { name });
+  return results.map(r => ({
+    ...r,
+    ssn:   maskSSN(r.ssn),       // ***-**-6789
+    email: maskEmail(r.email),   // j***@***.com
+    phone: maskPhone(r.phone)    // (***) ***-4567
+  }));
+}</pre>
+                <table style="width:100%;margin:.8em 0;font-size:.9em;"><tbody>
+                  <tr><td style="color:var(--muted);width:110px;vertical-align:top;padding:4px 8px 4px 0;"><strong>Say:</strong></td><td><em>"The MCP server is YOUR code. Redact PII before it leaves your server, and the model never processes sensitive data."</em></td></tr>
+                </tbody></table>
+              </div>
+            </details>
+          </div>
+        </article>
+
+<article class="callout full">
           <h4>Recommended customer takeaway</h4>
           <p>GitHub Copilot can be adopted securely when the customer understands the control stack: enterprise plan posture, provider-aware model routing, content exclusion, deterministic redaction, audit logging, and platform policy. The strongest message is not “trust the model” — it is “govern the system around the model.”</p>
           <div class="footnote-list">
@@ -2541,6 +3643,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       initializeState();
+      initializeWorkflowDemoState();
       renderNavigation();
       renderDemoCards();
       renderGhasShowcase();
