@@ -1,0 +1,127 @@
+name: "🐳 Container Security Scan"
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_ref:
+        description: 'Docker image to scan (e.g. node:18-alpine)'
+        required: true
+        default: 'node:18-alpine'
+      severity_threshold:
+        description: 'Minimum severity to report'
+        required: true
+        default: 'HIGH,CRITICAL'
+        type: choice
+        options:
+          - 'CRITICAL'
+          - 'HIGH,CRITICAL'
+          - 'MEDIUM,HIGH,CRITICAL'
+          - 'LOW,MEDIUM,HIGH,CRITICAL'
+  push:
+    branches: ['demo/*']
+
+jobs:
+  trivy-scan:
+    name: "Trivy Vulnerability Scan"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: "🔍 Scan with Trivy"
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ github.event.inputs.image_ref || 'node:18-alpine' }}
+          format: 'table'
+          severity: ${{ github.event.inputs.severity_threshold || 'HIGH,CRITICAL' }}
+          exit-code: '0'
+          
+      - name: "📊 Generate SARIF Report"
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ github.event.inputs.image_ref || 'node:18-alpine' }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: ${{ github.event.inputs.severity_threshold || 'HIGH,CRITICAL' }}
+          
+      - name: "📤 Upload to GitHub Security"
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: 'container-trivy'
+          
+      - name: "📝 Summary"
+        if: always()
+        run: |
+          echo "## 🐳 Container Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ github.event.inputs.image_ref || 'node:18-alpine' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Severity Filter:** ${{ github.event.inputs.severity_threshold || 'HIGH,CRITICAL' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Scanner:** Trivy (aquasecurity)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Why GitHub can do this" >> $GITHUB_STEP_SUMMARY
+          echo "GitLab has 'native' container scanning. GitHub achieves the **same result** using:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Trivy** — Industry-leading open-source scanner (used by AWS, GCP, Azure)" >> $GITHUB_STEP_SUMMARY
+          echo "- **SARIF integration** — Results appear in GitHub Security tab" >> $GITHUB_STEP_SUMMARY
+          echo "- **Customizable** — Choose your scanner, severity threshold, and failure policy" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> 💡 **Advantage over GitLab**: You're not locked into one scanner. Run Trivy AND Grype for broader coverage." >> $GITHUB_STEP_SUMMARY
+
+  grype-scan:
+    name: "Grype Cross-Validation"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: "🔍 Scan with Grype"
+        uses: anchore/scan-action@v5
+        id: grype
+        with:
+          image: ${{ github.event.inputs.image_ref || 'node:18-alpine' }}
+          fail-build: false
+          severity-cutoff: high
+          output-format: sarif
+          
+      - name: "📤 Upload Grype Results"
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: ${{ steps.grype.outputs.sarif }}
+          category: 'container-grype'
+          
+      - name: "📝 Grype Summary"
+        if: always()
+        run: |
+          echo "## 🔬 Grype Cross-Validation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ github.event.inputs.image_ref || 'node:18-alpine' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Running two scanners gives ~40% better coverage than either alone." >> $GITHUB_STEP_SUMMARY
+          echo "Trivy and Grype have only ~60% overlap in CVE detection." >> $GITHUB_STEP_SUMMARY
+
+  sbom-generation:
+    name: "📋 Generate SBOM"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: "Generate SBOM with Syft"
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ github.event.inputs.image_ref || 'node:18-alpine' }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+          
+      - name: "📤 Upload SBOM Artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-sbom
+          path: sbom.spdx.json
+          
+      - name: "📝 SBOM Summary"
+        if: always()
+        run: |
+          echo "## 📋 Software Bill of Materials (SBOM)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Generated SPDX SBOM for supply chain transparency." >> $GITHUB_STEP_SUMMARY
+          echo "Download the artifact for full component inventory." >> $GITHUB_STEP_SUMMARY

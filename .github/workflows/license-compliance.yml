@@ -1,0 +1,116 @@
+name: "📜 License Compliance Check"
+
+on:
+  workflow_dispatch:
+    inputs:
+      policy_mode:
+        description: 'License policy enforcement'
+        required: true
+        default: 'warn'
+        type: choice
+        options:
+          - 'warn'
+          - 'fail'
+      allowed_licenses:
+        description: 'Comma-separated allowed licenses'
+        required: false
+        default: 'MIT,Apache-2.0,BSD-2-Clause,BSD-3-Clause,ISC,Unlicense,CC0-1.0,0BSD'
+  push:
+    branches: ['demo/*']
+  pull_request:
+
+jobs:
+  license-scan:
+    name: "Scan Licenses"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install dependencies
+        run: npm ci || npm install
+      
+      - name: "📜 Check licenses with license-checker"
+        run: |
+          npx license-checker --json --out licenses.json
+          npx license-checker --summary
+          
+      - name: "🔍 Analyze license compliance"
+        id: compliance
+        run: |
+          ALLOWED="${{ github.event.inputs.allowed_licenses || 'MIT,Apache-2.0,BSD-2-Clause,BSD-3-Clause,ISC,Unlicense,CC0-1.0,0BSD' }}"
+          
+          echo "## 📜 License Compliance Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Allowed Licenses" >> $GITHUB_STEP_SUMMARY
+          echo "\`$ALLOWED\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Parse and check licenses
+          node -e "
+          const fs = require('fs');
+          const licenses = JSON.parse(fs.readFileSync('licenses.json', 'utf-8'));
+          const allowed = '$ALLOWED'.split(',').map(l => l.trim().toLowerCase());
+          
+          const violations = [];
+          const approved = [];
+          const flagged = [];
+          
+          for (const [pkg, info] of Object.entries(licenses)) {
+            const license = (info.licenses || 'UNKNOWN').toString().toLowerCase();
+            const isAllowed = allowed.some(a => license.includes(a.toLowerCase()));
+            if (isAllowed) {
+              approved.push({ pkg, license: info.licenses });
+            } else {
+              violations.push({ pkg, license: info.licenses });
+            }
+          }
+          
+          console.log('APPROVED=' + approved.length);
+          console.log('VIOLATIONS=' + violations.length);
+          
+          // Write summary
+          let summary = '';
+          summary += '### Results\n\n';
+          summary += '| Status | Count |\n|--------|-------|\n';
+          summary += '| ✅ Approved | ' + approved.length + ' |\n';
+          summary += '| ⚠️ Needs Review | ' + violations.length + ' |\n\n';
+          
+          if (violations.length > 0) {
+            summary += '### ⚠️ Packages Requiring Review\n\n';
+            summary += '| Package | License |\n|---------|----------|\n';
+            violations.forEach(v => {
+              summary += '| ' + v.pkg + ' | ' + v.license + ' |\n';
+            });
+          }
+          
+          summary += '\n> 💡 **GitHub fills the gap**: GitLab has native license compliance. GitHub achieves this with license-checker, FOSSA, or ScanCode — all customizable to YOUR policy.\n';
+          
+          fs.writeFileSync('compliance-summary.md', summary);
+          
+          if (violations.length > 0) {
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, 'has_violations=true\n');
+          } else {
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, 'has_violations=false\n');
+          }
+          "
+          
+          cat compliance-summary.md >> $GITHUB_STEP_SUMMARY
+          
+      - name: "📤 Upload License Report"
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-report
+          path: |
+            licenses.json
+            compliance-summary.md
+            
+      - name: "❌ Fail if policy violations (when mode=fail)"
+        if: steps.compliance.outputs.has_violations == 'true' && github.event.inputs.policy_mode == 'fail'
+        run: |
+          echo "::error::License compliance violations found! Review the report above."
+          exit 1

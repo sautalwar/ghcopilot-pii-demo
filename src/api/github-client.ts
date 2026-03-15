@@ -123,6 +123,16 @@ function extractErrorDetails(error: unknown): { message: string; status?: number
   };
 }
 
+function matchesWorkflowFile(run: WorkflowRunSummary, workflowFile: string): boolean {
+  const normalizedWorkflowFile = workflowFile.toLowerCase();
+  const normalizedPath = run.path?.toLowerCase();
+
+  return Boolean(
+    normalizedPath?.endsWith(normalizedWorkflowFile) ||
+      normalizedPath?.includes(normalizedWorkflowFile),
+  );
+}
+
 export class GitHubClient {
   private readonly octokit?: Octokit;
   private readonly owner: string;
@@ -743,7 +753,7 @@ export class GitHubClient {
     }
   }
 
-  async deleteWorkflowRuns(branchName: string): Promise<GitHubResult<DeleteWorkflowRunsResult>> {
+  async deleteWorkflowRuns(branchName: string, workflowFile?: string): Promise<GitHubResult<DeleteWorkflowRunsResult>> {
     if (!this.octokit) {
       return this.configurationFailure();
     }
@@ -757,10 +767,13 @@ export class GitHubClient {
       };
     }
 
+    const runsToDelete = workflowFile
+      ? (workflowRuns.data ?? []).filter((run) => matchesWorkflowFile(run, workflowFile))
+      : workflowRuns.data ?? [];
     const deletedRunIds: number[] = [];
     const failedRunIds: number[] = [];
 
-    for (const run of workflowRuns.data ?? []) {
+    for (const run of runsToDelete) {
       try {
         await this.octokit.actions.deleteWorkflowRun({
           ...this.repoParams(),

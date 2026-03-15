@@ -18,6 +18,10 @@ src/demo-incidents/pii-data-leak.ts
 *.sql
 *.csv
 *.dump
+*.db
+*.sqlite
+*.sqlite3
+data/**
 
 # Certificate and key files
 *.pem

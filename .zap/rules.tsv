@@ -1,0 +1,26 @@
+# ZAP Scanning Rules Configuration
+# Rule ID	Action (IGNORE, WARN, FAIL)	Description
+10010	WARN	Cookie No HttpOnly Flag
+10011	WARN	Cookie Without Secure Flag
+10015	WARN	Incomplete or No Cache-control Header Set
+10017	WARN	Cross-Domain JavaScript Source File Inclusion
+10019	WARN	Content-Type Header Missing
+10020	WARN	X-Frame-Options Header
+10021	WARN	X-Content-Type-Options Header Missing
+10036	WARN	Server Leaks Version Information
+10038	WARN	Content Security Policy Header Not Set
+10098	WARN	Cross-Domain Misconfiguration
+10109	WARN	Modern Web Application
+40003	FAIL	CRLF Injection
+40012	FAIL	Cross Site Scripting (Reflected)
+40014	FAIL	Cross Site Scripting (Persistent)
+40018	FAIL	SQL Injection
+40019	FAIL	SQL Injection (MySQL)
+40020	FAIL	SQL Injection (Hypersonic)
+40021	FAIL	SQL Injection (Oracle)
+40022	FAIL	SQL Injection (PostgreSQL)
+90001	WARN	Insecure JSF ViewState
+90011	WARN	Charset Mismatch
+90019	WARN	Server Side Code Injection
+90020	FAIL	Remote OS Command Injection
+90021	WARN	XPath Injection

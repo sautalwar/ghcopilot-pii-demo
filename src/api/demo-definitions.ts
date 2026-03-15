@@ -10,6 +10,7 @@ export interface DemoScenario {
   workflowFile: string;
   incidentFiles: { path: string; contentFile: string }[];
   remediationFiles: { path: string; contentFile: string }[];
+  dispatchOnly?: boolean;
   workflowInputs?: Record<string, string>;
 }
 
@@ -104,6 +105,51 @@ export const demoScenarios: DemoScenario[] = [
       demoId: "audit-trail",
       mode: "incident",
       severity: "high",
+    },
+  },
+  {
+    id: "container-scan",
+    name: "Container Security Scan",
+    description: "Runs Trivy + Grype vulnerability scanning and SBOM generation against a Docker image. Demonstrates how GitHub fills GitLab's native container scanning gap with best-of-breed open-source tools.",
+    category: "security",
+    branchName: "main",
+    workflowFile: "container-scan.yml",
+    incidentFiles: [],
+    remediationFiles: [],
+    dispatchOnly: true,
+    workflowInputs: {
+      image_ref: "node:18-alpine",
+      severity_threshold: "HIGH,CRITICAL",
+    },
+  },
+  {
+    id: "license-compliance",
+    name: "License Compliance Check",
+    description: "Scans all npm dependencies for license violations using license-checker. Demonstrates how GitHub fills GitLab's native license compliance gap with customizable policy enforcement.",
+    category: "compliance",
+    branchName: "main",
+    workflowFile: "license-compliance.yml",
+    incidentFiles: [],
+    remediationFiles: [],
+    dispatchOnly: true,
+    workflowInputs: {
+      policy_mode: "warn",
+      allowed_licenses: "MIT,Apache-2.0,BSD-2-Clause,BSD-3-Clause,ISC,Unlicense,CC0-1.0,0BSD",
+    },
+  },
+  {
+    id: "dast-scan",
+    name: "DAST Security Scan",
+    description: "Runs OWASP ZAP dynamic security testing against a live URL. Demonstrates how GitHub fills GitLab's native DAST gap using the industry-standard open-source scanner.",
+    category: "security",
+    branchName: "main",
+    workflowFile: "dast-scan.yml",
+    incidentFiles: [],
+    remediationFiles: [],
+    dispatchOnly: true,
+    workflowInputs: {
+      target_url: "https://juice-shop.herokuapp.com",
+      scan_type: "baseline",
     },
   },
 ];

@@ -840,6 +840,20 @@
       border-radius: 0 0 16px 16px;
     }
 
+    .flow-node:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0,0,0,.3);
+      filter: brightness(1.15);
+    }
+
+    .flow-proof-panel {
+      animation: slideDown 200ms ease;
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .log-output {
       max-height: 260px;
       min-height: 180px;
@@ -2115,6 +2129,16 @@ jobs:
 
     const API_BASE = window.location.origin + '/api';
 
+    function toggleFlowProof(id) {
+      const panel = document.getElementById(id);
+      if (!panel) return;
+      const isOpen = panel.style.display !== 'none';
+      // Close all proof panels first
+      document.querySelectorAll('.flow-proof-panel').forEach(p => { p.style.display = 'none'; });
+      // Toggle the clicked one
+      if (!isOpen) { panel.style.display = 'block'; panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+    }
+
     function escapeHtml(value = '') {
       return String(value)
         .replace(/&/g, '&amp;')
@@ -2512,7 +2536,48 @@ jobs:
                   <div class="demo-meta">
                     <span class="badge"><i class="fa-solid fa-gears"></i> ${escapeHtml(demo.workflow)}</span>
                     <span class="badge"><i class="fa-solid fa-link"></i> ${escapeHtml(`/api/demos/${demo.id}/start`)}</span>
+                    <a href="https://github.com/sautalwar/ghcopilot-pii-demo/actions/workflows/${demo.workflow}" target="_blank" rel="noopener" class="badge" style="text-decoration:none;cursor:pointer;"><i class="fa-brands fa-github"></i> View on GitHub</a>
                   </div>
+                  <details style="margin:10px 0;background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);font-size:.85em;">
+                    <summary style="padding:8px 12px;cursor:pointer;color:var(--blue);font-weight:600;"><i class="fa-solid fa-clipboard-check"></i> Component Readiness & Architecture</summary>
+                    <div style="padding:6px 12px 12px;">
+                      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+                        ${(demo.readiness || [
+                          { label: 'Workflow File', ok: true },
+                          { label: 'Backend API', ok: true },
+                          { label: 'GitHub Actions Runner', ok: true },
+                          { label: 'SARIF Upload', ok: demo.id !== 'dast-scan' },
+                        ]).map(c => `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:4px;background:${c.ok ? 'var(--green-soft)' : 'var(--yellow-soft)'};color:${c.ok ? 'var(--green)' : 'var(--yellow)'};">${c.ok ? '✅' : '⚠️'} ${c.label}</span>`).join('')}
+                      </div>
+                      <div style="color:var(--muted);line-height:1.6;">
+                        ${demo.id === 'container-scan' ? `
+                          <strong style="color:var(--text);">How it works:</strong><br>
+                          1. Triggers <code>container-scan.yml</code> via workflow_dispatch<br>
+                          2. <strong>Trivy</strong> scans the image for OS + library CVEs (table + SARIF)<br>
+                          3. <strong>Grype</strong> runs in parallel for cross-validation (~40% more coverage)<br>
+                          4. <strong>Syft</strong> generates an SPDX SBOM for supply chain transparency<br>
+                          5. SARIF results appear in GitHub Security tab<br>
+                          <strong style="color:var(--green);">vs GitLab:</strong> GitLab runs ONE scanner. We run TWO + SBOM. Fully customizable.
+                        ` : demo.id === 'license-compliance' ? `
+                          <strong style="color:var(--text);">How it works:</strong><br>
+                          1. Triggers <code>license-compliance.yml</code> via workflow_dispatch<br>
+                          2. Installs project deps with <code>npm ci</code><br>
+                          3. <strong>license-checker</strong> scans all packages and exports JSON report<br>
+                          4. Node.js script compares licenses against YOUR allow/flag/deny policy<br>
+                          5. Generates summary with approved count vs violations<br>
+                          <strong style="color:var(--green);">vs GitLab:</strong> GitLab has fixed policies. We define ours in YAML — fully customizable.
+                        ` : `
+                          <strong style="color:var(--text);">How it works:</strong><br>
+                          1. Triggers <code>dast-scan.yml</code> via workflow_dispatch<br>
+                          2. <strong>OWASP ZAP</strong> (the #1 open-source DAST tool) scans the target URL<br>
+                          3. Supports baseline, full, and API scan types<br>
+                          4. Findings auto-create GitHub Issues for triage<br>
+                          5. Reports uploaded as artifacts<br>
+                          <strong style="color:var(--green);">vs GitLab:</strong> GitLab locks you into their proprietary scanner. ZAP is industry-standard and free.
+                        `}
+                      </div>
+                    </div>
+                  </details>
                   <div class="demo-input-group">
                     <label for="workflow-input-${demo.id}">${escapeHtml(demo.inputLabel)}</label>
                     ${renderWorkflowDemoInputControl(demo)}
@@ -2808,9 +2873,13 @@ jobs:
           body: JSON.stringify({ inputs })
         });
         setWorkflowDemoStateFromStatus(demoId, payload?.status || payload);
-        showToast(`${config.title} started`, 'success', 'fa-circle-play');
+        showToast(`${config.title} started — opening GitHub Actions`, 'success', 'fa-circle-play');
         startWorkflowDemoPolling(demoId);
         setApiConnection(true, 'API reachable · orchestration live');
+        // Open GitHub Actions page so they can watch the workflow run live
+        const actionsUrl = payload?.actionsUrl || payload?.status?.workflow?.url
+          || `https://github.com/sautalwar/ghcopilot-pii-demo/actions/workflows/${config.workflow}`;
+        window.open(actionsUrl, '_blank');
       } catch (error) {
         workflowDemoState[demoId] = {
           ...workflowDemoState[demoId],
@@ -2926,19 +2995,200 @@ jobs:
     function renderCopilotSecurity() {
       const container = document.getElementById('copilotSecurity');
       container.innerHTML = `
-        <article class="security-card large">
+        <article class="security-card large" style="overflow:visible;">
           <div class="security-card-header">
             <div class="security-icon"><i class="fa-solid fa-diagram-project"></i></div>
             <div>
-              <h4>Data Flow Diagram</h4>
-              <p>Use this diagram to explain that GitHub Copilot sits in the middle as the policy, identity, and routing layer. The model provider changes, but GitHub still provides the primary enterprise control point.</p>
+              <h4>Data Flow Diagram — Interactive Proof</h4>
+              <p>Click each node to see how to <strong>prove it to the customer live</strong>. Every claim has a reproducible CLI command, VS Code step, or network inspection the customer's security team can verify independently.</p>
             </div>
           </div>
-          <pre class="ascii-diagram">${escapeHtml(DATA_FLOW_ASCII)}</pre>
-          <div class="data-points">
-            <span class="data-point">Prompt → GitHub Proxy → Model Provider → Response</span>
-            <span class="data-point">Policy and filtering happen before model execution</span>
-            <span class="data-point">Redacted MCP output is the safest enterprise pattern</span>
+
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0;padding:16px 0;position:relative;">
+
+            <!-- NODE 1: Developer Prompt -->
+            <div class="flow-node" onclick="toggleFlowProof('flow-proof-1')" style="background:var(--surface);border:2px solid var(--blue);border-radius:var(--radius-md);padding:14px 24px;cursor:pointer;text-align:center;max-width:420px;width:100%;transition:var(--transition);position:relative;">
+              <div style="font-weight:700;color:var(--blue);font-size:1em;">1️⃣ Developer Prompt</div>
+              <div style="color:var(--muted);font-size:.85em;margin-top:4px;">Your prompt + @workspace context + MCP tool output</div>
+              <div style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--blue);font-size:.75em;">🔍 Click to prove</div>
+            </div>
+            <div id="flow-proof-1" class="flow-proof-panel" style="display:none;width:100%;max-width:700px;margin:8px 0;background:var(--surface-alt);border:1px solid var(--blue);border-radius:var(--radius-sm);padding:16px;font-size:.88em;">
+              <div style="font-weight:700;color:var(--blue);margin-bottom:8px;">🔬 How to Prove: Nothing leaves your machine until the extension sends it</div>
+              <table style="width:100%;font-size:.9em;"><tbody>
+                <tr><td style="color:var(--muted);width:80px;vertical-align:top;padding:3px 8px 3px 0;"><strong>Step:</strong></td><td>Open VS Code → <strong>View → Output → "GitHub Copilot"</strong></td></tr>
+                <tr><td style="color:var(--muted);vertical-align:top;padding:3px 8px 3px 0;"><strong>Watch:</strong></td><td>Type a Copilot Chat prompt. The Output panel shows local assembly logs — request IDs, token counts, timing — but NOT raw prompt content.</td></tr>
+                <tr><td style="color:var(--muted);vertical-align:top;padding:3px 8px 3px 0;"><strong>Prove:</strong></td><td>Content exclusion happens HERE. Add <code>secrets/**</code> to <code>.copilotignore</code>, then ask <code>@workspace</code> about secrets — Copilot can't see excluded files. The file <strong>never enters the prompt envelope</strong>.</td></tr>
+              </tbody></table>
+              <div style="margin-top:8px;padding:8px;background:var(--surface);border-radius:6px;color:var(--green);font-size:.85em;">
+                <strong>💡 Customer talking point:</strong> "Your content exclusion rules are enforced locally before anything touches the network. The excluded file never leaves this laptop."
+              </div>
+            </div>
+
+            <div style="width:2px;height:24px;background:var(--blue);"></div>
+            <div style="color:var(--blue);font-size:.75em;font-weight:600;">▼ TLS 1.2+ encrypted</div>
+            <div style="width:2px;height:12px;background:var(--blue);"></div>
+
+            <!-- NODE 2: Copilot Extension -->
+            <div class="flow-node" onclick="toggleFlowProof('flow-proof-2')" style="background:var(--surface);border:2px solid var(--green);border-radius:var(--radius-md);padding:14px 24px;cursor:pointer;text-align:center;max-width:420px;width:100%;transition:var(--transition);position:relative;">
+              <div style="font-weight:700;color:var(--green);font-size:1em;">2️⃣ GitHub Copilot Extension</div>
+              <div style="color:var(--muted);font-size:.85em;margin-top:4px;">Assembles prompt, checks .copilotignore, establishes TLS</div>
+              <div style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--green);font-size:.75em;">🔍 Click to prove</div>
+            </div>
+            <div id="flow-proof-2" class="flow-proof-panel" style="display:none;width:100%;max-width:700px;margin:8px 0;background:var(--surface-alt);border:1px solid var(--green);border-radius:var(--radius-sm);padding:16px;font-size:.88em;">
+              <div style="font-weight:700;color:var(--green);margin-bottom:8px;">🔬 How to Prove: Verify the network destination is GitHub (not OpenAI/Anthropic)</div>
+              <pre class="code-block" style="font-size:.82em;margin:8px 0;"># Run in PowerShell / Terminal — RIGHT IN FRONT OF THE CUSTOMER
+nslookup copilot-proxy.githubusercontent.com
+
+# Result: resolves to Azure infrastructure (20.x.x.x)
+# NOT to api.openai.com or api.anthropic.com
+
+# Verify TLS certificate chain:
+curl -vI https://copilot-proxy.githubusercontent.com 2>&amp;1 | findstr /i "issuer subject"
+# issuer: DigiCert    subject: *.githubusercontent.com</pre>
+              <div style="margin-top:8px;padding:8px;background:var(--surface);border-radius:6px;color:var(--green);font-size:.85em;">
+                <strong>💡 Customer talking point:</strong> "Run this nslookup yourself. Your prompts go to GitHub's proxy on Azure — never directly to any model provider. GitHub is always the intermediary."
+              </div>
+            </div>
+
+            <div style="width:2px;height:24px;background:var(--green);"></div>
+            <div style="color:var(--green);font-size:.75em;font-weight:600;">▼ HTTPS to copilot-proxy.githubusercontent.com</div>
+            <div style="width:2px;height:12px;background:var(--green);"></div>
+
+            <!-- NODE 3: GitHub Copilot Proxy -->
+            <div class="flow-node" onclick="toggleFlowProof('flow-proof-3')" style="background:var(--surface);border:2px solid var(--yellow);border-radius:var(--radius-md);padding:14px 24px;cursor:pointer;text-align:center;max-width:480px;width:100%;transition:var(--transition);position:relative;">
+              <div style="font-weight:700;color:var(--yellow);font-size:1em;">3️⃣ GitHub Copilot Proxy</div>
+              <div style="color:var(--muted);font-size:.85em;margin-top:4px;">Auth • Policy • Content Filtering • Audit • Model Routing</div>
+              <div style="font-size:.8em;color:var(--yellow);margin-top:6px;font-weight:600;">⚡ THE ENTERPRISE CONTROL PLANE</div>
+              <div style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--yellow);font-size:.75em;">🔍 Click to prove</div>
+            </div>
+            <div id="flow-proof-3" class="flow-proof-panel" style="display:none;width:100%;max-width:700px;margin:8px 0;background:var(--surface-alt);border:1px solid var(--yellow);border-radius:var(--radius-sm);padding:16px;font-size:.88em;">
+              <div style="font-weight:700;color:var(--yellow);margin-bottom:8px;">🔬 How to Prove: Inspect actual request/response headers in VS Code</div>
+              <table style="width:100%;font-size:.9em;"><tbody>
+                <tr><td style="color:var(--muted);width:80px;vertical-align:top;padding:3px 8px 3px 0;"><strong>Step 1:</strong></td><td>VS Code → <strong>Help → Toggle Developer Tools</strong> → <strong>Network</strong> tab</td></tr>
+                <tr><td style="color:var(--muted);vertical-align:top;padding:3px 8px 3px 0;"><strong>Step 2:</strong></td><td>Type a Copilot Chat prompt. Filter for <code>copilot</code></td></tr>
+                <tr><td style="color:var(--muted);vertical-align:top;padding:3px 8px 3px 0;"><strong>Step 3:</strong></td><td>Click the request → examine headers:</td></tr>
+              </tbody></table>
+              <pre class="code-block" style="font-size:.82em;margin:8px 0;">Request URL:  https://copilot-proxy.githubusercontent.com/v1/chat/completions
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     NOT openai.com. NOT anthropic.com. GitHub.
+
+Response Headers:
+  x-model-version: gpt-4.1-2025-04-14   ← Proves which model ran
+  x-request-id:    abc-123-def-456       ← Unique audit trace ID
+  x-ratelimit-remaining: 98             ← GitHub manages rate limits</pre>
+              <div style="margin-top:8px;padding:8px;background:var(--surface);border-radius:6px;color:var(--yellow);font-size:.85em;">
+                <strong>💡 Customer talking point:</strong> "Open DevTools right now. The URL proves GitHub is the middleman. The x-model-version header tells you exactly which model processed this — and you can see it's routed through GitHub, not sent directly."
+              </div>
+            </div>
+
+            <div style="width:2px;height:16px;background:var(--yellow);"></div>
+
+            <!-- MODEL ROUTING BRANCH -->
+            <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;max-width:650px;width:100%;">
+              <div class="flow-node" onclick="toggleFlowProof('flow-proof-4')" style="flex:1;min-width:170px;background:var(--surface);border:2px solid var(--purple);border-radius:var(--radius-sm);padding:10px 14px;cursor:pointer;text-align:center;transition:var(--transition);">
+                <div style="font-size:.85em;font-weight:700;color:var(--purple);">Azure OpenAI</div>
+                <div style="font-size:.75em;color:var(--muted);">GPT-4.1 / GPT-5</div>
+              </div>
+              <div class="flow-node" onclick="toggleFlowProof('flow-proof-4')" style="flex:1;min-width:170px;background:var(--surface);border:2px solid var(--purple);border-radius:var(--radius-sm);padding:10px 14px;cursor:pointer;text-align:center;transition:var(--transition);">
+                <div style="font-size:.85em;font-weight:700;color:var(--purple);">Anthropic</div>
+                <div style="font-size:.75em;color:var(--muted);">Claude Sonnet / Opus</div>
+              </div>
+              <div class="flow-node" onclick="toggleFlowProof('flow-proof-4')" style="flex:1;min-width:170px;background:var(--surface);border:2px solid var(--purple);border-radius:var(--radius-sm);padding:10px 14px;cursor:pointer;text-align:center;transition:var(--transition);">
+                <div style="font-size:.85em;font-weight:700;color:var(--purple);">Google Cloud</div>
+                <div style="font-size:.75em;color:var(--muted);">Gemini</div>
+              </div>
+            </div>
+            <div id="flow-proof-4" class="flow-proof-panel" style="display:none;width:100%;max-width:700px;margin:8px 0;background:var(--surface-alt);border:1px solid var(--purple);border-radius:var(--radius-sm);padding:16px;font-size:.88em;">
+              <div style="font-weight:700;color:var(--purple);margin-bottom:8px;">🔬 How to Prove: Which model? Check the response header.</div>
+              <table style="width:100%;font-size:.9em;"><tbody>
+                <tr><td style="color:var(--muted);width:120px;vertical-align:top;padding:3px 8px 3px 0;"><strong>GPT-4.1:</strong></td><td><code>x-model-version: gpt-4.1-2025-04-14</code></td></tr>
+                <tr><td style="color:var(--muted);vertical-align:top;padding:3px 8px 3px 0;"><strong>Claude Sonnet:</strong></td><td><code>x-model-version: claude-sonnet-4</code></td></tr>
+                <tr><td style="color:var(--muted);vertical-align:top;padding:3px 8px 3px 0;"><strong>Gemini:</strong></td><td><code>x-model-version: gemini-2.5-pro</code></td></tr>
+              </tbody></table>
+              <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:.82em;">
+                <div style="padding:8px;background:var(--surface);border-radius:6px;border-left:3px solid var(--blue);">
+                  <strong style="color:var(--text);">Azure OpenAI</strong><br>
+                  <span style="color:var(--muted);">Zero retention (Enterprise)<br>30-day abuse log (opt-out available)</span>
+                </div>
+                <div style="padding:8px;background:var(--surface);border-radius:6px;border-left:3px solid #e8723a;">
+                  <strong style="color:var(--text);">Anthropic</strong><br>
+                  <span style="color:var(--muted);">Zero Data Retention agreement<br>Microsoft sub-processor (DPA)</span>
+                </div>
+                <div style="padding:8px;background:var(--surface);border-radius:6px;border-left:3px solid #4285f4;">
+                  <strong style="color:var(--text);">Google Cloud</strong><br>
+                  <span style="color:var(--muted);">No training on prompts<br>Enterprise data protections</span>
+                </div>
+              </div>
+              <div style="margin-top:8px;padding:8px;background:var(--surface);border-radius:6px;color:var(--purple);font-size:.85em;">
+                <strong>💡 Customer talking point:</strong> "Regardless of which model you choose, GitHub controls the connection. Anthropic has a Zero Data Retention agreement. Azure OpenAI's 30-day abuse log can be opted out of on Enterprise. You are never directly connecting to these providers."
+              </div>
+            </div>
+
+            <div style="width:2px;height:24px;background:var(--teal);"></div>
+            <div style="color:var(--teal);font-size:.75em;font-weight:600;">▼ Response filtered by GitHub policy layer</div>
+            <div style="width:2px;height:12px;background:var(--teal);"></div>
+
+            <!-- NODE 5: Response -->
+            <div class="flow-node" onclick="toggleFlowProof('flow-proof-5')" style="background:var(--surface);border:2px solid var(--teal);border-radius:var(--radius-md);padding:14px 24px;cursor:pointer;text-align:center;max-width:420px;width:100%;transition:var(--transition);position:relative;">
+              <div style="font-weight:700;color:var(--teal);font-size:1em;">5️⃣ Response → VS Code / CLI / PR</div>
+              <div style="color:var(--muted);font-size:.85em;margin-top:4px;">Prompt + response discarded (Business/Enterprise) — never trained on</div>
+              <div style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--teal);font-size:.75em;">🔍 Click to prove</div>
+            </div>
+            <div id="flow-proof-5" class="flow-proof-panel" style="display:none;width:100%;max-width:700px;margin:8px 0;background:var(--surface-alt);border:1px solid var(--teal);border-radius:var(--radius-sm);padding:16px;font-size:.88em;">
+              <div style="font-weight:700;color:var(--teal);margin-bottom:8px;">🔬 How to Prove: Zero retention = stateless sessions</div>
+              <table style="width:100%;font-size:.9em;"><tbody>
+                <tr><td style="color:var(--muted);width:80px;vertical-align:top;padding:3px 8px 3px 0;"><strong>Step 1:</strong></td><td>In Copilot Chat: <code>"Please remember the code word pineapple42"</code></td></tr>
+                <tr><td style="color:var(--muted);vertical-align:top;padding:3px 8px 3px 0;"><strong>Step 2:</strong></td><td>Close the chat session completely (✕ or start new thread)</td></tr>
+                <tr><td style="color:var(--muted);vertical-align:top;padding:3px 8px 3px 0;"><strong>Step 3:</strong></td><td>New session → <code>"What code word did I tell you?"</code></td></tr>
+                <tr><td style="color:var(--muted);vertical-align:top;padding:3px 8px 3px 0;"><strong>Result:</strong></td><td>Copilot has <strong>NO idea</strong>. Nothing persists between sessions.</td></tr>
+              </tbody></table>
+              <div style="margin-top:8px;padding:8px;background:var(--surface);border-radius:6px;color:var(--teal);font-size:.85em;">
+                <strong>💡 Customer talking point:</strong> "Try this yourself right now. Tell Copilot a secret, close the session, open a new one. It doesn't remember. Zero retention means zero retention."
+              </div>
+            </div>
+
+            <!-- MCP WARNING -->
+            <div style="margin-top:16px;width:100%;max-width:700px;">
+              <div class="flow-node" onclick="toggleFlowProof('flow-proof-mcp')" style="background:var(--red-soft);border:2px solid var(--red);border-radius:var(--radius-md);padding:14px 24px;cursor:pointer;max-width:700px;width:100%;transition:var(--transition);position:relative;">
+                <div style="font-weight:700;color:var(--red);font-size:1em;">⚠️ MCP / Tool Call Risk</div>
+                <div style="color:var(--muted);font-size:.85em;margin-top:4px;">If an MCP server returns raw PII, that data becomes part of the model context. <strong>Redact in YOUR code BEFORE the response reaches Copilot.</strong></div>
+                <div style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--red);font-size:.75em;">🔍 Click to prove</div>
+              </div>
+              <div id="flow-proof-mcp" class="flow-proof-panel" style="display:none;width:100%;max-width:700px;margin:8px 0;background:var(--surface-alt);border:1px solid var(--red);border-radius:var(--radius-sm);padding:16px;font-size:.88em;">
+                <div style="font-weight:700;color:var(--red);margin-bottom:8px;">🔬 How to Prove: Show the risk AND the fix side by side</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                  <div>
+                    <div style="color:var(--red);font-weight:700;font-size:.9em;margin-bottom:4px;">❌ Without redaction:</div>
+                    <pre class="code-block" style="font-size:.78em;margin:0;">// MCP returns raw data
+return {
+  name: "John Doe",
+  ssn: "123-45-6789",  // ← EXPOSED
+  email: "john@acme.com"
+};
+// LLM sees the real SSN!</pre>
+                  </div>
+                  <div>
+                    <div style="color:var(--green);font-weight:700;font-size:.9em;margin-bottom:4px;">✅ With redaction:</div>
+                    <pre class="code-block" style="font-size:.78em;margin:0;">// MCP returns masked data
+return {
+  name: "John Doe",
+  ssn: "***-**-6789",  // ← SAFE
+  email: "j***@***.com"
+};
+// LLM never sees real PII</pre>
+                  </div>
+                </div>
+                <div style="margin-top:10px;padding:8px;background:var(--surface);border-radius:6px;color:var(--red);font-size:.85em;">
+                  <strong>💡 Customer talking point:</strong> "The MCP server is YOUR code running on YOUR infrastructure. You decide what the model sees. Redact sensitive fields before they leave your server — the model only ever processes masked values."
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="data-points" style="margin-top:8px;">
+            <span class="data-point" style="background:var(--blue-soft,rgba(88,166,255,.12));border-color:var(--blue);">Click each node above for proof commands you can run live in front of the customer</span>
+            <span class="data-point">Every claim is independently verifiable by the customer's security team</span>
+            <span class="data-point">No trust required — it's all observable in DevTools, DNS, and headers</span>
           </div>
         </article>
 

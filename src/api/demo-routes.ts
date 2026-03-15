@@ -66,6 +66,18 @@ function matchesWorkflow(run: WorkflowRunSummary, workflowFile: string): boolean
   );
 }
 
+function getWorkflowBranch(demo: DemoScenario): string {
+  return demo.dispatchOnly ? "main" : demo.branchName;
+}
+
+function findLatestWorkflowRun(
+  demo: DemoScenario,
+  workflowRuns: WorkflowRunSummary[],
+): WorkflowRunSummary | undefined {
+  const matchingRun = workflowRuns.find((run) => matchesWorkflow(run, demo.workflowFile));
+  return matchingRun ?? (demo.dispatchOnly ? undefined : workflowRuns[0]);
+}
+
 function collectAlertCount<T extends SecretScanningAlertSummary | CodeScanningAlertSummary>(alerts: T[] | undefined, branchName: string): number {
   if (!alerts || alerts.length === 0) {
     return 0;
@@ -85,15 +97,20 @@ async function buildDemoStatus(
   },
 ): Promise<DemoStatusPayload> {
   const errors = [...(sharedAlerts?.errors ?? [])];
+  const workflowBranch = getWorkflowBranch(demo);
 
   const [branchExistsResult, workflowRunsResult, pullRequestsResult] = await Promise.all([
-    githubClient.branchExists(demo.branchName),
-    githubClient.getWorkflowRuns(demo.branchName),
-    githubClient.listOpenPullRequestsByHead(demo.branchName),
+    demo.dispatchOnly ? Promise.resolve(null) : githubClient.branchExists(demo.branchName),
+    githubClient.getWorkflowRuns(workflowBranch),
+    demo.dispatchOnly ? Promise.resolve(null) : githubClient.listOpenPullRequestsByHead(demo.branchName),
   ]);
 
-  const branchExists = branchExistsResult.success ? branchExistsResult.data ?? false : false;
-  if (!branchExistsResult.success && branchExistsResult.error) {
+  const branchExists = demo.dispatchOnly
+    ? true
+    : branchExistsResult?.success
+      ? branchExistsResult.data ?? false
+      : false;
+  if (!demo.dispatchOnly && branchExistsResult && !branchExistsResult.success && branchExistsResult.error) {
     errors.push(branchExistsResult.error);
   }
 
@@ -102,11 +119,15 @@ async function buildDemoStatus(
     errors.push(workflowRunsResult.error);
   }
 
-  const latestRun = workflowRuns.find((run) => matchesWorkflow(run, demo.workflowFile)) ?? workflowRuns[0];
+  const latestRun = findLatestWorkflowRun(demo, workflowRuns);
   const workflowStatus = latestRun?.status ?? (branchExists ? "ready" : "not-started");
 
-  const openPullRequests = pullRequestsResult.success ? pullRequestsResult.data?.length ?? 0 : 0;
-  if (!pullRequestsResult.success && pullRequestsResult.error) {
+  const openPullRequests = demo.dispatchOnly
+    ? 0
+    : pullRequestsResult?.success
+      ? pullRequestsResult.data?.length ?? 0
+      : 0;
+  if (!demo.dispatchOnly && pullRequestsResult && !pullRequestsResult.success && pullRequestsResult.error) {
     errors.push(pullRequestsResult.error);
   }
 
@@ -205,6 +226,20 @@ function operationSucceeded(results: Array<{ success?: boolean }>): boolean {
 }
 
 async function teardownDemo(demo: DemoScenario): Promise<TeardownResult> {
+  if (demo.dispatchOnly) {
+    const workflowRunsResult = await githubClient.deleteWorkflowRuns(getWorkflowBranch(demo), demo.workflowFile);
+    const errors = [workflowRunsResult.error].filter((value): value is string => Boolean(value));
+
+    return {
+      demoId: demo.id,
+      branch: null,
+      pullRequests: null,
+      issues: null,
+      workflowRuns: workflowRunsResult.data ?? null,
+      errors,
+    };
+  }
+
   const [pullRequestsResult, issuesResult, workflowRunsResult, branchResult] = await Promise.all([
     githubClient.closePullRequestsByHead(demo.branchName),
     githubClient.closeIssuesByLabel(`demo:${demo.id}`),
@@ -230,14 +265,14 @@ async function teardownDemo(demo: DemoScenario): Promise<TeardownResult> {
 }
 
 async function getLatestRunForDemo(demo: DemoScenario): Promise<{ run?: WorkflowRunSummary; error?: string }> {
-  const workflowRuns = await githubClient.getWorkflowRuns(demo.branchName);
+  const workflowRuns = await githubClient.getWorkflowRuns(getWorkflowBranch(demo));
   if (!workflowRuns.success) {
     return {
       error: workflowRuns.error ?? "Unable to retrieve workflow runs.",
     };
   }
 
-  const run = workflowRuns.data?.find((candidate) => matchesWorkflow(candidate, demo.workflowFile)) ?? workflowRuns.data?.[0];
+  const run = findLatestWorkflowRun(demo, workflowRuns.data ?? []);
   return { run };
 }
 
@@ -269,6 +304,27 @@ router.post("/:demoId/start", async (request: Request, response: Response) => {
   const demo = resolveDemo(request.params.demoId);
   if (!demo) {
     return respondMissingDemo(response, request.params.demoId);
+  }
+
+  if (demo.dispatchOnly) {
+    const mergedInputs: Record<string, string> = {
+      ...(demo.workflowInputs ?? {}),
+      ...((request.body?.inputs ?? {}) as Record<string, string>),
+    };
+    const workflowResult = await githubClient.triggerWorkflow(
+      demo.workflowFile,
+      getWorkflowBranch(demo),
+      mergedInputs,
+    );
+
+    const status = await buildDemoStatus(demo, await loadSharedAlerts());
+    return response.status(workflowResult.success ? 202 : 502).json({
+      success: workflowResult.success,
+      workflow: workflowResult.data,
+      workflowError: workflowResult.error,
+      actionsUrl: `https://github.com/sautalwar/ghcopilot-pii-demo/actions/workflows/${demo.workflowFile}`,
+      status,
+    });
   }
 
   const branchResult = await githubClient.createBranch(demo.branchName);
@@ -323,6 +379,16 @@ router.post("/:demoId/remediate", async (request: Request, response: Response) =
   const demo = resolveDemo(request.params.demoId);
   if (!demo) {
     return respondMissingDemo(response, request.params.demoId);
+  }
+
+  if (demo.dispatchOnly) {
+    const status = await buildDemoStatus(demo, await loadSharedAlerts());
+    return response.json({
+      success: true,
+      skipped: true,
+      message: `Demo '${demo.id}' is workflow_dispatch only and does not support remediation.`,
+      status,
+    });
   }
 
   const branchResult = await githubClient.createBranch(demo.branchName);
