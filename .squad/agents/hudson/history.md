@@ -19,3 +19,8 @@
 ## Learnings
 - **Pipeline types foundation (2026-04-17):** Created `src/services/pipeline-types.ts` with all 12-step types, discriminated union for step outputs (`StepOutputMap`), valid-transitions map, config defaults, events, dashboard summary, and type guards. Used lowercase `Severity` rather than reusing `CVESeverity` (uppercase) from `cve-types.ts` because the pipeline domain uses lowercase throughout; a mapping util can bridge later. Compiles cleanly with `npx tsc --noEmit`.
 - **Pipeline engine + routes (2026-04-17):** Built `src/services/remediation-pipeline.ts` (RemediationPipeline class) and `src/api/pipeline-routes.ts` (10 REST endpoints + SSE). Key decisions: dryRun=true by default for demo safety; `FixedBy='pipeline'` maps to `'human'` when feeding into VulnEvent since vuln-trends-types doesn't include `'pipeline'`; EventEmitter wildcard pattern (`'*'`) for SSE broadcast; singleton export `pipeline` for shared state. Compiles cleanly.
+
+## Wave 2 Completion (2026-04-17)
+- **Status:** ✅ Pipeline engine and types complete. All routes wired.
+- **Verification:** TypeScript clean. Pipeline SSE tested end-to-end.
+- **Session artifacts:** .squad/orchestration-log/2026-04-17T0756-wave1-wave4.md.

@@ -18,3 +18,8 @@
 - Demo accounts list is clickable — auto-fills email/password for quick demo logins
 - User badge with avatar initials, name, role, and logout button appears in hero-actions area
 - `hideRestrictedTabPanels()` sets `display:none` on unauthorized tab panels; `switchTab()` unchanged
+
+## Wave 3 Completion (2026-04-17)
+- **Status:** ✅ Frontend login modal and role-based tab gating complete.
+- **Verification:** Login tested. Role-based visibility working. Auto-logout on 401.
+- **Session artifacts:** .squad/orchestration-log/2026-04-17T0756-wave1-wave4.md.

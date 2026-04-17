@@ -23,3 +23,8 @@
 - All jobs include `permissions:` blocks scoped to least privilege
 - Poll loop in wait-for-fix: 20 attempts × 30s = 10min timeout, with `needs-human` label on timeout
 - Gate verdict sets commit status via `repos.createCommitStatus` for branch protection integration
+
+## Wave 3 Completion (2026-04-17)
+- **Status:** ✅ Remediation pipeline and merge gate workflows complete.
+- **Verification:** Workflows trigger cleanly from API. Gate verdicts set commit status.
+- **Session artifacts:** .squad/orchestration-log/2026-04-17T0756-wave1-wave4.md.

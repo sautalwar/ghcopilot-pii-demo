@@ -28,3 +28,8 @@
 - Tree provider `contextValue` on TreeItems enables context menu contributions in `package.json` menus section — essential for "Create Jira Ticket" right-click.
 - Copilot Extension message formatters should use markdown tables for structured data and code blocks for trees/charts — Copilot Chat renders these natively.
 - `cisaKEV` flag on ZeroDayAlert is valuable for demo impact — highlights items that are in the CISA Known Exploited Vulnerabilities catalog.
+
+## Wave 1 & 3 Completion (2026-04-17)
+- **Status:** ✅ VS Code and Copilot Extension scaffolds complete. Features integrated.
+- **Verification:** Extensions compile independently. Sidebar + CodeLens + Copilot handlers working.
+- **Session artifacts:** .squad/orchestration-log/2026-04-17T0756-wave1-wave4.md.
