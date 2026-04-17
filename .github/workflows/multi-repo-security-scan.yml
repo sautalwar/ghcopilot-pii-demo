@@ -1,0 +1,654 @@
+name: Multi-Repo Security Scan
+
+on:
+  push:
+    branches: [main, 'demo/*']
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      scan_scope:
+        description: 'Scan scope'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - secrets
+          - dependencies
+          - code
+      auto_fix:
+        description: 'Auto-create fix PRs for critical findings'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  security-events: read
+  actions: read
+
+jobs:
+  # ──────────────────────────────────────────────────────────
+  # Job 1: Secret scanning
+  # ──────────────────────────────────────────────────────────
+  scan-secrets:
+    name: Scan — Secrets
+    if: >-
+      github.event_name != 'workflow_dispatch'
+      || github.event.inputs.scan_scope == 'all'
+      || github.event.inputs.scan_scope == 'secrets'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Scan for hardcoded secrets
+        id: scan
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          START_NS=$(date +%s%N)
+
+          python3 <<'PY'
+          import json, os, re, time
+          from pathlib import Path
+
+          start = time.time()
+          root = Path('.')
+          ignore_dirs = {'.git', 'node_modules', 'dist', 'build', 'coverage', '.github'}
+          allowed_suffixes = {
+              '.ts', '.tsx', '.js', '.jsx', '.json', '.env', '.yaml', '.yml',
+              '.properties', '.config', '.toml', '.xml', '.sh', '.py', '.md'
+          }
+
+          patterns = [
+              {'name': 'AWS_ACCESS_KEY',     'severity': 'critical', 'regex': re.compile(r'AKIA[0-9A-Z]{16}')},
+              {'name': 'GITHUB_TOKEN',       'severity': 'critical', 'regex': re.compile(r'gh[ps]_[A-Za-z0-9_]{36,}')},
+              {'name': 'SLACK_TOKEN',        'severity': 'high',     'regex': re.compile(r'xox[bpors]-[A-Za-z0-9\-]{10,}')},
+              {'name': 'JWT_TOKEN',          'severity': 'high',     'regex': re.compile(r'eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]+')},
+              {'name': 'PRIVATE_KEY',        'severity': 'critical', 'regex': re.compile(r'-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----')},
+              {'name': 'CONNECTION_STRING',  'severity': 'high',     'regex': re.compile(r'(?i)(?:mongodb\+srv|postgres|mysql|mssql|amqp|redis)://[^\s"\']+')},
+              {'name': 'GENERIC_API_KEY',    'severity': 'medium',   'regex': re.compile(r'(?i)\b(?:api[_-]?key|client[_-]?secret|access[_-]?token)\b\s*[:=]\s*["\']?[A-Za-z0-9_\-/=+]{16,}["\']?')},
+              {'name': 'PASSWORD_IN_CONFIG', 'severity': 'high',     'regex': re.compile(r'(?i)\b(?:password|passwd|pwd)\b\s*[:=]\s*["\']?[^"\'\s]{8,}["\']?')},
+          ]
+
+          findings = []
+          for path in root.rglob('*'):
+              if not path.is_file():
+                  continue
+              rel = path.relative_to(root)
+              if any(part in ignore_dirs for part in rel.parts):
+                  continue
+              if path.name != '.env' and path.suffix.lower() not in allowed_suffixes:
+                  continue
+              try:
+                  content = path.read_text(encoding='utf-8')
+              except (UnicodeDecodeError, OSError):
+                  continue
+
+              for pat in patterns:
+                  for match in pat['regex'].finditer(content):
+                      line = content.count('\n', 0, match.start()) + 1
+                      findings.append({
+                          'type': pat['name'],
+                          'file': rel.as_posix(),
+                          'line': line,
+                          'severity': pat['severity'],
+                          'message': f"Potential {pat['name']} detected in {rel.as_posix()} at line {line}"
+                      })
+                      level = 'error' if pat['severity'] in ('critical', 'high') else 'warning'
+                      print(f"::{level} file={rel.as_posix()},line={line},title={pat['name']}::{pat['name']} ({pat['severity']})")
+
+          elapsed_ms = int((time.time() - start) * 1000)
+
+          result = {
+              'scanner': 'secret-scanner',
+              'status': 'fail' if findings else 'pass',
+              'findings': findings[:200],
+              'scanDurationMs': elapsed_ms
+          }
+          Path('secret-scan-results.json').write_text(json.dumps(result, indent=2))
+          if findings:
+              exit(1)
+          PY
+
+      - name: Upload secret scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: secret-scan-results
+          path: secret-scan-results.json
+
+  # ──────────────────────────────────────────────────────────
+  # Job 2: Dependency scanning
+  # ──────────────────────────────────────────────────────────
+  scan-dependencies:
+    name: Scan — Dependencies
+    if: >-
+      github.event_name != 'workflow_dispatch'
+      || github.event.inputs.scan_scope == 'all'
+      || github.event.inputs.scan_scope == 'dependencies'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --ignore-scripts
+          elif [ -f package.json ]; then
+            npm install --package-lock-only --ignore-scripts --no-audit
+            npm ci --ignore-scripts
+          fi
+
+      - name: Run dependency audit
+        id: audit
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          START_MS=$(date +%s%3N)
+
+          npm audit --json > audit-raw.json || true
+
+          node <<'NODE'
+          const fs = require('fs');
+          const startMs = parseInt(process.env.START_MS || '0', 10);
+
+          let report;
+          try {
+            report = JSON.parse(fs.readFileSync('audit-raw.json', 'utf8'));
+          } catch {
+            const result = { scanner: 'npm-audit', status: 'skipped', findings: [], scanDurationMs: 0 };
+            fs.writeFileSync('dep-scan-results.json', JSON.stringify(result, null, 2));
+            process.exit(0);
+          }
+
+          const vulns = report.vulnerabilities || {};
+          const findings = [];
+
+          for (const [name, v] of Object.entries(vulns)) {
+            const severity = String(v.severity || 'low').toLowerCase();
+            const via = Array.isArray(v.via)
+              ? v.via.map(e => typeof e === 'string' ? e : (e.url || e.name || '')).filter(Boolean)
+              : [];
+            const cveIds = Array.isArray(v.via)
+              ? v.via.filter(e => typeof e !== 'string' && e.url).map(e => {
+                  const m = String(e.url || '').match(/CVE-\d{4}-\d+/i);
+                  return m ? m[0] : null;
+                }).filter(Boolean)
+              : [];
+
+            const fixAvailable = v.fixAvailable;
+            let patchedVersion = 'N/A';
+            if (typeof fixAvailable === 'object' && fixAvailable && fixAvailable.version) {
+              patchedVersion = fixAvailable.version;
+            } else if (fixAvailable === true) {
+              patchedVersion = 'Run npm audit fix';
+            }
+
+            findings.push({
+              type: 'VULNERABLE_DEPENDENCY',
+              file: 'package.json',
+              line: 0,
+              severity,
+              message: `${name}@${v.range || 'unknown'} has ${severity} vulnerability`,
+              package: name,
+              currentVersion: v.range || 'unknown',
+              patchedVersion,
+              cve: cveIds.join(', ') || 'N/A',
+              fixDescription: patchedVersion !== 'N/A'
+                ? `Update ${name} to ${patchedVersion}. Run: npm audit fix or npm install ${name}@latest`
+                : `Review advisory for ${name}: ${via.join(', ')}`
+            });
+
+            const level = ['critical', 'high'].includes(severity) ? 'error' : 'warning';
+            console.log(`::${level} title=${name} ${severity}::${name} (${severity}) - ${via.join(', ')}`);
+          }
+
+          const elapsed = Date.now() - startMs;
+          const hasCritHigh = findings.some(f => ['critical', 'high'].includes(f.severity));
+
+          const result = {
+            scanner: 'npm-audit',
+            status: hasCritHigh ? 'fail' : 'pass',
+            findings,
+            scanDurationMs: elapsed > 0 ? elapsed : 0
+          };
+          fs.writeFileSync('dep-scan-results.json', JSON.stringify(result, null, 2));
+
+          if (hasCritHigh) process.exit(1);
+          NODE
+        env:
+          START_MS: ${{ steps.audit.outputs.start_ms || '0' }}
+
+      - name: Upload dependency scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dep-scan-results
+          path: dep-scan-results.json
+
+  # ──────────────────────────────────────────────────────────
+  # Job 3: Code vulnerability scanning
+  # ──────────────────────────────────────────────────────────
+  scan-code:
+    name: Scan — Code Vulnerabilities
+    if: >-
+      github.event_name != 'workflow_dispatch'
+      || github.event.inputs.scan_scope == 'all'
+      || github.event.inputs.scan_scope == 'code'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        id: codeql-init
+        continue-on-error: true
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+
+      - name: Autobuild project
+        if: steps.codeql-init.outcome == 'success'
+        continue-on-error: true
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Run CodeQL analysis
+        if: steps.codeql-init.outcome == 'success'
+        continue-on-error: true
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:javascript-typescript
+          output: codeql-results
+
+      - name: Run custom SAST checks
+        id: custom-sast
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          START_MS=$(date +%s%3N)
+
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const startMs = Date.now();
+
+          const ignoreDirs = new Set(['.git', 'node_modules', 'dist', 'build', 'coverage']);
+          const scanExtensions = new Set(['.ts', '.tsx', '.js', '.jsx']);
+
+          const patterns = [
+            {
+              name: 'SQL_INJECTION',
+              severity: 'critical',
+              regex: /(?:query|execute|raw)\s*\(\s*[`'"].*\$\{|(?:query|execute|raw)\s*\(\s*['"].*\+\s*(?:req\.|params\.|body\.|query\.)/gi,
+              message: 'Potential SQL injection: string concatenation or template literal in query'
+            },
+            {
+              name: 'XSS_INNERHTML',
+              severity: 'high',
+              regex: /\.innerHTML\s*=\s*(?!['"]<)|document\.write\s*\(/gi,
+              message: 'Potential XSS: innerHTML assignment or document.write without sanitization'
+            },
+            {
+              name: 'PATH_TRAVERSAL',
+              severity: 'high',
+              regex: /(?:readFile|readFileSync|createReadStream|writeFile|writeFileSync|unlink|rmdir)\s*\(\s*(?:req\.|params\.|body\.|query\.|`[^`]*\$\{)/gi,
+              message: 'Potential path traversal: unsanitized user input in file system operation'
+            },
+            {
+              name: 'INSECURE_CRYPTO',
+              severity: 'medium',
+              regex: /createHash\s*\(\s*['"](?:md5|sha1)['"]\s*\)/gi,
+              message: 'Insecure hash algorithm: MD5/SHA1 should not be used for passwords or security'
+            },
+            {
+              name: 'EVAL_USAGE',
+              severity: 'high',
+              regex: /\beval\s*\(\s*(?!['"])/g,
+              message: 'Dangerous eval() usage with dynamic input'
+            },
+            {
+              name: 'HARDCODED_CORS',
+              severity: 'medium',
+              regex: /Access-Control-Allow-Origin['":\s]*['"]\*/gi,
+              message: 'Wildcard CORS origin allows requests from any domain'
+            }
+          ];
+
+          function walkDir(dir) {
+            const results = [];
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              if (ignoreDirs.has(entry.name)) continue;
+              const fullPath = path.join(dir, entry.name);
+              if (entry.isDirectory()) {
+                results.push(...walkDir(fullPath));
+              } else if (entry.isFile() && scanExtensions.has(path.extname(entry.name))) {
+                results.push(fullPath);
+              }
+            }
+            return results;
+          }
+
+          const findings = [];
+          const files = walkDir('.');
+
+          for (const file of files) {
+            let content;
+            try {
+              content = fs.readFileSync(file, 'utf8');
+            } catch { continue; }
+
+            const lines = content.split('\n');
+
+            for (const pat of patterns) {
+              let match;
+              const regex = new RegExp(pat.regex.source, pat.regex.flags);
+              while ((match = regex.exec(content)) !== null) {
+                const lineNum = content.substring(0, match.index).split('\n').length;
+                const relFile = file.replace(/\\/g, '/').replace(/^\.\//, '');
+                findings.push({
+                  type: pat.name,
+                  file: relFile,
+                  line: lineNum,
+                  severity: pat.severity,
+                  message: pat.message
+                });
+                const level = ['critical', 'high'].includes(pat.severity) ? 'error' : 'warning';
+                console.log(`::${level} file=${relFile},line=${lineNum},title=${pat.name}::${pat.message}`);
+              }
+            }
+          }
+
+          const elapsed = Date.now() - startMs;
+          const hasCritHigh = findings.some(f => ['critical', 'high'].includes(f.severity));
+
+          const result = {
+            scanner: 'custom-sast',
+            status: hasCritHigh ? 'fail' : 'pass',
+            findings,
+            scanDurationMs: elapsed
+          };
+          fs.writeFileSync('code-scan-results.json', JSON.stringify(result, null, 2));
+
+          if (hasCritHigh) process.exit(1);
+          NODE
+
+      - name: Upload code scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-scan-results
+          path: code-scan-results.json
+
+  # ──────────────────────────────────────────────────────────
+  # Job 4: Consolidate report and auto-remediate
+  # ──────────────────────────────────────────────────────────
+  report-and-remediate:
+    name: Report & Remediate
+    if: always()
+    needs: [scan-secrets, scan-dependencies, scan-code]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download all scan artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: Consolidate report and create issues
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUTO_FIX: ${{ github.event.inputs.auto_fix || 'false' }}
+        run: |
+          set -euo pipefail
+
+          node <<'NODE'
+          const fs = require('fs');
+          const { execSync } = require('child_process');
+
+          const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+          const autoFix = process.env.AUTO_FIX === 'true';
+          const repo = process.env.GITHUB_REPOSITORY;
+          const runId = process.env.GITHUB_RUN_ID;
+          const runNumber = process.env.GITHUB_RUN_NUMBER;
+          const serverUrl = process.env.GITHUB_SERVER_URL;
+          const refName = process.env.GITHUB_REF_NAME;
+          const actor = process.env.GITHUB_ACTOR;
+
+          // ── Load results ─────────────────────────────────────
+          function loadResult(file, fallbackScanner) {
+            try {
+              return JSON.parse(fs.readFileSync(file, 'utf8'));
+            } catch {
+              return { scanner: fallbackScanner, status: 'skipped', findings: [], scanDurationMs: 0 };
+            }
+          }
+
+          const secrets = loadResult('secret-scan-results.json', 'secret-scanner');
+          const deps    = loadResult('dep-scan-results.json',    'npm-audit');
+          const code    = loadResult('code-scan-results.json',   'custom-sast');
+
+          const allFindings = [
+            ...(secrets.findings || []).map(f => ({ ...f, scanner: 'secrets' })),
+            ...(deps.findings    || []).map(f => ({ ...f, scanner: 'dependencies' })),
+            ...(code.findings    || []).map(f => ({ ...f, scanner: 'code' })),
+          ];
+
+          // ── Severity helpers ─────────────────────────────────
+          const sevIcon = { critical: '🔴', high: '🟠', medium: '🟡', low: '🟢' };
+          const sevLabel = { critical: 'CRITICAL', high: 'HIGH', medium: 'MEDIUM', low: 'LOW' };
+
+          const bySeverity = { critical: [], high: [], medium: [], low: [] };
+          for (const f of allFindings) {
+            const sev = (f.severity || 'low').toLowerCase();
+            if (bySeverity[sev]) bySeverity[sev].push(f);
+            else bySeverity.low.push(f);
+          }
+
+          const byScanner = {};
+          for (const scan of [secrets, deps, code]) {
+            byScanner[scan.scanner] = {
+              status: scan.status,
+              count: (scan.findings || []).length,
+              durationMs: scan.scanDurationMs || 0
+            };
+          }
+
+          // ── Fix description generator ─────────────────────────
+          function generateFixDescription(finding) {
+            const t = (finding.type || '').toUpperCase();
+            if (finding.scanner === 'secrets') {
+              return [
+                `**Rotate the exposed credential** immediately.`,
+                `Move the value to a GitHub secret or environment variable.`,
+                `Add the file pattern to \`.gitignore\` if it should not be committed.`,
+                `Audit git history with \`git log -p -- ${finding.file}\` and consider using BFG Repo-Cleaner to purge.`
+              ].join('\n');
+            }
+            if (finding.scanner === 'dependencies') {
+              const pkg = finding.package || finding.type;
+              const ver = finding.patchedVersion || 'latest';
+              return [
+                `**Update ${pkg}** to version \`${ver}\`.`,
+                `Run: \`npm audit fix\` or \`npm install ${pkg}@latest\``,
+                `If a major version bump is required, review the changelog for breaking changes.`,
+                finding.cve && finding.cve !== 'N/A' ? `CVE: ${finding.cve}` : ''
+              ].filter(Boolean).join('\n');
+            }
+            // Code vulnerabilities
+            const fixes = {
+              SQL_INJECTION: 'Use parameterized queries or prepared statements. Never concatenate user input into SQL strings.',
+              XSS_INNERHTML: 'Use textContent instead of innerHTML, or sanitize input with DOMPurify before rendering.',
+              PATH_TRAVERSAL: 'Validate and sanitize file paths. Use path.resolve() and ensure the result is within the expected directory.',
+              INSECURE_CRYPTO: 'Replace MD5/SHA1 with SHA-256 or bcrypt for password hashing.',
+              EVAL_USAGE: 'Remove eval() and use safe alternatives like JSON.parse() or a sandboxed interpreter.',
+              HARDCODED_CORS: 'Replace wildcard CORS origin with specific allowed origins.',
+            };
+            return fixes[t] || `Review and fix the ${t} vulnerability in \`${finding.file}\` at line ${finding.line}.`;
+          }
+
+          // ── Create issues for critical/high findings ──────────
+          let existingIssues = [];
+          try {
+            const raw = execSync(
+              `gh issue list --label security --state open --json title --limit 200`,
+              { encoding: 'utf8', timeout: 30000 }
+            );
+            existingIssues = JSON.parse(raw).map(i => i.title);
+          } catch {
+            console.log('::warning::Could not fetch existing issues for dedup.');
+          }
+
+          let issuesCreated = 0;
+          const critHighFindings = [...bySeverity.critical, ...bySeverity.high];
+
+          for (const finding of critHighFindings.slice(0, 20)) {
+            const sev = (finding.severity || 'high').toLowerCase();
+            const shouldCreate = autoFix || sev === 'critical';
+            if (!shouldCreate) continue;
+
+            const title = `${sevIcon[sev]} [SECURITY] ${sevLabel[sev]}: ${finding.type} in ${finding.file || finding.package || 'unknown'}`;
+
+            if (existingIssues.some(t => t === title)) {
+              console.log(`Skipping duplicate issue: ${title}`);
+              continue;
+            }
+
+            const fixDesc = generateFixDescription(finding);
+            const body = [
+              `## Security Finding`,
+              ``,
+              `| Field | Value |`,
+              `| --- | --- |`,
+              `| **Scanner** | ${finding.scanner} |`,
+              `| **Severity** | ${sevIcon[sev]} ${sevLabel[sev]} |`,
+              `| **Type** | ${finding.type} |`,
+              `| **File** | \`${finding.file || 'N/A'}\` |`,
+              `| **Line** | ${finding.line || 'N/A'} |`,
+              `| **Package** | ${finding.package || 'N/A'} |`,
+              ``,
+              `### Description`,
+              finding.message || 'Security vulnerability detected.',
+              ``,
+              `### Recommended Fix`,
+              fixDesc,
+              ``,
+              `---`,
+              `*Auto-generated by [Multi-Repo Security Scan](${serverUrl}/${repo}/actions/runs/${runId}) run #${runNumber}*`,
+            ].join('\n');
+
+            try {
+              // Ensure labels exist
+              execSync(`gh label create security --color D93F0B --description "Security finding" --force`, { encoding: 'utf8', stdio: 'pipe' });
+              execSync(`gh label create auto-remediation --color 0E8A16 --description "Auto-remediation candidate" --force`, { encoding: 'utf8', stdio: 'pipe' });
+
+              const issueResult = execSync(
+                `gh issue create --title "${title.replace(/"/g, '\\"')}" --body "${body.replace(/"/g, '\\"').replace(/\n/g, '\\n')}" --label "security,auto-remediation"`,
+                { encoding: 'utf8', timeout: 30000 }
+              );
+              console.log(`Created issue: ${issueResult.trim()}`);
+              issuesCreated++;
+            } catch (err) {
+              console.log(`::warning::Failed to create issue for ${finding.type}: ${err.message}`);
+            }
+          }
+
+          // ── Build job summary ────────────────────────────────
+          const lines = [
+            '# 🛡️ Multi-Repo Security Scan Report',
+            '',
+            `**Ref:** \`${refName}\` | **Run:** [#${runNumber}](${serverUrl}/${repo}/actions/runs/${runId}) | **Actor:** @${actor}`,
+            '',
+            '## Summary by Severity',
+            '',
+            '| Severity | Count |',
+            '| --- | --- |',
+            `| 🔴 Critical | ${bySeverity.critical.length} |`,
+            `| 🟠 High | ${bySeverity.high.length} |`,
+            `| 🟡 Medium | ${bySeverity.medium.length} |`,
+            `| 🟢 Low | ${bySeverity.low.length} |`,
+            `| **Total** | **${allFindings.length}** |`,
+            '',
+            '## Scanner Results',
+            '',
+            '| Scanner | Status | Findings | Duration |',
+            '| --- | --- | --- | --- |',
+          ];
+
+          const statusIcon = s => s === 'pass' ? '✅' : s === 'fail' ? '❌' : '⏭️';
+          for (const [name, info] of Object.entries(byScanner)) {
+            const dur = info.durationMs > 0 ? `${(info.durationMs / 1000).toFixed(1)}s` : 'N/A';
+            lines.push(`| ${name} | ${statusIcon(info.status)} ${info.status} | ${info.count} | ${dur} |`);
+          }
+
+          // Detail tables per severity
+          for (const sev of ['critical', 'high', 'medium', 'low']) {
+            const items = bySeverity[sev];
+            if (items.length === 0) continue;
+            lines.push('', `### ${sevIcon[sev]} ${sevLabel[sev]} Findings`, '');
+            lines.push('| Scanner | Type | File | Line | Message |');
+            lines.push('| --- | --- | --- | --- | --- |');
+            for (const f of items.slice(0, 30)) {
+              lines.push(`| ${f.scanner} | ${f.type} | \`${f.file || f.package || '-'}\` | ${f.line || '-'} | ${(f.message || '').substring(0, 80)} |`);
+            }
+            if (items.length > 30) {
+              lines.push(`| | | | | *...and ${items.length - 30} more* |`);
+            }
+          }
+
+          lines.push('');
+          if (issuesCreated > 0) {
+            lines.push(`> 🎫 **${issuesCreated} GitHub issue(s) created** for critical/high findings.`);
+          }
+
+          const hasFail = [secrets.status, deps.status, code.status].some(s => s === 'fail');
+          lines.push('', '---');
+          lines.push(`**Overall: ${hasFail ? '❌ FAIL — security findings detected' : '✅ PASS — no security findings detected'}**`);
+
+          fs.appendFileSync(summaryPath, lines.join('\n') + '\n');
+
+          // ── Save consolidated report ──────────────────────────
+          const consolidated = {
+            ref: refName,
+            runId,
+            runNumber,
+            timestamp: new Date().toISOString(),
+            summary: {
+              critical: bySeverity.critical.length,
+              high: bySeverity.high.length,
+              medium: bySeverity.medium.length,
+              low: bySeverity.low.length,
+              total: allFindings.length
+            },
+            scanners: byScanner,
+            issuesCreated,
+            overall: hasFail ? 'fail' : 'pass',
+            findings: allFindings
+          };
+          fs.writeFileSync('consolidated-security-report.json', JSON.stringify(consolidated, null, 2));
+
+          if (hasFail) process.exit(1);
+          NODE
+
+      - name: Upload consolidated report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: consolidated-security-report
+          path: consolidated-security-report.json

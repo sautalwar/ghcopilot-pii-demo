@@ -22,6 +22,25 @@
     </div>
   </header>
 
+  <!-- Multi-Repo Selector -->
+  <div id="repo-selector-bar" class="repo-selector-bar">
+    <div class="repo-selector-left">
+      <label for="repo-select">🏢 Repository:</label>
+      <select id="repo-select" class="repo-select">
+        <option value="local">📁 Local Repository</option>
+        <option value="custom">🔗 Enter GitHub URL…</option>
+      </select>
+      <input id="repo-url-input" type="text" class="repo-url-input hidden"
+             placeholder="https://github.com/owner/repo or owner/repo"
+             spellcheck="false">
+      <button id="load-repos-btn" class="btn-secondary">↻ Load Repos</button>
+    </div>
+    <div class="repo-selector-right">
+      <span id="repo-count" class="repo-count"></span>
+      <button id="scan-all-btn" class="btn-danger" title="Scan all repos (slow)">🔍 Scan All Repos</button>
+    </div>
+  </div>
+
   <!-- Summary Bar (hidden until scan completes) -->
   <div id="summary-bar" class="summary-bar hidden">
     <div class="stat critical"><span id="stat-critical">0</span> Critical</div>
@@ -83,6 +102,21 @@
   <div id="loading-overlay" class="loading-overlay hidden">
     <div class="spinner"></div>
     <p id="loading-text">Scanning repository...</p>
+  </div>
+
+  <!-- Fix Description Modal -->
+  <div id="fix-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="fix-modal-title">Fix Description</h3>
+        <button id="fix-modal-close" class="modal-close">×</button>
+      </div>
+      <div id="fix-modal-body" class="modal-body"></div>
+      <div class="modal-footer">
+        <button id="fix-modal-auto-fix" class="btn-scan">🤖 Auto-Fix with Copilot</button>
+        <button id="fix-modal-dismiss" class="btn-secondary">Close</button>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>

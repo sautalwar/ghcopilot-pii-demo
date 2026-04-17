@@ -33,6 +33,8 @@
   let allFindings = [];
   let activeFilter = 'all';
   let selectedFilePath = null;
+  let currentRepoMode = 'local'; // 'local' or 'owner/repo'
+  let ghasAlerts = [];           // GHAS alerts for the selected repo
 
   // ---------------------------------------------------------------------------
   // Utilities
@@ -79,6 +81,440 @@
   }
 
   // ---------------------------------------------------------------------------
+  // Multi-Repo: DOM References
+  // ---------------------------------------------------------------------------
+
+  const repoSelect = $('repo-select');
+  const repoUrlInput = $('repo-url-input');
+  const loadReposBtn = $('load-repos-btn');
+  const repoCount = $('repo-count');
+  const scanAllBtn = $('scan-all-btn');
+  const fixModal = $('fix-modal');
+  const fixModalTitle = $('fix-modal-title');
+  const fixModalBody = $('fix-modal-body');
+  const fixModalClose = $('fix-modal-close');
+  const fixModalAutoFix = $('fix-modal-auto-fix');
+  const fixModalDismiss = $('fix-modal-dismiss');
+
+  // ---------------------------------------------------------------------------
+  // Multi-Repo: Load Repos
+  // ---------------------------------------------------------------------------
+
+  async function loadRepos() {
+    if (!loadReposBtn || !repoSelect) return;
+    try {
+      loadReposBtn.disabled = true;
+      loadReposBtn.textContent = '↻ Loading...';
+      const data = await fetchJSON('/api/multi/repos');
+      const repos = data.data || [];
+      while (repoSelect.options.length > 2) repoSelect.remove(2); // keep Local + Custom
+      repos.forEach(function (repo) {
+        var opt = document.createElement('option');
+        opt.value = repo.fullName;
+        opt.textContent = (repo.isPrivate ? '🔒 ' : '🌐 ') + repo.name + ' (' + (repo.language || 'unknown') + ')';
+        repoSelect.appendChild(opt);
+      });
+      if (repoCount) repoCount.textContent = repos.length + ' repos';
+    } catch (err) {
+      if (repoCount) repoCount.textContent = 'Failed to load repos';
+    } finally {
+      loadReposBtn.disabled = false;
+      loadReposBtn.textContent = '↻ Load Repos';
+    }
+  }
+
+  if (loadReposBtn) {
+    loadReposBtn.addEventListener('click', loadRepos);
+  }
+
+  // Parse GitHub URL or owner/repo string into owner/repo format
+  function parseRepoInput(input) {
+    if (!input) return null;
+    input = input.trim();
+    // Handle full URLs: https://github.com/owner/repo or github.com/owner/repo
+    var urlMatch = input.match(/(?:https?:\/\/)?github\.com\/([^\/\s]+)\/([^\/\s#?]+)/);
+    if (urlMatch) return urlMatch[1] + '/' + urlMatch[2].replace(/\.git$/, '');
+    // Handle owner/repo format directly
+    var slashMatch = input.match(/^([^\/\s]+)\/([^\/\s]+)$/);
+    if (slashMatch) return slashMatch[1] + '/' + slashMatch[2];
+    return null;
+  }
+
+  if (repoSelect) {
+    repoSelect.addEventListener('change', function () {
+      var val = repoSelect.value;
+      if (val === 'custom') {
+        // Show URL input
+        if (repoUrlInput) {
+          repoUrlInput.classList.remove('hidden');
+          repoUrlInput.focus();
+        }
+        currentRepoMode = 'local'; // don't scan until URL entered
+      } else {
+        if (repoUrlInput) repoUrlInput.classList.add('hidden');
+        currentRepoMode = val;
+      }
+    });
+  }
+
+  if (repoUrlInput) {
+    repoUrlInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        var parsed = parseRepoInput(repoUrlInput.value);
+        if (parsed) {
+          currentRepoMode = parsed;
+          if (scanStatus) scanStatus.textContent = 'Repo: ' + parsed;
+          // Auto-trigger scan
+          if (scanBtn) scanBtn.click();
+        } else {
+          if (scanStatus) scanStatus.textContent = 'Invalid repo URL';
+        }
+      }
+    });
+    repoUrlInput.addEventListener('blur', function () {
+      var parsed = parseRepoInput(repoUrlInput.value);
+      if (parsed) {
+        currentRepoMode = parsed;
+        if (scanStatus) scanStatus.textContent = 'Repo: ' + parsed;
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Multi-Repo: Scan All Repos
+  // ---------------------------------------------------------------------------
+
+  if (scanAllBtn) {
+    scanAllBtn.addEventListener('click', async function () {
+      scanAllBtn.disabled = true;
+      showLoading('Scanning all repositories…');
+      if (scanStatus) scanStatus.textContent = 'Scanning all…';
+      try {
+        var data = await fetchJSON('/api/multi/repos/scan');
+        var results = data.data || [];
+        // Aggregate all findings across repos
+        ghasAlerts = [];
+        results.forEach(function (repoResult) {
+          if (repoResult.alerts) {
+            var allAlerts = [].concat(
+              repoResult.alerts.critical || [],
+              repoResult.alerts.high || [],
+              repoResult.alerts.medium || [],
+              repoResult.alerts.low || []
+            );
+            allAlerts.forEach(function (a) { a._repo = repoResult.repo; });
+            ghasAlerts = ghasAlerts.concat(allAlerts);
+          }
+        });
+        renderGHASFindings(ghasAlerts);
+        updateGHASSummary(ghasAlerts, results.length);
+        if (scanStatus) scanStatus.textContent = 'Multi-repo scan complete';
+      } catch (err) {
+        if (scanStatus) scanStatus.textContent = 'Scan failed';
+        showError(findingsList, err.message);
+      } finally {
+        hideLoading();
+        scanAllBtn.disabled = false;
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Multi-Repo: GHAS Findings Rendering
+  // ---------------------------------------------------------------------------
+
+  function renderGHASFindings(alerts) {
+    if (!findingsList) return;
+    if (!alerts || alerts.length === 0) {
+      findingsList.innerHTML = '<p class="empty-state">No GHAS findings</p>';
+      return;
+    }
+    findingsList.innerHTML = '';
+
+    // Sort by severity
+    var sorted = alerts.slice().sort(function (a, b) {
+      return (SEVERITY_ORDER[(a.severity || 'info').toLowerCase()] || 4)
+           - (SEVERITY_ORDER[(b.severity || 'info').toLowerCase()] || 4);
+    });
+
+    sorted.forEach(function (alert, i) {
+      var sev = (alert.severity || 'info').toLowerCase();
+      var card = document.createElement('div');
+      card.className = 'finding-card severity-' + sev;
+      card.style.animationDelay = (i * 60) + 'ms';
+
+      // Header row
+      var headerDiv = document.createElement('div');
+      headerDiv.className = 'finding-card-header';
+
+      var sevBadge = document.createElement('span');
+      sevBadge.className = 'severity-badge ' + sev;
+      sevBadge.textContent = SEVERITY_LABELS[sev] || sev.toUpperCase();
+      headerDiv.appendChild(sevBadge);
+
+      if (alert.type) {
+        var typeBadge = document.createElement('span');
+        typeBadge.className = 'finding-type-badge';
+        typeBadge.textContent = alert.type.replace(/-/g, ' ');
+        headerDiv.appendChild(typeBadge);
+      }
+
+      if (alert._repo) {
+        var repoSpan = document.createElement('span');
+        repoSpan.className = 'finding-file';
+        repoSpan.textContent = alert._repo;
+        headerDiv.appendChild(repoSpan);
+      }
+
+      card.appendChild(headerDiv);
+
+      // Title
+      var titleDiv = document.createElement('div');
+      titleDiv.className = 'finding-rule';
+      titleDiv.textContent = alert.title || alert.rule || alert.description || 'Untitled finding';
+      card.appendChild(titleDiv);
+
+      // Description / message
+      if (alert.description || alert.message) {
+        var msgDiv = document.createElement('div');
+        msgDiv.className = 'finding-message';
+        msgDiv.textContent = alert.description || alert.message;
+        card.appendChild(msgDiv);
+      }
+
+      // File / package meta
+      var meta = document.createElement('div');
+      meta.className = 'finding-meta';
+      if (alert.file || alert.path) {
+        var filePath = document.createElement('span');
+        filePath.className = 'file-path';
+        filePath.textContent = alert.file || alert.path;
+        meta.appendChild(filePath);
+      }
+      if (alert.package) {
+        var pkgSpan = document.createElement('span');
+        pkgSpan.className = 'file-path';
+        pkgSpan.textContent = '📦 ' + alert.package;
+        meta.appendChild(pkgSpan);
+      }
+      card.appendChild(meta);
+
+      // Action buttons
+      var actions = document.createElement('div');
+      actions.className = 'finding-card-actions';
+
+      var fixBtn = document.createElement('button');
+      fixBtn.className = 'fix-btn';
+      fixBtn.textContent = '🔧 Show Fix';
+      fixBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        showFixModal(alert);
+      });
+      actions.appendChild(fixBtn);
+
+      var autoFixBtn = document.createElement('button');
+      autoFixBtn.className = 'auto-fix-btn';
+      autoFixBtn.textContent = '🤖 Auto-Fix';
+      autoFixBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        triggerAutoFix(alert, autoFixBtn);
+      });
+      actions.appendChild(autoFixBtn);
+
+      // PR status placeholder
+      var prStatusSpan = document.createElement('span');
+      prStatusSpan.className = 'pr-status hidden';
+      prStatusSpan.setAttribute('data-finding-id', alert.id || alert.number || '');
+      actions.appendChild(prStatusSpan);
+
+      card.appendChild(actions);
+      findingsList.appendChild(card);
+    });
+  }
+
+  function updateGHASSummary(alerts, repoCountNum) {
+    if (!summaryBar) return;
+    summaryBar.classList.remove('hidden');
+    var counts = { critical: 0, high: 0, medium: 0, low: 0 };
+    (alerts || []).forEach(function (a) {
+      var s = (a.severity || 'info').toLowerCase();
+      if (counts[s] !== undefined) counts[s]++;
+    });
+    setStat('stat-critical', counts.critical);
+    setStat('stat-high', counts.high);
+    setStat('stat-medium', counts.medium);
+    setStat('stat-low', counts.low);
+    setStat('stat-total', (repoCountNum || '—') + ' repos');
+    setStat('stat-duration', alerts.length + ' findings');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Multi-Repo: Fix Description Modal
+  // ---------------------------------------------------------------------------
+
+  var currentFixAlert = null;
+
+  function showFixModal(alert) {
+    if (!fixModal) return;
+    currentFixAlert = alert;
+    if (fixModalTitle) fixModalTitle.textContent = alert.title || alert.rule || 'Fix Description';
+    if (fixModalBody) fixModalBody.innerHTML = '<p>Loading fix description…</p>';
+    fixModal.classList.remove('hidden');
+
+    var repoFullName = alert._repo || currentRepoMode;
+    if (!repoFullName || repoFullName === 'local') {
+      if (fixModalBody) fixModalBody.innerHTML = '<p>Fix descriptions are only available for GitHub repos.</p>';
+      return;
+    }
+
+    var parts = repoFullName.split('/');
+    var owner = parts[0];
+    var repo = parts[1];
+    var findingId = alert.id || alert.number || 0;
+
+    fetchJSON('/api/multi/repos/' + owner + '/' + repo + '/fix/' + findingId)
+      .then(function (data) {
+        var fix = data.data || data;
+        var html = '';
+        if (fix.whatIsWrong) html += '<h4>⚠️ What is Wrong</h4><p>' + escapeHTML(fix.whatIsWrong) + '</p>';
+        if (fix.whyItMatters) html += '<h4>💡 Why It Matters</h4><p>' + escapeHTML(fix.whyItMatters) + '</p>';
+        if (fix.howToFix) html += '<h4>🔧 How to Fix</h4><p>' + escapeHTML(fix.howToFix) + '</p>';
+        if (fix.codeExample) html += '<h4>📝 Code Example</h4><pre>' + escapeHTML(fix.codeExample) + '</pre>';
+        if (!html) html = '<p>' + escapeHTML(fix.description || fix.message || 'No fix details available.') + '</p>';
+        if (fixModalBody) fixModalBody.innerHTML = html;
+      })
+      .catch(function (err) {
+        if (fixModalBody) fixModalBody.innerHTML = '<p class="error-message">Failed to load fix: ' + escapeHTML(err.message) + '</p>';
+      });
+  }
+
+  function closeFixModal() {
+    if (fixModal) fixModal.classList.add('hidden');
+    currentFixAlert = null;
+  }
+
+  if (fixModalClose) fixModalClose.addEventListener('click', closeFixModal);
+  if (fixModalDismiss) fixModalDismiss.addEventListener('click', closeFixModal);
+
+  // Close modal on Escape key or clicking outside
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && fixModal && !fixModal.classList.contains('hidden')) {
+      closeFixModal();
+    }
+  });
+
+  if (fixModal) {
+    fixModal.addEventListener('click', function (e) {
+      if (e.target === fixModal) closeFixModal();
+    });
+  }
+
+  // Auto-Fix from modal
+  if (fixModalAutoFix) {
+    fixModalAutoFix.addEventListener('click', function () {
+      if (currentFixAlert) triggerAutoFix(currentFixAlert, fixModalAutoFix);
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Multi-Repo: Auto-Fix (Remediation PR)
+  // ---------------------------------------------------------------------------
+
+  function triggerAutoFix(alert, btn) {
+    var repoFullName = alert._repo || currentRepoMode;
+    if (!repoFullName || repoFullName === 'local') {
+      showError(findingsList, 'Auto-fix is only available for GitHub repos.');
+      return;
+    }
+    var parts = repoFullName.split('/');
+    var owner = parts[0];
+    var repo = parts[1];
+    var findingId = alert.id || alert.number || 0;
+
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '⏳ Creating PR…';
+    }
+
+    // Show PR status as "creating"
+    var prSpan = findingsList.querySelector('[data-finding-id="' + findingId + '"]');
+    if (prSpan) {
+      prSpan.className = 'pr-status creating';
+      prSpan.textContent = '⏳ Creating PR…';
+    }
+
+    fetch(API_BASE + '/api/multi/repos/' + owner + '/' + repo + '/remediate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ findingId: findingId })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.success && data.data && data.data.prNumber) {
+          if (prSpan) {
+            prSpan.className = 'pr-status open';
+            prSpan.textContent = '🔗 PR #' + data.data.prNumber;
+          }
+          if (btn) {
+            btn.textContent = '✅ PR Created';
+            btn.disabled = true;
+          }
+          // Start polling PR status
+          pollPRStatus(owner, repo, data.data.prNumber, prSpan);
+        } else {
+          if (prSpan) {
+            prSpan.className = 'pr-status failed';
+            prSpan.textContent = '❌ ' + (data.error || 'Failed');
+          }
+          if (btn) {
+            btn.textContent = '🤖 Auto-Fix';
+            btn.disabled = false;
+          }
+        }
+      })
+      .catch(function (err) {
+        if (prSpan) {
+          prSpan.className = 'pr-status failed';
+          prSpan.textContent = '❌ Error';
+        }
+        if (btn) {
+          btn.textContent = '🤖 Auto-Fix';
+          btn.disabled = false;
+        }
+      });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Multi-Repo: PR Status Polling
+  // ---------------------------------------------------------------------------
+
+  function pollPRStatus(owner, repo, prNumber, statusEl) {
+    if (!statusEl) return;
+    var pollInterval = setInterval(function () {
+      fetchJSON('/api/multi/repos/' + owner + '/' + repo + '/pr/' + prNumber)
+        .then(function (data) {
+          var pr = data.data || data;
+          var state = (pr.state || 'open').toLowerCase();
+          if (pr.merged || state === 'merged') {
+            statusEl.className = 'pr-status merged';
+            statusEl.textContent = '✅ PR #' + prNumber + ' merged';
+            clearInterval(pollInterval);
+          } else if (state === 'closed') {
+            statusEl.className = 'pr-status failed';
+            statusEl.textContent = '🚫 PR #' + prNumber + ' closed';
+            clearInterval(pollInterval);
+          } else {
+            statusEl.className = 'pr-status open';
+            statusEl.textContent = '🔗 PR #' + prNumber + ' (' + state + ')';
+          }
+        })
+        .catch(function () {
+          clearInterval(pollInterval);
+        });
+    }, 10000); // Poll every 10 seconds
+  }
+
+  // ---------------------------------------------------------------------------
   // 1. Scan Button Click Handler
   // ---------------------------------------------------------------------------
 
@@ -89,19 +525,43 @@
       if (scanStatus) scanStatus.textContent = 'Scanning…';
 
       try {
-        const [repoData, depData, recData] = await Promise.all([
-          fetchJSON('/api/scan/repo'),
-          fetchJSON('/api/scan/dependencies'),
-          fetchJSON('/api/scan/recommendations'),
-        ]);
+        if (currentRepoMode === 'local') {
+          // Existing local scan
+          const [repoData, depData, recData] = await Promise.all([
+            fetchJSON('/api/scan/repo'),
+            fetchJSON('/api/scan/dependencies'),
+            fetchJSON('/api/scan/recommendations'),
+          ]);
 
-        // Render all panels
-        renderFileTree(repoData.tree);
-        collectFindings(repoData.issues || repoData.tree);
-        renderFindings(allFindings);
-        renderDepTree(depData);
-        renderRecommendations(recData);
-        updateSummary(repoData.summary, repoData);
+          renderFileTree(repoData.tree);
+          collectFindings(repoData.issues || repoData.tree);
+          renderFindings(allFindings);
+          renderDepTree(depData);
+          renderRecommendations(recData);
+          updateSummary(repoData.summary, repoData);
+        } else {
+          // GHAS scan for selected GitHub repo
+          var parts = currentRepoMode.split('/');
+          var owner = parts[0];
+          var repo = parts[1];
+          showLoading('Scanning ' + currentRepoMode + '…');
+
+          const alertsData = await fetchJSON('/api/multi/repos/' + owner + '/' + repo + '/alerts');
+          var grouped = alertsData.data || alertsData;
+          ghasAlerts = [].concat(
+            (grouped.critical || []).map(function (a) { a._repo = currentRepoMode; return a; }),
+            (grouped.high || []).map(function (a) { a._repo = currentRepoMode; return a; }),
+            (grouped.medium || []).map(function (a) { a._repo = currentRepoMode; return a; }),
+            (grouped.low || []).map(function (a) { a._repo = currentRepoMode; return a; })
+          );
+          renderGHASFindings(ghasAlerts);
+          updateGHASSummary(ghasAlerts, 1);
+
+          // Clear tree and deps panels for GHAS mode
+          if (fileTreeContainer) fileTreeContainer.innerHTML = '<p class="placeholder">File tree not available for remote repos</p>';
+          if (depTreeView) depTreeView.innerHTML = '<p class="placeholder">Use local scan for dependency tree</p>';
+          if (recommendationsView) recommendationsView.innerHTML = '<p class="placeholder">Use local scan for recommendations</p>';
+        }
 
         if (scanStatus) scanStatus.textContent = 'Scan complete';
       } catch (err) {
