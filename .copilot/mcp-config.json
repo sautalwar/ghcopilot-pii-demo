@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "EXAMPLE-github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@anthropic/github-mcp-server"
+      ],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      }
+    },
+    "ghas-jira-mcp": {
+      "command": "npx",
+      "args": [
+        "ts-node",
+        "src/mcp-server/index.ts"
+      ],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+        "GITHUB_OWNER": "${GITHUB_OWNER}",
+        "GITHUB_REPO": "${GITHUB_REPO}",
+        "JIRA_MODE": "${JIRA_MODE}",
+        "JIRA_BASE_URL": "${JIRA_BASE_URL}",
+        "JIRA_EMAIL": "${JIRA_EMAIL}",
+        "JIRA_API_TOKEN": "${JIRA_API_TOKEN}",
+        "JIRA_PROJECT_KEY": "${JIRA_PROJECT_KEY}"
+      }
+    }
+  }
+}

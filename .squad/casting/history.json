@@ -1,0 +1,9 @@
+[
+  {
+    "assignment_id": "alien-1979-20260416",
+    "universe": "alien-1979",
+    "timestamp": "2026-04-16T20:05:00Z",
+    "agents": ["Ripley", "Kane", "Dallas", "Lambert"],
+    "reason": "Security/detection theme resonance with project domain"
+  }
+]

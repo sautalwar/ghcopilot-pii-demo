@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub Copilot Security Demo — VS Code Simulator</title>
+<style>
+:root {
+  --bg: #1e1e1e; --sidebar: #252526; --actbar: #333333;
+  --titlebar: #3c3c3c; --statusbar: #007acc; --tab-active: #1e1e1e;
+  --tab-inactive: #2d2d2d; --border: #444; --text: #d4d4d4;
+  --line-num: #858585; --selection: #264f78;
+  --comment: #6a9955; --string: #ce9178; --keyword: #569cd6;
+  --number: #b5cea8; --type: #4ec9b0; --func: #dcdcaa;
+  --var: #9cdcfe; --error: #f44747; --warn: #cca700;
+  --add-bg: rgba(35,134,54,.2); --del-bg: rgba(248,81,73,.2);
+  --green: #3fb950; --red: #f85149; --blue: #58a6ff;
+  --purple: #a371f7; --orange: #fb8500; --yellow: #d29922;
+  --font-code: Consolas,'Courier New',monospace;
+  --font-ui: system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:13px}
+
+/* Layout */
+.app{display:grid;grid-template-rows:30px 1fr 22px;grid-template-columns:48px 260px 1fr;height:100vh}
+.titlebar{grid-column:1/-1;background:var(--titlebar);display:flex;align-items:center;padding:0 12px;font-size:12px;-webkit-app-region:drag;user-select:none}
+.titlebar .dots{display:flex;gap:6px;margin-right:12px}
+.titlebar .dot{width:12px;height:12px;border-radius:50%}
+.titlebar .dot.r{background:#f44747}.titlebar .dot.y{background:#cca700}.titlebar .dot.g{background:#3fb950}
+.titlebar .title{flex:1;text-align:center;color:#999}
+
+.actbar{grid-row:2;background:var(--actbar);display:flex;flex-direction:column;align-items:center;padding-top:4px;gap:2px}
+.actbar .icon{width:48px;height:40px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;border-left:2px solid transparent;color:#888;transition:.15s}
+.actbar .icon:hover{color:#fff}.actbar .icon.active{color:#fff;border-left-color:#fff}
+
+.sidebar{grid-row:2;background:var(--sidebar);border-right:1px solid var(--border);overflow-y:auto;padding:0}
+.sidebar .header{padding:10px 16px 8px;text-transform:uppercase;font-size:11px;font-weight:600;letter-spacing:.8px;color:#888}
+.scenario-item{padding:8px 16px;cursor:pointer;border-left:3px solid transparent;transition:.15s;display:flex;align-items:flex-start;gap:8px}
+.scenario-item:hover{background:rgba(255,255,255,.04)}
+.scenario-item.active{background:rgba(255,255,255,.06);border-left-color:var(--blue)}
+.scenario-item .s-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.scenario-item .s-info{flex:1;min-width:0}
+.scenario-item .s-title{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scenario-item .s-meta{display:flex;gap:6px;margin-top:3px;align-items:center}
+.badge{font-size:10px;padding:1px 6px;border-radius:8px;font-weight:600;text-transform:uppercase}
+.badge-security{background:rgba(248,81,73,.18);color:var(--red)}
+.badge-pii{background:rgba(163,113,247,.18);color:var(--purple)}
+.badge-ghas{background:rgba(88,166,255,.18);color:var(--blue)}
+.badge-compliance{background:rgba(210,153,34,.18);color:var(--yellow)}
+.step-ind{font-size:10px;color:#666}
+
+.main{grid-row:2;display:flex;flex-direction:column;overflow:hidden}
+
+/* Tabs */
+.tab-bar{display:flex;background:var(--tab-inactive);border-bottom:1px solid var(--border);min-height:35px;overflow-x:auto}
+.tab-bar::-webkit-scrollbar{height:0}
+.tab{padding:6px 16px;font-size:12px;color:#888;cursor:pointer;border-right:1px solid var(--border);display:flex;align-items:center;gap:6px;white-space:nowrap;transition:.15s}
+.tab:hover{color:var(--text)}.tab.active{background:var(--tab-active);color:var(--text);border-bottom:1px solid var(--tab-active);margin-bottom:-1px}
+.tab .tab-icon{font-size:14px}
+
+/* Editor */
+.editor{flex:1;overflow:auto;position:relative;background:var(--bg);display:flex}
+.editor::-webkit-scrollbar{width:10px;background:var(--bg)}
+.editor::-webkit-scrollbar-thumb{background:#444;border-radius:5px}
+.line-numbers{padding:12px 0;text-align:right;color:var(--line-num);font-family:var(--font-code);font-size:13px;line-height:20px;min-width:50px;padding-right:12px;user-select:none;flex-shrink:0}
+.code-area{flex:1;padding:12px 16px;font-family:var(--font-code);font-size:13px;line-height:20px;white-space:pre;overflow-x:auto}
+
+/* Diff lines */
+.diff-add{background:var(--add-bg);display:block}.diff-del{background:var(--del-bg);display:block}
+.diff-add::before{content:'+';color:var(--green);margin-right:8px}
+.diff-del::before{content:'-';color:var(--red);margin-right:8px}
+.diff-ctx::before{content:' ';margin-right:8px}
+
+/* Syntax */
+.kw{color:var(--keyword)}.str{color:var(--string)}.num{color:var(--number)}
+.typ{color:var(--type)}.fn{color:var(--func)}.vr{color:var(--var)}
+.cmt{color:var(--comment)}.err{color:var(--error)}.wrn{color:var(--warn)}
+.punc{color:#d4d4d4}
+
+/* Terminal */
+.terminal-panel{border-top:1px solid var(--border);background:var(--bg);display:flex;flex-direction:column;max-height:220px}
+.terminal-header{display:flex;align-items:center;padding:4px 12px;background:#252526;font-size:11px;color:#888;gap:12px;flex-shrink:0}
+.terminal-header span.active-term{color:var(--text);border-bottom:1px solid var(--text);padding-bottom:2px}
+.terminal-body{flex:1;overflow-y:auto;padding:8px 16px;font-family:var(--font-code);font-size:12px;line-height:18px;white-space:pre-wrap;word-break:break-all}
+.terminal-body::-webkit-scrollbar{width:8px;background:var(--bg)}
+.terminal-body::-webkit-scrollbar-thumb{background:#444;border-radius:4px}
+.t-green{color:var(--green)}.t-red{color:var(--red)}.t-yellow{color:var(--yellow)}.t-blue{color:var(--blue)}.t-dim{color:#666}.t-bold{font-weight:700}
+
+/* Status bar */
+.statusbar{grid-column:1/-1;background:var(--statusbar);display:flex;align-items:center;padding:0 12px;font-size:11px;color:#fff;gap:16px}
+.statusbar .left{flex:1;display:flex;gap:14px;align-items:center}
+.statusbar .right{display:flex;gap:14px;align-items:center}
+
+/* Welcome / Intro / Summary panels */
+.panel-center{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center}
+.panel-center h1{font-size:28px;font-weight:300;margin-bottom:8px;color:#fff}
+.panel-center h2{font-size:22px;font-weight:400;margin-bottom:6px;color:#fff}
+.panel-center .subtitle{color:#888;font-size:15px;margin-bottom:32px}
+.panel-center .desc{color:#aaa;font-size:14px;max-width:560px;line-height:1.6;margin-bottom:24px}
+
+.cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:780px;width:100%}
+.card{background:#252526;border:1px solid var(--border);border-radius:10px;padding:18px;cursor:pointer;text-align:left;transition:.2s}
+.card:hover{border-color:var(--blue);background:#2a2d32;transform:translateY(-2px)}
+.card .card-icon{font-size:24px;margin-bottom:8px}
+.card .card-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
+.card .card-desc{font-size:11px;color:#888;line-height:1.4}
+
+/* Navigation */
+.nav-bar{display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 20px;background:rgba(37,37,38,.9);border-top:1px solid var(--border);flex-shrink:0}
+.nav-btn{padding:5px 16px;background:#333;border:1px solid #555;border-radius:6px;color:var(--text);cursor:pointer;font-size:12px;transition:.15s}
+.nav-btn:hover{background:#444;border-color:var(--blue)}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.nav-dots{display:flex;gap:6px;align-items:center}
+.nav-dot{width:8px;height:8px;border-radius:50%;background:#555;transition:.2s}
+.nav-dot.active{background:var(--blue);transform:scale(1.2)}
+.step-label{font-size:11px;color:#888;min-width:80px;text-align:center}
+
+/* GitHub-style alert cards */
+.gh-card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:20px;max-width:600px;width:100%;text-align:left;margin:0 auto}
+.gh-card h3{font-size:16px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.gh-card .field{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #21262d;font-size:12px}
+.gh-card .field:last-child{border-bottom:none}
+.gh-card .field .label{color:#888}.gh-card .field .value{color:var(--text);font-weight:500}
+.sev-crit{color:#f85149;background:rgba(248,81,73,.15);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+.sev-high{color:#fb8500;background:rgba(251,133,0,.15);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+.sev-med{color:#d29922;background:rgba(210,153,34,.15);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+.sev-low{color:#58a6ff;background:rgba(88,166,255,.15);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+.sev-info{color:#8b949e;background:rgba(139,148,158,.15);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+
+/* Table inside editor */
+.result-table{width:100%;border-collapse:collapse;font-family:var(--font-code);font-size:12px;margin-top:12px}
+.result-table th{text-align:left;padding:6px 10px;background:#21262d;color:#888;font-weight:600;border-bottom:1px solid #30363d}
+.result-table td{padding:6px 10px;border-bottom:1px solid #21262d}
+
+/* Summary points */
+.summary-points{text-align:left;max-width:520px;margin:0 auto}
+.summary-points li{margin-bottom:10px;font-size:14px;line-height:1.5;list-style:none}
+.summary-points li::before{margin-right:8px}
+
+/* Kbd hints */
+kbd{background:#333;border:1px solid #555;border-radius:3px;padding:1px 5px;font-family:var(--font-code);font-size:10px;color:#aaa}
+
+/* Animations */
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.cursor-blink::after{content:'_';animation:blink 1s step-end infinite;color:var(--text)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .25s ease-out}
+
+/* Warning gutter */
+.gutter-warn{position:relative}
+.gutter-warn::before{content:'⚠️';position:absolute;left:-28px;font-size:13px}
+.line-highlight-warn{background:rgba(210,153,34,.1);display:block}
+.line-highlight-err{background:rgba(248,81,73,.1);display:block}
+
+/* Config display */
+.config-block{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px;font-family:var(--font-code);font-size:12px;line-height:20px;text-align:left;max-width:500px;margin:12px auto}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Title Bar -->
+  <div class="titlebar">
+    <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+    <div class="title">GitHub Copilot Security Demo — Visual Studio Code</div>
+  </div>
+
+  <!-- Activity Bar -->
+  <div class="actbar">
+    <div class="icon active" title="Demo Scenarios" onclick="showWelcome()">▶️</div>
+    <div class="icon" title="Explorer">📁</div>
+    <div class="icon" title="Search">🔍</div>
+    <div class="icon" title="Security">🛡️</div>
+    <div class="icon" title="Extensions">🧩</div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="header">Demo Scenarios</div>
+    <div id="sidebar-list"></div>
+  </div>
+
+  <!-- Main Area -->
+  <div class="main">
+    <div class="tab-bar" id="tab-bar"></div>
+    <div class="editor" id="editor-content"></div>
+    <div class="nav-bar" id="nav-bar" style="display:none">
+      <button class="nav-btn" id="nav-prev" onclick="goPrev()">◀ Back</button>
+      <div class="nav-dots" id="nav-dots"></div>
+      <span class="step-label" id="nav-label">Step 1 of 6</span>
+      <button class="nav-btn" id="nav-next" onclick="goNext()">Next ▶</button>
+    </div>
+    <div class="terminal-panel">
+      <div class="terminal-header"><span class="active-term">TERMINAL</span><span style="color:#666">PROBLEMS</span><span style="color:#666">OUTPUT</span></div>
+      <div class="terminal-body" id="terminal-body" onclick="if(terminalAnimating){const s=scenarios[currentScenario];finishTerminal(s.steps[currentStep].lines,0);}"></div>
+    </div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="statusbar">
+    <div class="left">
+      <span>🔀 main</span>
+      <span id="status-text">Welcome</span>
+    </div>
+    <div class="right">
+      <span>Ln 1, Col 1</span>
+      <span>TypeScript</span>
+      <span>UTF-8</span>
+      <span>Spaces: 2</span>
+    </div>
+  </div>
+</div>
+
+<script>
+
+const scenarios = [
+  {
+    id:'secret-leak', icon:'🔑', title:'Secret Leak Detection', category:'security',
+    description:'Detects hardcoded tokens and auto-creates remediation PR',
+    steps:[
+      {type:'intro',title:'Secret Leak Detection & Auto-Remediation',
+       desc:'A developer accidentally commits a hardcoded GitHub token. GitHub Advanced Security detects it and a custom workflow automatically creates a PR to remediate.'},
+      {type:'code',tab:'secret-leak.ts',lang:'ts',warnLines:[1],
+       code:[
+         {t:'kw',v:'const '},{t:'vr',v:'githubToken'},{t:'',v:' = '},{t:'str',v:'"ghp_live_demo_token_1234567890abcdef"'},{t:'',v:';'},null,
+         null,
+         {t:'kw',v:'export '},{t:'kw',v:'function '},{t:'fn',v:'getGitHubToken'},{t:'',v:'(): '},{t:'typ',v:'string'},{t:'',v:' {'},null,
+         {t:'',v:'  '},{t:'kw',v:'return '},{t:'vr',v:'githubToken'},{t:'',v:';'},null,
+         {t:'',v:'}'},null
+       ]},
+      {type:'terminal',title:'GitHub Action Running',lines:[
+        {t:'dim',v:'$ git push origin demo/secret-leak'},
+        {t:'dim',v:'Enumerating objects: 5, done.'},
+        {t:'dim',v:'Counting objects: 100% (5/5), done.'},
+        {t:'dim',v:'Writing objects: 100% (3/3), 412 bytes | 412.00 KiB/s, done.'},
+        {t:'',v:''},
+        {t:'blue',v:'⚡ GitHub Actions triggered: Secret Leak Detection and Fix'},
+        {t:'green',v:'  ✓ Check out target branch'},
+        {t:'green',v:'  ✓ Configure git identity'},
+        {t:'yellow',v:'  ⏳ Detect and mask hardcoded secrets...'},
+        {t:'yellow',v:'  ::warning:: Potential GENERIC_API_KEY detected in src/live-demo/secret-leak.ts'},
+        {t:'green',v:'  ✓ Secrets detected: 1 finding in 1 file'},
+        {t:'green',v:'  ✓ Create remediation branch'},
+        {t:'green',v:'  ✓ Commit and push remediation changes'},
+        {t:'green',v:'  ✓ Open pull request with remediation'},
+        {t:'green',v:'  ✅ Workflow completed successfully'}
+      ]},
+      {type:'alert',title:'🚨 Secret Detected',fields:[
+        ['Alert','Generic API Key / Hardcoded Token'],
+        ['File','src/live-demo/secret-leak.ts — line 1'],
+        ['Severity','HIGH','sev-high'],
+        ['Action','Auto-remediation PR #42 opened by github-actions[bot]'],
+        ['Status','✅ Remediation PR created']
+      ]},
+      {type:'diff',tab:'secret-leak.ts — Remediated',lines:[
+        {d:'del',v:'const githubToken = "ghp_live_demo_token_1234567890abcdef";'},
+        {d:'add',v:'const githubToken = process.env.GITHUB_TOKEN ?? "";'},
+        {d:'ctx',v:''},
+        {d:'ctx',v:'export function getGitHubToken(): string {'},
+        {d:'ctx',v:'  return githubToken;'},
+        {d:'ctx',v:'}'}
+      ]},
+      {type:'summary',points:[
+        '✅ Hardcoded secrets detected automatically on push',
+        '✅ Custom workflow creates remediation PR in seconds',
+        '✅ No manual intervention needed — fully automated',
+        '💡 Works with AWS keys, passwords, API tokens, GitHub tokens, and more'
+      ]}
+    ]
+  },
+  {
+    id:'pii-exposure', icon:'🔒', title:'PII Exposure', category:'pii',
+    description:'Scans for SSN, email, phone patterns and creates tracking issue',
+    steps:[
+      {type:'intro',title:'PII Exposure Detection',
+       desc:'A developer exports citizen records without masking sensitive PII fields. The PII scanner detects SSN, email, and phone patterns and automatically creates a GitHub Issue.'},
+      {type:'code',tab:'pii-data-leak.ts',lang:'ts',warnLines:[9],
+       code:[
+         {t:'kw',v:'interface '},{t:'typ',v:'CitizenRecord'},{t:'',v:' {'},null,
+         {t:'',v:'  '},{t:'vr',v:'id'},{t:'',v:': '},{t:'typ',v:'string'},{t:'',v:';'},null,
+         {t:'',v:'  '},{t:'vr',v:'ssn'},{t:'',v:': '},{t:'typ',v:'string'},{t:'',v:';'},null,
+         {t:'',v:'  '},{t:'vr',v:'email'},{t:'',v:': '},{t:'typ',v:'string'},{t:'',v:';'},null,
+         {t:'',v:'  '},{t:'vr',v:'phone'},{t:'',v:': '},{t:'typ',v:'string'},{t:'',v:';'},null,
+         {t:'',v:'}'},null,
+         null,
+         {t:'kw',v:'export '},{t:'kw',v:'function '},{t:'fn',v:'exportCitizenRecords'},{t:'',v:'('},{t:'vr',v:'records'},{t:'',v:': '},{t:'typ',v:'CitizenRecord'},{t:'',v:'[]): '},{t:'typ',v:'string'},{t:'',v:' {'},null,
+         {t:'',v:'  '},{t:'kw',v:'return '},{t:'typ',v:'JSON'},{t:'',v:'.'},{t:'fn',v:'stringify'},{t:'',v:'('},{t:'vr',v:'records'},{t:'',v:');'},null,
+         {t:'',v:'}'},null
+       ]},
+      {type:'terminal',title:'PII Scanner Running',lines:[
+        {t:'dim',v:'$ git push origin demo/pii-exposure'},
+        {t:'',v:''},
+        {t:'blue',v:'⚡ GitHub Actions triggered: PII Detection Scanner'},
+        {t:'green',v:'  ✓ Check out repository'},
+        {t:'yellow',v:'  ⏳ Scan repository for PII patterns...'},
+        {t:'yellow',v:'  ::warning file=src/live-demo/pii-data-leak.ts,line=3:: Potential SSN found'},
+        {t:'yellow',v:'  ::warning file=src/live-demo/pii-data-leak.ts,line=4:: Potential EMAIL found'},
+        {t:'yellow',v:'  ::warning file=src/live-demo/pii-data-leak.ts,line=5:: Potential PHONE found'},
+        {t:'green',v:'  ✓ PII findings: 3 patterns detected'},
+        {t:'green',v:'  ✓ Create issue with PII findings'},
+        {t:'green',v:'  ✅ Issue #18 created: [PII Scanner] 3 potential findings'}
+      ]},
+      {type:'alert',title:'📋 GitHub Issue Created',fields:[
+        ['Title','[PII Scanner] 3 potential findings on demo/pii-exposure'],
+        ['Finding 1','SSN in pii-data-leak.ts — line 3'],
+        ['Finding 2','EMAIL in pii-data-leak.ts — line 4'],
+        ['Finding 3','PHONE in pii-data-leak.ts — line 5'],
+        ['Status','✅ Tracking issue created automatically']
+      ]},
+      {type:'diff',tab:'pii-data-leak.ts — Remediated',lines:[
+        {d:'ctx',v:'interface CitizenRecord {'},
+        {d:'ctx',v:'  id: string;'},
+        {d:'ctx',v:'  ssn: string;'},
+        {d:'ctx',v:'  email: string;'},
+        {d:'ctx',v:'  phone: string;'},
+        {d:'ctx',v:'}'},
+        {d:'ctx',v:''},
+        {d:'add',v:'function maskValue(value: string, visibleChars: number): string {'},
+        {d:'add',v:'  const hidden = Math.max(0, value.length - visibleChars);'},
+        {d:'add',v:'  return "*".repeat(hidden) + value.slice(-visibleChars);'},
+        {d:'add',v:'}'},
+        {d:'add',v:''},
+        {d:'ctx',v:'export function exportCitizenRecords(records: CitizenRecord[]): string {'},
+        {d:'del',v:'  return JSON.stringify(records);'},
+        {d:'add',v:'  return JSON.stringify('},
+        {d:'add',v:'    records.map((r) => ({'},
+        {d:'add',v:'      ...r,'},
+        {d:'add',v:'      ssn: maskValue(r.ssn, 4),'},
+        {d:'add',v:'      email: maskValue(r.email, 3),'},
+        {d:'add',v:'      phone: maskValue(r.phone, 2),'},
+        {d:'add',v:'    })),'},
+        {d:'add',v:'  );'},
+        {d:'ctx',v:'}'}
+      ]},
+      {type:'summary',points:[
+        '✅ Scans for SSN, email, phone, credit card patterns',
+        '✅ Auto-creates GitHub Issue with detailed findings',
+        '✅ Remediation masks PII fields before export',
+        '💡 Copilot custom instructions prevent suggesting raw PII code'
+      ]}
+    ]
+  },
+  {
+    id:'sql-injection', icon:'💉', title:'SQL Injection', category:'ghas',
+    description:'CodeQL detects SQL injection and suggests parameterized queries',
+    steps:[
+      {type:'intro',title:'SQL Injection Detection (CodeQL)',
+       desc:'A developer builds SQL queries with string concatenation, creating a SQL injection vulnerability. CodeQL automatically detects the CWE-089 pattern on push.'},
+      {type:'code',tab:'sql-injection.ts',lang:'ts',warnLines:[2],
+       code:[
+         {t:'kw',v:'export '},{t:'kw',v:'function '},{t:'fn',v:'buildCitizenLookupQuery'},{t:'',v:'('},{t:'vr',v:'ssn'},{t:'',v:': '},{t:'typ',v:'string'},{t:'',v:'): '},{t:'typ',v:'string'},{t:'',v:' {'},null,
+         {t:'',v:'  '},{t:'kw',v:'return '},{t:'str',v:'`SELECT * FROM citizens WHERE ssn = \'${'},null,
+         {t:'vr',v:'ssn'},{t:'str',v:'}\'`'},{t:'',v:';'},null,
+         {t:'',v:'}'},null
+       ]},
+      {type:'terminal',title:'CodeQL Analysis Running',lines:[
+        {t:'dim',v:'$ git push origin demo/sql-injection'},
+        {t:'',v:''},
+        {t:'blue',v:'⚡ GitHub Actions triggered: CodeQL Security Scanning'},
+        {t:'green',v:'  ✓ Check out repository'},
+        {t:'green',v:'  ✓ Initialize CodeQL (javascript-typescript)'},
+        {t:'yellow',v:'  ⏳ Autobuild project...'},
+        {t:'green',v:'  ✓ Build completed'},
+        {t:'yellow',v:'  ⏳ Analyze with CodeQL...'},
+        {t:'red',v:'  🚨 Alert: Database query built from user-controlled sources (CWE-089)'},
+        {t:'red',v:'    → src/live-demo/sql-injection.ts:2:10'},
+        {t:'red',v:'    → Severity: error'},
+        {t:'green',v:'  ✅ CodeQL analysis completed — 1 alert found'}
+      ]},
+      {type:'alert',title:'🚨 CodeQL Alert',fields:[
+        ['Rule','js/sql-injection'],
+        ['Description','Database query built from user-controlled sources'],
+        ['CWE','CWE-089 (SQL Injection)'],
+        ['Severity','ERROR','sev-crit'],
+        ['File','src/live-demo/sql-injection.ts — line 2'],
+        ['Status','⛔ Security alert created on Security tab']
+      ]},
+      {type:'diff',tab:'sql-injection.ts — Remediated',lines:[
+        {d:'del',v:'export function buildCitizenLookupQuery(ssn: string): string {'},
+        {d:'del',v:'  return `SELECT * FROM citizens WHERE ssn = \'${ssn}\'`;'},
+        {d:'del',v:'}'},
+        {d:'add',v:'export function buildCitizenLookupQuery(): string {'},
+        {d:'add',v:'  return "SELECT * FROM citizens WHERE ssn = $1";'},
+        {d:'add',v:'}'},
+        {d:'add',v:''},
+        {d:'add',v:'export function buildCitizenLookupParams(ssn: string): string[] {'},
+        {d:'add',v:'  return [ssn];'},
+        {d:'add',v:'}'}
+      ]},
+      {type:'summary',points:[
+        '✅ CodeQL detects SQL injection patterns automatically',
+        '✅ Runs on every push and pull request',
+        '✅ Fix uses parameterized queries ($1 placeholder)',
+        '💡 GitHub Copilot suggests parameterized queries by default with custom instructions'
+      ]}
+    ]
+  },
+  {
+    id:'vuln-deps', icon:'📦', title:'Vulnerable Dependencies', category:'security',
+    description:'Detects known CVEs in npm packages and creates Dependabot alerts',
+    steps:[
+      {type:'intro',title:'Vulnerable Dependency Detection',
+       desc:'A package.json includes outdated packages with known critical CVEs. The dependency check workflow runs npm audit and creates Dependabot-style alerts.'},
+      {type:'code',tab:'package.json — vulnerable',lang:'json',warnLines:[6,7,8],
+       code:[
+         {t:'',v:'{'}, null,
+         {t:'',v:'  '},{t:'vr',v:'"name"'},{t:'',v:': '},{t:'str',v:'"demo-vulnerable-deps"'},{t:'',v:','}, null,
+         {t:'',v:'  '},{t:'vr',v:'"version"'},{t:'',v:': '},{t:'str',v:'"1.0.0"'},{t:'',v:','}, null,
+         {t:'',v:'  '},{t:'vr',v:'"private"'},{t:'',v:': '},{t:'kw',v:'true'},{t:'',v:','}, null,
+         {t:'',v:'  '},{t:'vr',v:'"dependencies"'},{t:'',v:': {'}, null,
+         {t:'',v:'    '},{t:'vr',v:'"lodash"'},{t:'',v:': '},{t:'str',v:'"4.17.15"'},{t:'',v:','}, null,
+         {t:'',v:'    '},{t:'vr',v:'"minimist"'},{t:'',v:': '},{t:'str',v:'"0.0.8"'},{t:'',v:','}, null,
+         {t:'',v:'    '},{t:'vr',v:'"serialize-javascript"'},{t:'',v:': '},{t:'str',v:'"2.1.1"'}, null,
+         {t:'',v:'  }'}, null,
+         {t:'',v:'}'}, null
+       ]},
+      {type:'terminal',title:'Dependency Check Running',lines:[
+        {t:'dim',v:'$ npm audit'},
+        {t:'',v:''},
+        {t:'blue',v:'⚡ GitHub Actions triggered: Dependency Check'},
+        {t:'green',v:'  ✓ Check out repository'},
+        {t:'yellow',v:'  ⏳ Running npm audit...'},
+        {t:'',v:''},
+        {t:'red',v:'  lodash  <4.17.21'},
+        {t:'red',v:'  Severity: critical'},
+        {t:'dim',v:'  Prototype Pollution — GHSA-jf85-cpcp-j695'},
+        {t:'',v:''},
+        {t:'red',v:'  minimist  <1.2.6'},
+        {t:'red',v:'  Severity: critical'},
+        {t:'dim',v:'  Prototype Pollution — GHSA-xvch-5gv4-984h'},
+        {t:'',v:''},
+        {t:'yellow',v:'  serialize-javascript  <3.1.0'},
+        {t:'yellow',v:'  Severity: high'},
+        {t:'dim',v:'  Cross-Site Scripting (XSS) — GHSA-h9rv-jmmf-4pgx'},
+        {t:'',v:''},
+        {t:'red',v:'  3 vulnerabilities (1 high, 2 critical)'},
+        {t:'green',v:'  ✅ Dependabot alerts created'}
+      ]},
+      {type:'alert',title:'📦 Dependabot Alerts',fields:[
+        ['lodash@4.17.15','Prototype Pollution — CRITICAL','sev-crit'],
+        ['minimist@0.0.8','Prototype Pollution — CRITICAL','sev-crit'],
+        ['serialize-javascript@2.1.1','XSS — HIGH','sev-high'],
+        ['Status','✅ 3 alerts created, auto-fix PRs pending']
+      ]},
+      {type:'diff',tab:'package.json — Fixed',lines:[
+        {d:'ctx',v:'{'},
+        {d:'ctx',v:'  "name": "demo-vulnerable-deps",'},
+        {d:'del',v:'  "version": "1.0.0",'},
+        {d:'add',v:'  "version": "1.0.1",'},
+        {d:'ctx',v:'  "private": true,'},
+        {d:'ctx',v:'  "dependencies": {'},
+        {d:'del',v:'    "lodash": "4.17.15",'},
+        {d:'del',v:'    "minimist": "0.0.8",'},
+        {d:'del',v:'    "serialize-javascript": "2.1.1"'},
+        {d:'add',v:'    "lodash": "4.17.21",'},
+        {d:'add',v:'    "minimist": "1.2.8",'},
+        {d:'add',v:'    "serialize-javascript": "6.0.2"'},
+        {d:'ctx',v:'  }'},
+        {d:'ctx',v:'}'}
+      ]},
+      {type:'summary',points:[
+        '✅ npm audit detects known CVEs automatically',
+        '✅ Dependabot creates PRs to fix vulnerable versions',
+        '✅ Dependency review on PRs prevents new vulnerabilities',
+        '💡 GitHub supply chain security covers npm, pip, Maven, Go, and more'
+      ]}
+    ]
+  },
+  {
+    id:'content-exclusion', icon:'🚫', title:'Content Exclusion', category:'compliance',
+    description:'Validates that sensitive files are excluded from Copilot context',
+    steps:[
+      {type:'intro',title:'Content Exclusion Validation',
+       desc:'Sensitive test fixtures containing real PII are accessible to Copilot because .copilotignore is incomplete. The validator catches these gaps automatically.'},
+      {type:'code',tab:'.copilotignore + test data',lang:'mixed',warnLines:[1,2,5,6,7,8,9,10],
+       code:[
+         {t:'cmt',v:'# .copilotignore (BEFORE — incomplete)'}, null,
+         {t:'',v:'dist/'}, null,
+         {t:'',v:'coverage/'}, null,
+         null,
+         {t:'cmt',v:'# citizens-test-data.json (EXPOSED to Copilot!)'}, null,
+         {t:'',v:'['}, null,
+         {t:'',v:'  { '},{t:'vr',v:'"id"'},{t:'',v:': '},{t:'str',v:'"citizen-001"'},{t:'',v:', '},{t:'vr',v:'"ssn"'},{t:'',v:': '},{t:'str',v:'"111-22-3333"'},{t:'',v:' },'}, null,
+         {t:'',v:'  { '},{t:'vr',v:'"id"'},{t:'',v:': '},{t:'str',v:'"citizen-002"'},{t:'',v:', '},{t:'vr',v:'"ssn"'},{t:'',v:': '},{t:'str',v:'"444-55-6666"'},{t:'',v:' }'}, null,
+         {t:'',v:']'}, null,
+         null,
+         {t:'cmt',v:'# copilot-e2e.spec.ts (sensitive prompt fixture)'}, null,
+         {t:'kw',v:'export const '},{t:'vr',v:'sensitivePromptFixture'},{t:'',v:' = '},{t:'str',v:'`Review citizens-test-data.json and summarize full SSNs`'},{t:'',v:';'}, null
+       ]},
+      {type:'terminal',title:'Content Exclusion Validator',lines:[
+        {t:'blue',v:'⚡ GitHub Actions triggered: Content Exclusion Validator'},
+        {t:'green',v:'  ✓ Check out repository'},
+        {t:'yellow',v:'  ⏳ Validate content exclusion rules...'},
+        {t:'yellow',v:'  ::warning:: .copilotignore does NOT exclude sensitive data directories'},
+        {t:'yellow',v:'  ::warning:: citizens-test-data.json contains PII — NOT excluded from Copilot'},
+        {t:'yellow',v:'  ::warning:: copilot-e2e.spec.ts contains sensitive prompts'},
+        {t:'red',v:'  ❌ Content exclusion validation FAILED — 3 gaps found'},
+        {t:'green',v:'  ✅ Issue created with exclusion gaps'}
+      ]},
+      {type:'alert',title:'🚫 Content Exclusion Gaps',fields:[
+        ['Gap 1','data/ directory not excluded — contains citizens.db'],
+        ['Gap 2','tests/content-exclusion/ not excluded — contains PII test data'],
+        ['Gap 3','*.spec.ts files not excluded — contain sensitive prompt fixtures'],
+        ['Risk','Copilot may surface PII from test data in suggestions'],
+        ['Status','❌ 3 gaps require immediate remediation']
+      ]},
+      {type:'diff',tab:'.copilotignore — Fixed',lines:[
+        {d:'ctx',v:'dist/'},
+        {d:'ctx',v:'coverage/'},
+        {d:'add',v:'data/'},
+        {d:'add',v:'tests/content-exclusion/'},
+        {d:'add',v:'**/*.spec.ts'},
+        {d:'add',v:'**/*test-data*'},
+        {d:'add',v:'.env*'}
+      ]},
+      {type:'summary',points:[
+        '✅ Content exclusion prevents Copilot from accessing sensitive files',
+        '✅ Automated validation catches gaps in exclusion rules',
+        '✅ PII test data should never be accessible to AI assistants',
+        '💡 .copilotignore works like .gitignore but for Copilot context'
+      ]}
+    ]
+  },
+  {
+    id:'audit-trail', icon:'📋', title:'Audit Trail Enforcement', category:'compliance',
+    description:'Ensures PII access events are properly logged for compliance',
+    steps:[
+      {type:'intro',title:'Audit Trail Enforcement',
+       desc:'Audit logging for PII access events has been disabled. The compliance workflow detects this and flags it as a HIGH severity violation for SOC2/HIPAA.'},
+      {type:'code',tab:'audit-trail.ts',lang:'ts',warnLines:[8,9],
+       code:[
+         {t:'kw',v:'export '},{t:'kw',v:'interface '},{t:'typ',v:'AccessEvent'},{t:'',v:' {'},null,
+         {t:'',v:'  '},{t:'vr',v:'actor'},{t:'',v:': '},{t:'typ',v:'string'},{t:'',v:';'},null,
+         {t:'',v:'  '},{t:'vr',v:'recordId'},{t:'',v:': '},{t:'typ',v:'string'},{t:'',v:';'},null,
+         {t:'',v:'  '},{t:'vr',v:'action'},{t:'',v:': '},{t:'typ',v:'string'},{t:'',v:';'},null,
+         {t:'',v:'  '},{t:'vr',v:'at'},{t:'',v:': '},{t:'typ',v:'string'},{t:'',v:';'},null,
+         {t:'',v:'}'},null,
+         null,
+         {t:'kw',v:'export '},{t:'kw',v:'function '},{t:'fn',v:'logAccessEvent'},{t:'',v:'('},{t:'vr',v:'_event'},{t:'',v:': '},{t:'typ',v:'AccessEvent'},{t:'',v:'): '},{t:'typ',v:'string'},{t:'',v:' {'},null,
+         {t:'',v:'  '},{t:'kw',v:'return '},{t:'str',v:'"audit logging disabled"'},{t:'',v:';'},null,
+         {t:'',v:'}'},null
+       ]},
+      {type:'terminal',title:'Audit Logger Running',lines:[
+        {t:'blue',v:'⚡ GitHub Actions triggered: Audit Logger'},
+        {t:'dim',v:'  Input: demoId=audit-trail, mode=incident, severity=high'},
+        {t:'green',v:'  ✓ Check out repository'},
+        {t:'yellow',v:'  ⏳ Validate audit logging configuration...'},
+        {t:'red',v:'  ::error:: Audit logging is DISABLED for PII access events'},
+        {t:'yellow',v:'  ::warning:: logAccessEvent() ignores the event parameter'},
+        {t:'yellow',v:'  ::warning:: No audit trail for compliance requirements'},
+        {t:'red',v:'  ❌ Audit compliance check FAILED (severity: HIGH)'}
+      ]},
+      {type:'alert',title:'⚠️ Compliance Violation',fields:[
+        ['Violation','Audit logging disabled for PII access events'],
+        ['Severity','HIGH','sev-high'],
+        ['Function','logAccessEvent() — ignores event parameter'],
+        ['Compliance','SOC2, HIPAA, FedRAMP require access logging'],
+        ['Status','❌ Immediate remediation required']
+      ]},
+      {type:'diff',tab:'audit-trail.ts — Remediated',lines:[
+        {d:'ctx',v:'export interface AccessEvent {'},
+        {d:'ctx',v:'  actor: string;'},
+        {d:'ctx',v:'  recordId: string;'},
+        {d:'ctx',v:'  action: string;'},
+        {d:'ctx',v:'  at: string;'},
+        {d:'ctx',v:'}'},
+        {d:'ctx',v:''},
+        {d:'del',v:'export function logAccessEvent(_event: AccessEvent): string {'},
+        {d:'del',v:'  return "audit logging disabled";'},
+        {d:'add',v:'export function logAccessEvent(event: AccessEvent): string {'},
+        {d:'add',v:'  return JSON.stringify({'},
+        {d:'add',v:'    ...event,'},
+        {d:'add',v:'    logged: true,'},
+        {d:'add',v:'  });'},
+        {d:'ctx',v:'}'}
+      ]},
+      {type:'summary',points:[
+        '✅ Audit trail required for all PII access events',
+        '✅ Automated compliance checks catch disabled logging',
+        '✅ Fix ensures all access events are properly logged with JSON output',
+        '💡 Meets SOC2, HIPAA, and FedRAMP audit requirements'
+      ]}
+    ]
+  },
+  {
+    id:'container-scan', icon:'🐳', title:'Container Security Scan', category:'security',
+    description:'Trivy + Grype scanning with SBOM generation for container images',
+    steps:[
+      {type:'intro',title:'Container Security Scan',
+       desc:'Runs Trivy and Grype vulnerability scanning plus SBOM generation against Docker images. Demonstrates how GitHub fills GitLab\'s native container scanning gap with best-of-breed open-source tools.'},
+      {type:'code',tab:'container-scan.yml — Config',lang:'yaml',warnLines:[],
+       code:[
+         {t:'cmt',v:'# Container scan configuration'}, null,
+         {t:'vr',v:'image_ref'},{t:'',v:':     '},{t:'str',v:'node:18-alpine'}, null,
+         {t:'vr',v:'severity'},{t:'',v:':     '},{t:'str',v:'HIGH,CRITICAL'}, null,
+         {t:'vr',v:'scanners'},{t:'',v:':    '},{t:'str',v:'trivy, grype'}, null,
+         {t:'vr',v:'sbom_format'},{t:'',v:': '},{t:'str',v:'CycloneDX'}, null,
+         null,
+         {t:'cmt',v:'# Triggered via workflow_dispatch'}, null,
+         {t:'cmt',v:'# Results uploaded to GitHub Security tab'}, null
+       ]},
+      {type:'terminal',title:'Container Scan Running',lines:[
+        {t:'blue',v:'⚡ GitHub Actions triggered: Container Security Scan'},
+        {t:'dim',v:'  Input: image_ref=node:18-alpine, severity=HIGH,CRITICAL'},
+        {t:'green',v:'  ✓ Pull container image'},
+        {t:'yellow',v:'  ⏳ Running Trivy vulnerability scan...'},
+        {t:'',v:''},
+        {t:'',v:'  node:18-alpine (alpine 3.18.4)'},
+        {t:'red',v:'  Total: 12 (HIGH: 8, CRITICAL: 4)'},
+        {t:'',v:''},
+        {t:'',v:'  ┌──────────────┬────────────────┬──────────┬─────────────┐'},
+        {t:'',v:'  │   Library    │ Vulnerability  │ Severity │  Fixed Ver  │'},
+        {t:'',v:'  ├──────────────┼────────────────┼──────────┼─────────────┤'},
+        {t:'red',v:'  │ openssl      │ CVE-2023-5678  │ CRITICAL │ 3.1.4-r0    │'},
+        {t:'red',v:'  │ libcrypto3   │ CVE-2023-5363  │ CRITICAL │ 3.1.4-r1    │'},
+        {t:'yellow',v:'  │ curl         │ CVE-2023-46218 │ HIGH     │ 8.5.0-r0    │'},
+        {t:'yellow',v:'  │ zlib         │ CVE-2023-45853 │ HIGH     │ 1.3-r2      │'},
+        {t:'',v:'  └──────────────┴────────────────┴──────────┴─────────────┘'},
+        {t:'',v:''},
+        {t:'green',v:'  ✓ Grype confirmed 12 vulnerabilities'},
+        {t:'green',v:'  ✓ SBOM generated (CycloneDX format)'},
+        {t:'green',v:'  ✅ Scan complete — results uploaded to Security tab'}
+      ]},
+      {type:'alert',title:'🐳 Container Vulnerability Summary',fields:[
+        ['Image','node:18-alpine'],
+        ['Critical','4 vulnerabilities (openssl, libcrypto3, busybox, apk-tools)','sev-crit'],
+        ['High','8 vulnerabilities (curl, zlib, nghttp2, and more)','sev-high'],
+        ['SBOM','CycloneDX format — uploaded as artifact'],
+        ['Action','Update base image to node:20-alpine (latest patched)']
+      ]},
+      {type:'diff',tab:'Dockerfile — Remediation',lines:[
+        {d:'del',v:'FROM node:18-alpine'},
+        {d:'add',v:'FROM node:20-alpine@sha256:a1b2c3...  # pinned digest'},
+        {d:'ctx',v:''},
+        {d:'ctx',v:'WORKDIR /app'},
+        {d:'ctx',v:'COPY package*.json ./'},
+        {d:'ctx',v:'RUN npm ci --only=production'},
+        {d:'ctx',v:'COPY . .'},
+        {d:'ctx',v:'EXPOSE 3000'},
+        {d:'ctx',v:'CMD ["node", "dist/server.js"]'}
+      ]},
+      {type:'summary',points:[
+        '✅ Trivy + Grype dual scanning for comprehensive coverage',
+        '✅ SBOM generation for supply chain transparency (CycloneDX)',
+        '✅ Fills GitLab\'s native container scanning gap',
+        '💡 Pin image digests and use Dependabot for container image updates'
+      ]}
+    ]
+  },
+  {
+    id:'license-compliance', icon:'⚖️', title:'License Compliance', category:'compliance',
+    description:'Scans npm dependencies for license violations against policy',
+    steps:[
+      {type:'intro',title:'License Compliance Check',
+       desc:'Scans all npm dependencies for license violations using license-checker. Enforces organization policy that only approved open-source licenses (MIT, Apache-2.0, BSD, etc.) are allowed.'},
+      {type:'code',tab:'license-policy.yml — Config',lang:'yaml',warnLines:[],
+       code:[
+         {t:'cmt',v:'# License compliance policy configuration'}, null,
+         {t:'vr',v:'policy_mode'},{t:'',v:':        '},{t:'str',v:'warn'}, null,
+         {t:'vr',v:'allowed_licenses'},{t:'',v:':'}, null,
+         {t:'',v:'  - '},{t:'str',v:'MIT'}, null,
+         {t:'',v:'  - '},{t:'str',v:'Apache-2.0'}, null,
+         {t:'',v:'  - '},{t:'str',v:'BSD-2-Clause'}, null,
+         {t:'',v:'  - '},{t:'str',v:'BSD-3-Clause'}, null,
+         {t:'',v:'  - '},{t:'str',v:'ISC'}, null,
+         {t:'',v:'  - '},{t:'str',v:'Unlicense'}, null,
+         {t:'',v:'  - '},{t:'str',v:'CC0-1.0'}, null,
+         {t:'',v:'  - '},{t:'str',v:'0BSD'}, null
+       ]},
+      {type:'terminal',title:'License Compliance Running',lines:[
+        {t:'blue',v:'⚡ GitHub Actions triggered: License Compliance Check'},
+        {t:'green',v:'  ✓ Install dependencies'},
+        {t:'yellow',v:'  ⏳ Running license-checker...'},
+        {t:'',v:'  Scanning 847 packages...'},
+        {t:'',v:''},
+        {t:'yellow',v:'  ⚠️  License violations found:'},
+        {t:'',v:''},
+        {t:'',v:'  ┌─────────────────────┬──────────┬────────────────┐'},
+        {t:'',v:'  │ Package             │ License  │ Status         │'},
+        {t:'',v:'  ├─────────────────────┼──────────┼────────────────┤'},
+        {t:'red',v:'  │ colors@1.4.0        │ GPL-3.0  │ ❌ NOT ALLOWED │'},
+        {t:'green',v:'  │ debug@4.3.4         │ MIT      │ ✅ Allowed     │'},
+        {t:'green',v:'  │ express@4.18.2      │ MIT      │ ✅ Allowed     │'},
+        {t:'red',v:'  │ random-lib@2.0.0    │ AGPL-3.0 │ ❌ NOT ALLOWED │'},
+        {t:'green',v:'  │ lodash@4.17.21      │ MIT      │ ✅ Allowed     │'},
+        {t:'',v:'  └─────────────────────┴──────────┴────────────────┘'},
+        {t:'',v:''},
+        {t:'yellow',v:'  Total: 847 packages | 2 violations | Policy: warn'},
+        {t:'green',v:'  ✅ License compliance report generated'}
+      ]},
+      {type:'alert',title:'⚖️ License Violations',fields:[
+        ['colors@1.4.0','GPL-3.0 — NOT in allowed list','sev-high'],
+        ['random-lib@2.0.0','AGPL-3.0 — NOT in allowed list','sev-high'],
+        ['Total Scanned','847 packages'],
+        ['Passing','845 packages with approved licenses'],
+        ['Policy Mode','Warn (can be set to Block for enforcement)']
+      ]},
+      {type:'diff',tab:'package.json — Remediation',lines:[
+        {d:'ctx',v:'"dependencies": {'},
+        {d:'del',v:'  "colors": "^1.4.0",        // GPL-3.0'},
+        {d:'add',v:'  "chalk": "^5.3.0",         // MIT ✅'},
+        {d:'ctx',v:'  "debug": "^4.3.4",         // MIT'},
+        {d:'ctx',v:'  "express": "^4.18.2",      // MIT'},
+        {d:'del',v:'  "random-lib": "^2.0.0",    // AGPL-3.0'},
+        {d:'add',v:'  "nanoid": "^5.0.4",        // MIT ✅'},
+        {d:'ctx',v:'  "lodash": "^4.17.21"       // MIT'},
+        {d:'ctx',v:'}'}
+      ]},
+      {type:'summary',points:[
+        '✅ Automated license scanning of all dependencies',
+        '✅ Configurable policy — warn mode or block mode',
+        '✅ Fills GitLab\'s native license compliance gap',
+        '💡 Prevents GPL/AGPL contamination of proprietary codebases'
+      ]}
+    ]
+  },
+  {
+    id:'dast-scan', icon:'🌐', title:'DAST Security Scan', category:'security',
+    description:'OWASP ZAP dynamic security testing against live URLs',
+    steps:[
+      {type:'intro',title:'DAST Security Scan (OWASP ZAP)',
+       desc:'Runs OWASP ZAP dynamic security testing against a live URL. Catches runtime vulnerabilities that static analysis misses — XSS, CSRF, missing headers, and more.'},
+      {type:'code',tab:'dast-scan.yml — Config',lang:'yaml',warnLines:[],
+       code:[
+         {t:'cmt',v:'# DAST scan configuration'}, null,
+         {t:'vr',v:'target_url'},{t:'',v:': '},{t:'str',v:'https://app.example.com'}, null,
+         {t:'vr',v:'scan_type'},{t:'',v:':  '},{t:'str',v:'baseline'}, null,
+         {t:'vr',v:'scanner'},{t:'',v:':    '},{t:'str',v:'OWASP ZAP 2.14'}, null,
+         null,
+         {t:'cmt',v:'# SARIF output uploaded to GitHub Security tab'}, null,
+         {t:'cmt',v:'# Supports baseline, full, and API scan modes'}, null
+       ]},
+      {type:'terminal',title:'DAST Scan Running',lines:[
+        {t:'blue',v:'⚡ GitHub Actions triggered: DAST Security Scan'},
+        {t:'dim',v:'  Input: target=https://app.example.com, type=baseline'},
+        {t:'green',v:'  ✓ Start OWASP ZAP in daemon mode'},
+        {t:'yellow',v:'  ⏳ Running baseline scan...'},
+        {t:'dim',v:'  [ZAP] Spider found 23 URLs'},
+        {t:'dim',v:'  [ZAP] Testing for vulnerabilities...'},
+        {t:'',v:''},
+        {t:'',v:'  OWASP ZAP Baseline Scan Results:'},
+        {t:'',v:'  ┌──────────┬──────────────────────────────────┬───────┐'},
+        {t:'',v:'  │ Risk     │ Alert                            │ Count │'},
+        {t:'',v:'  ├──────────┼──────────────────────────────────┼───────┤'},
+        {t:'red',v:'  │ HIGH     │ SQL Injection                    │   2   │'},
+        {t:'red',v:'  │ HIGH     │ Cross-Site Scripting (XSS)       │   3   │'},
+        {t:'yellow',v:'  │ MEDIUM   │ Missing Anti-CSRF Tokens         │   5   │'},
+        {t:'yellow',v:'  │ MEDIUM   │ X-Frame-Options Header Missing   │   1   │'},
+        {t:'blue',v:'  │ LOW      │ Cookie Without Secure Flag       │   4   │'},
+        {t:'blue',v:'  │ LOW      │ Server Leaks Version Info         │   2   │'},
+        {t:'dim',v:'  │ INFO     │ Timestamp Disclosure              │   3   │'},
+        {t:'',v:'  └──────────┴──────────────────────────────────┴───────┘'},
+        {t:'',v:''},
+        {t:'red',v:'  Total: 20 alerts (5 HIGH, 6 MEDIUM, 6 LOW, 3 INFO)'},
+        {t:'green',v:'  ✅ SARIF report uploaded to GitHub Security tab'}
+      ]},
+      {type:'alert',title:'🌐 DAST Findings Summary',fields:[
+        ['High Risk','5 alerts — SQL Injection (2), XSS (3)','sev-high'],
+        ['Medium Risk','6 alerts — CSRF (5), Missing Headers (1)','sev-med'],
+        ['Low Risk','6 alerts — Cookie flags (4), Server info (2)','sev-low'],
+        ['Info','3 alerts — Timestamp disclosure','sev-info'],
+        ['Output','SARIF report uploaded to GitHub Security tab']
+      ]},
+      {type:'diff',tab:'Remediation Recommendations',lines:[
+        {d:'add',v:'// 1. Fix SQL Injection with parameterized queries'},
+        {d:'add',v:'//    Use prepared statements, never concatenate user input'},
+        {d:'add',v:''},
+        {d:'add',v:'// 2. Prevent XSS with output encoding'},
+        {d:'add',v:'//    Sanitize all user input before rendering in HTML'},
+        {d:'add',v:''},
+        {d:'add',v:'// 3. Add CSRF tokens to all forms'},
+        {d:'add',v:'//    Use csurf middleware or similar framework protection'},
+        {d:'add',v:''},
+        {d:'add',v:'// 4. Set security headers'},
+        {d:'add',v:'//    X-Frame-Options: DENY'},
+        {d:'add',v:'//    Content-Security-Policy: default-src \'self\''},
+        {d:'add',v:'//    Strict-Transport-Security: max-age=31536000'},
+        {d:'add',v:'//    X-Content-Type-Options: nosniff'}
+      ]},
+      {type:'summary',points:[
+        '✅ OWASP ZAP dynamic security testing catches runtime vulnerabilities',
+        '✅ Spider crawls all URLs, tests for OWASP Top 10',
+        '✅ SARIF integration with GitHub Security tab for unified view',
+        '💡 Fills GitLab\'s native DAST gap using industry-standard tools'
+      ]}
+    ]
+  }
+];
+
+
+let currentScenario = -1;
+let currentStep = 0;
+let terminalAnimating = false;
+let terminalTimeout = null;
+
+function init() {
+  renderSidebar();
+  showWelcome();
+  document.addEventListener('keydown', handleKey);
+}
+
+function renderSidebar() {
+  const sb = document.getElementById('sidebar-list');
+  sb.innerHTML = '';
+  scenarios.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'scenario-item' + (i === currentScenario ? ' active' : '');
+    div.innerHTML = `
+      <span class="s-icon">${s.icon}</span>
+      <div class="s-info">
+        <div class="s-title">${s.title}</div>
+        <div class="s-meta">
+          <span class="badge badge-${s.category}">${s.category}</span>
+          <span class="step-ind" id="step-ind-${i}">${i === currentScenario ? `Step ${currentStep+1}/${s.steps.length}` : `${s.steps.length} steps`}</span>
+        </div>
+      </div>`;
+    div.onclick = () => loadScenario(i);
+    sb.appendChild(div);
+  });
+}
+
+function showWelcome() {
+  currentScenario = -1; currentStep = 0;
+  const ed = document.getElementById('editor-content');
+  const tb = document.getElementById('tab-bar');
+  const term = document.getElementById('terminal-body');
+  tb.innerHTML = '<div class="tab active"><span class="tab-icon">🏠</span> Welcome</div>';
+  term.innerHTML = '<span class="t-dim">Ready. Select a scenario or press 1-9 to begin.</span>';
+  ed.innerHTML = `
+    <div class="panel-center fade-in">
+      <h1>🛡️ GitHub Copilot + Advanced Security</h1>
+      <p class="subtitle">Interactive Demo Experience — Fully Offline</p>
+      <p class="desc">Click any scenario below to begin an interactive walkthrough. Each scenario demonstrates a real security workflow with vulnerable code, automated detection, and remediation.</p>
+      <div class="cards-grid">
+        ${scenarios.map((s,i) => `
+          <div class="card" onclick="loadScenario(${i})">
+            <div class="card-icon">${s.icon}</div>
+            <div class="card-title">${i+1}. ${s.title}</div>
+            <div class="card-desc">${s.description}</div>
+          </div>`).join('')}
+      </div>
+      <p style="margin-top:24px;color:#666;font-size:12px">Press <kbd>1</kbd>–<kbd>9</kbd> to jump to a scenario &nbsp;|&nbsp; <kbd>→</kbd> next step &nbsp;|&nbsp; <kbd>←</kbd> previous &nbsp;|&nbsp; <kbd>Esc</kbd> welcome</p>
+    </div>`;
+  updateNav(true);
+  updateStatus('Welcome');
+  renderSidebar();
+}
+
+function loadScenario(idx) {
+  cancelTerminal();
+  currentScenario = idx;
+  currentStep = 0;
+  renderSidebar();
+  renderStep();
+}
+
+function renderStep() {
+  if (currentScenario < 0) return showWelcome();
+  const s = scenarios[currentScenario];
+  const step = s.steps[currentStep];
+  const ed = document.getElementById('editor-content');
+  const tb = document.getElementById('tab-bar');
+  const term = document.getElementById('terminal-body');
+  cancelTerminal();
+  updateStatus(s.title + ' — Step ' + (currentStep+1));
+  updateStepIndicator();
+
+  // Tab bar
+  const tabName = step.tab || s.title;
+  const stepTypes = {intro:'📖',code:'📝',terminal:'⚡',alert:'🔔',diff:'🔀',summary:'✅'};
+  tb.innerHTML = `<div class="tab active"><span class="tab-icon">${stepTypes[step.type]||'📄'}</span> ${tabName}</div>`;
+
+  if (step.type === 'intro') {
+    ed.innerHTML = `
+      <div class="panel-center fade-in">
+        <h2>${s.icon} ${step.title}</h2>
+        <p class="desc">${step.desc}</p>
+        <p style="color:#666;font-size:13px;margin-top:20px">Press <kbd>→</kbd> or click <strong>Next</strong> to see the vulnerable code</p>
+      </div>`;
+    term.innerHTML = '<span class="t-dim">Scenario loaded: ' + s.title + '</span>';
+  }
+  else if (step.type === 'code') {
+    renderCodeView(ed, step);
+    term.innerHTML = '<span class="t-dim">Viewing: ' + step.tab + '</span>';
+  }
+  else if (step.type === 'terminal') {
+    ed.innerHTML = `<div class="panel-center fade-in"><h2>⚡ ${step.title}</h2><p class="desc">Watch the terminal below for live workflow output</p><p style="color:#666;font-size:12px;margin-top:12px">Click terminal or press <kbd>Space</kbd> to skip animation</p></div>`;
+    animateTerminal(step.lines);
+  }
+  else if (step.type === 'alert') {
+    renderAlertView(ed, step);
+    term.innerHTML = '<span class="t-green">Detection complete.</span>';
+  }
+  else if (step.type === 'diff') {
+    renderDiffView(ed, step);
+    term.innerHTML = '<span class="t-green">Remediation applied.</span>';
+  }
+  else if (step.type === 'summary') {
+    ed.innerHTML = `
+      <div class="panel-center fade-in">
+        <h2>✅ Summary: ${s.title}</h2>
+        <ul class="summary-points">${step.points.map(p => `<li>${p}</li>`).join('')}</ul>
+        ${currentScenario < scenarios.length - 1 ?
+          `<p style="margin-top:24px;color:#888;font-size:13px">Press <kbd>→</kbd> for next scenario: <strong>${scenarios[currentScenario+1].icon} ${scenarios[currentScenario+1].title}</strong></p>` :
+          `<p style="margin-top:24px;color:var(--green);font-size:14px;font-weight:600">🎉 Demo complete! Press <kbd>Esc</kbd> to return to the welcome screen.</p>`
+        }
+      </div>`;
+    term.innerHTML = '<span class="t-green">✅ Scenario complete: ' + s.title + '</span>';
+  }
+  updateNav();
+}
+
+function renderCodeView(ed, step) {
+  let html = '<div class="editor fade-in" style="display:flex"><div class="line-numbers">';
+  let lineNum = 1;
+  let codeHtml = '';
+  let lineContent = '';
+  const warnSet = new Set(step.warnLines || []);
+
+  step.code.forEach(token => {
+    if (token === null) {
+      const isWarn = warnSet.has(lineNum);
+      html += `<div${isWarn ? ' class="gutter-warn"' : ''}>${lineNum}</div>`;
+      codeHtml += `<span class="${isWarn ? 'line-highlight-warn' : ''}">${lineContent}\n</span>`;
+      lineContent = '';
+      lineNum++;
+    } else {
+      lineContent += token.t ? `<span class="${token.t}">${esc(token.v)}</span>` : esc(token.v);
+    }
+  });
+  html += '</div><div class="code-area">' + codeHtml + '</div></div>';
+  ed.innerHTML = html;
+}
+
+function renderDiffView(ed, step) {
+  let html = '<div class="editor fade-in" style="display:flex"><div class="line-numbers">';
+  let lineNum = 1;
+  let codeHtml = '';
+  step.lines.forEach(line => {
+    html += `<div>${lineNum}</div>`;
+    const cls = line.d === 'add' ? 'diff-add' : line.d === 'del' ? 'diff-del' : 'diff-ctx';
+    codeHtml += `<span class="${cls}">${esc(line.v)}</span>\n`;
+    lineNum++;
+  });
+  html += '</div><div class="code-area">' + codeHtml + '</div></div>';
+  ed.innerHTML = html;
+}
+
+function renderAlertView(ed, step) {
+  let fieldsHtml = step.fields.map(f => {
+    const sevClass = f[2] || '';
+    return `<div class="field"><span class="label">${esc(f[0])}</span><span class="value">${sevClass ? `<span class="${sevClass}">${esc(f[1])}</span>` : esc(f[1])}</span></div>`;
+  }).join('');
+  ed.innerHTML = `
+    <div class="panel-center fade-in">
+      <div class="gh-card">
+        <h3>${step.title}</h3>
+        ${fieldsHtml}
+      </div>
+    </div>`;
+}
+
+function animateTerminal(lines) {
+  const term = document.getElementById('terminal-body');
+  term.innerHTML = '';
+  terminalAnimating = true;
+  let lineIdx = 0;
+
+  function nextLine() {
+    if (!terminalAnimating || lineIdx >= lines.length) {
+      terminalAnimating = false;
+      return;
+    }
+    const line = lines[lineIdx++];
+    const span = document.createElement('span');
+    span.className = line.t ? 't-' + line.t : '';
+    term.appendChild(span);
+    let charIdx = 0;
+    function nextChar() {
+      if (!terminalAnimating) {
+        finishTerminal(lines, lineIdx - 1);
+        return;
+      }
+      if (charIdx < line.v.length) {
+        span.textContent += line.v[charIdx++];
+        term.scrollTop = term.scrollHeight;
+        terminalTimeout = setTimeout(nextChar, 12);
+      } else {
+        span.textContent += '\n';
+        term.scrollTop = term.scrollHeight;
+        terminalTimeout = setTimeout(nextLine, line.t === 'blue' ? 400 : 80);
+      }
+    }
+    nextChar();
+  }
+  nextLine();
+}
+
+function finishTerminal(lines, fromLine) {
+  const term = document.getElementById('terminal-body');
+  term.innerHTML = '';
+  lines.forEach(line => {
+    const span = document.createElement('span');
+    span.className = line.t ? 't-' + line.t : '';
+    span.textContent = line.v + '\n';
+    term.appendChild(span);
+  });
+  terminalAnimating = false;
+  term.scrollTop = term.scrollHeight;
+}
+
+function cancelTerminal() {
+  terminalAnimating = false;
+  if (terminalTimeout) { clearTimeout(terminalTimeout); terminalTimeout = null; }
+}
+
+function handleKey(e) {
+  if (e.key === 'ArrowRight' || e.key === ' ') {
+    if (terminalAnimating && currentScenario >= 0) {
+      const s = scenarios[currentScenario];
+      const step = s.steps[currentStep];
+      if (step.type === 'terminal') {
+        finishTerminal(step.lines, 0);
+        return;
+      }
+    }
+    goNext();
+  }
+  else if (e.key === 'ArrowLeft') goPrev();
+  else if (e.key === 'Escape') showWelcome();
+  else if (e.key >= '1' && e.key <= '9') {
+    const idx = parseInt(e.key) - 1;
+    if (idx < scenarios.length) loadScenario(idx);
+  }
+}
+
+function goNext() {
+  if (currentScenario < 0) { loadScenario(0); return; }
+  const s = scenarios[currentScenario];
+  if (currentStep < s.steps.length - 1) { currentStep++; renderStep(); }
+  else if (currentScenario < scenarios.length - 1) { loadScenario(currentScenario + 1); }
+}
+
+function goPrev() {
+  if (currentScenario < 0) return;
+  if (currentStep > 0) { currentStep--; renderStep(); }
+  else if (currentScenario > 0) {
+    currentScenario--;
+    currentStep = scenarios[currentScenario].steps.length - 1;
+    renderSidebar();
+    renderStep();
+  }
+}
+
+function updateNav(hidden) {
+  const nav = document.getElementById('nav-bar');
+  if (hidden || currentScenario < 0) {
+    nav.style.display = 'none'; return;
+  }
+  nav.style.display = 'flex';
+  const s = scenarios[currentScenario];
+  const dots = s.steps.map((_, i) => `<div class="nav-dot${i === currentStep ? ' active' : ''}"></div>`).join('');
+  document.getElementById('nav-prev').disabled = (currentScenario === 0 && currentStep === 0);
+  document.getElementById('nav-next').disabled = (currentScenario === scenarios.length - 1 && currentStep === s.steps.length - 1);
+  document.getElementById('nav-dots').innerHTML = dots;
+  document.getElementById('nav-label').textContent = `Step ${currentStep+1} of ${s.steps.length}`;
+}
+
+function updateStatus(text) {
+  document.getElementById('status-text').textContent = text;
+}
+
+function updateStepIndicator() {
+  const ind = document.getElementById('step-ind-' + currentScenario);
+  if (ind) ind.textContent = `Step ${currentStep+1}/${scenarios[currentScenario].steps.length}`;
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+</script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+name: "Jira Ticket Closer"
+
+on:
+  # When a GHAS alert is resolved
+  code_scanning_alert:
+    types: [closed_by_user, fixed]
+  secret_scanning_alert:
+    types: [resolved]
+  dependabot_alert:
+    types: [fixed, dismissed]
+  # When a PR referencing a Jira ticket is merged
+  pull_request:
+    types: [closed]
+  # Manual trigger for demos
+  workflow_dispatch:
+    inputs:
+      jira_key:
+        description: "Jira ticket key to close"
+        required: true
+        default: "VULN-001"
+      resolution:
+        description: "Resolution message"
+        required: false
+        default: "Vulnerability remediated via automated fix"
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  close-ticket:
+    name: "Close Jira Ticket"
+    runs-on: ubuntu-latest
+    # Only run on merged PRs (not closed without merge)
+    if: >
+      github.event_name != 'pull_request' || 
+      github.event.pull_request.merged == true
+    steps:
+      - name: Extract Jira key
+        id: jira
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "key=${{ inputs.jira_key }}" >> $GITHUB_OUTPUT
+            echo "resolution=${{ inputs.resolution }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            # Extract VULN-NNN from PR body or title
+            PR_BODY="${{ github.event.pull_request.body }}"
+            PR_TITLE="${{ github.event.pull_request.title }}"
+            JIRA_KEY=$(echo "${PR_BODY} ${PR_TITLE}" | grep -oP 'VULN-\d+' | head -1)
+            if [ -z "$JIRA_KEY" ]; then
+              echo "No Jira key found in PR — skipping"
+              echo "key=" >> $GITHUB_OUTPUT
+            else
+              echo "key=${JIRA_KEY}" >> $GITHUB_OUTPUT
+              echo "resolution=Fixed via PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
+            fi
+          else
+            # GHAS alert event — try to find linked Jira key from related issues
+            echo "key=" >> $GITHUB_OUTPUT
+            echo "resolution=GHAS alert resolved" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Close Jira ticket
+        if: steps.jira.outputs.key != ''
+        env:
+          DEMO_SERVER_URL: ${{ vars.DEMO_SERVER_URL || 'http://localhost:3000' }}
+        run: |
+          JIRA_KEY="${{ steps.jira.outputs.key }}"
+          RESOLUTION="${{ steps.jira.outputs.resolution }}"
+          
+          echo "🔄 Closing Jira ticket ${JIRA_KEY}..."
+          
+          # Add resolution comment
+          curl -s -X POST "${DEMO_SERVER_URL}/api/jira/tickets/${JIRA_KEY}/comment" \
+            -H "Content-Type: application/json" \
+            -d "{\"comment\": \"✅ ${RESOLUTION}\"}" || true
+          
+          # Transition to Done
+          curl -s -X POST "${DEMO_SERVER_URL}/api/jira/tickets/${JIRA_KEY}/transition" \
+            -H "Content-Type: application/json" \
+            -d '{"status": "Done"}' || true
+          
+          echo "✅ Jira ticket ${JIRA_KEY} closed"
+
+      - name: Summary
+        if: steps.jira.outputs.key != ''
+        run: |
+          echo "### Jira Ticket Closed 🎫" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Ticket:** ${{ steps.jira.outputs.key }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Resolution:** ${{ steps.jira.outputs.resolution }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY

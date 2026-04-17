@@ -10,8 +10,13 @@ import {
   redactCitizenRecord,
   searchCitizens,
 } from "./database";
+import { optionalAuth, requireRole } from '../middleware/rbac';
 
 export const piiDemoRouter = Router();
+
+// TODO: Make auth required in production
+piiDemoRouter.use(optionalAuth);
+piiDemoRouter.use(requireRole('security_admin', 'security_analyst', 'demo_operator'));
 
 function buildMeta(redacted: boolean, proof: string): {
   source: string;

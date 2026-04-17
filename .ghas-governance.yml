@@ -1,0 +1,90 @@
+# .ghas-governance.yml — Mandatory Governance Checks
+# Defines the security compliance checks required before code can be merged.
+# Used by the governance-gate.yml workflow and the governance-service.
+version: "1.0"
+
+checks:
+  # 1. No critical/high vulnerabilities in changed files
+  vulnerability_threshold:
+    enabled: true
+    max_critical: 0
+    max_high: 0
+    max_medium: 10
+    max_low: -1
+    scope: "changed_files"
+    exclude_excepted: true
+
+  # 2. Secret scanning must be clean
+  secret_scanning:
+    enabled: true
+    block_on_detection: true
+    allow_push_protection_bypass: false
+
+  # 3. License compliance
+  license_compliance:
+    enabled: true
+    policy: "strict"
+
+  # 4. Dependency audit
+  dependency_audit:
+    enabled: true
+    max_critical_deps: 0
+    max_high_deps: 0
+    require_lockfile: true
+    check_transitive: true
+
+  # 5. CodeQL must have run
+  codeql_required:
+    enabled: true
+    languages: ["javascript", "typescript"]
+    max_errors: 0
+    max_warnings: 5
+
+  # 6. Security review sign-off for high-risk changes
+  security_review:
+    enabled: true
+    required_for:
+      - "src/security/**"
+      - "src/mcp-server/**"
+      - ".github/workflows/**"
+      - "package.json"
+    reviewers: ["security-team"]
+    auto_assign: true
+
+# License compliance policy
+license_compliance:
+  allowed:
+    - "MIT"
+    - "Apache-2.0"
+    - "BSD-2-Clause"
+    - "BSD-3-Clause"
+    - "ISC"
+    - "0BSD"
+    - "CC0-1.0"
+    - "Unlicense"
+    - "BlueOak-1.0.0"
+
+  denied:
+    - "GPL-2.0"
+    - "GPL-3.0"
+    - "AGPL-3.0"
+    - "SSPL-1.0"
+    - "EUPL-1.1"
+
+  review_required:
+    - "LGPL-2.1"
+    - "LGPL-3.0"
+    - "MPL-2.0"
+    - "EPL-1.0"
+    - "CDDL-1.0"
+
+  unknown_license_action: "fail"
+  check_transitive: true
+
+  overrides: []
+
+# Audit trail configuration
+audit:
+  log_all_checks: true
+  retention_days: 365
+  export_format: "json"

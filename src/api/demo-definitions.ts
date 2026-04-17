@@ -152,6 +152,24 @@ export const demoScenarios: DemoScenario[] = [
       scan_type: "baseline",
     },
   },
+  {
+    id: "jira-loop",
+    name: "Jira Closed-Loop Demo",
+    description: "End-to-end: pushes vulnerable deps → GHAS detects → creates Jira ticket (deduped) → assigns Copilot → Copilot fixes → PR merged → Jira auto-closed. The full Snyk-killer workflow.",
+    category: "security",
+    branchName: "main",
+    workflowFile: "ghas-jira-bridge.yml",
+    incidentFiles: [],
+    remediationFiles: [],
+    dispatchOnly: true,
+    workflowInputs: {
+      alert_type: "dependabot",
+      severity: "critical",
+      title: "CVE-2024-DEMO-001",
+      file_path: "package.json",
+      package_name: "lodash",
+    },
+  },
 ];
 
 export function getDemoScenario(demoId: string): DemoScenario | undefined {

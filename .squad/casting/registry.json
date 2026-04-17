@@ -1,0 +1,58 @@
+[
+  {
+    "persistent_name": "Ripley",
+    "universe": "alien-1979",
+    "role": "Lead",
+    "created_at": "2026-04-16T20:05:00Z",
+    "legacy_named": false,
+    "status": "active"
+  },
+  {
+    "persistent_name": "Kane",
+    "universe": "alien-1979",
+    "role": "Backend Dev",
+    "created_at": "2026-04-16T20:05:00Z",
+    "legacy_named": false,
+    "status": "active"
+  },
+  {
+    "persistent_name": "Dallas",
+    "universe": "alien-1979",
+    "role": "Frontend Dev",
+    "created_at": "2026-04-16T20:05:00Z",
+    "legacy_named": false,
+    "status": "active"
+  },
+  {
+    "persistent_name": "Lambert",
+    "universe": "alien-1979",
+    "role": "Tester",
+    "created_at": "2026-04-16T20:05:00Z",
+    "legacy_named": false,
+    "status": "active"
+  },
+  {
+    "persistent_name": "Ash",
+    "universe": "alien-1979",
+    "role": "Security & Deps",
+    "created_at": "2026-04-16T20:12:00Z",
+    "legacy_named": false,
+    "status": "active"
+  },
+  {
+    "persistent_name": "Bishop",
+    "universe": "alien-1979",
+    "role": "GHAS Expert",
+    "created_at": "2026-04-16T20:12:00Z",
+    "legacy_named": false,
+    "status": "active"
+  },
+  {
+    "persistent_name": "Parker",
+    "universe": "alien-1979",
+    "role": "Actions Expert",
+    "created_at": "2026-04-16T20:12:00Z",
+    "legacy_named": false,
+    "status": "active"
+  }
+]

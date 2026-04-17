@@ -1,0 +1,126 @@
+{
+  "name": "ghas-security",
+  "displayName": "GHAS Security Dashboard",
+  "description": "GitHub Advanced Security integration — CVE feed, vulnerability trends, Jira bridge, governance checks",
+  "version": "0.1.0",
+  "publisher": "ghas-demo",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Security"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ghas.scan",
+        "title": "GHAS: Scan for Vulnerabilities"
+      },
+      {
+        "command": "ghas.createJiraTicket",
+        "title": "GHAS: Create Jira Ticket"
+      },
+      {
+        "command": "ghas.runGovernanceCheck",
+        "title": "GHAS: Run Governance Check"
+      },
+      {
+        "command": "ghas.showDepTree",
+        "title": "GHAS: Show Dependency Tree"
+      },
+      {
+        "command": "ghas.generateSbom",
+        "title": "GHAS: Generate SBOM"
+      },
+      {
+        "command": "ghas.showCveFeed",
+        "title": "GHAS: Show CVE Feed"
+      },
+      {
+        "command": "ghas.showTrends",
+        "title": "GHAS: Show Vulnerability Trends"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ghas-security",
+          "title": "GHAS Security",
+          "icon": "$(shield)"
+        }
+      ]
+    },
+    "views": {
+      "ghas-security": [
+        {
+          "id": "ghas-vulnerabilities",
+          "name": "Vulnerabilities"
+        },
+        {
+          "id": "ghas-dependencies",
+          "name": "Dependencies"
+        },
+        {
+          "id": "ghas-jira-tickets",
+          "name": "Jira Tickets"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "GHAS Security",
+      "properties": {
+        "ghas.server.url": {
+          "type": "string",
+          "default": "http://localhost:3000",
+          "description": "Base URL of the GHAS Express API server"
+        },
+        "ghas.jira.baseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Jira instance base URL (e.g. https://yourorg.atlassian.net)"
+        },
+        "ghas.jira.email": {
+          "type": "string",
+          "default": "",
+          "description": "Jira account email address"
+        },
+        "ghas.jira.apiToken": {
+          "type": "string",
+          "default": "",
+          "description": "Jira API token (stored in VS Code SecretStorage when possible)"
+        },
+        "ghas.jira.projectKey": {
+          "type": "string",
+          "default": "",
+          "description": "Default Jira project key for new tickets"
+        },
+        "ghas.github.token": {
+          "type": "string",
+          "default": "",
+          "description": "GitHub personal access token for GHAS API calls"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "watch": "tsc -watch -p .",
+    "lint": "echo 'No linter configured yet'",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/node-fetch": "^2.6.13",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.22.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}

@@ -1,0 +1,141 @@
+name: "GHAS → Jira Bridge"
+
+on:
+  # Real GHAS event triggers
+  code_scanning_alert:
+    types: [appeared_in_branch, reopened]
+  secret_scanning_alert:
+    types: [created]
+  dependabot_alert:
+    types: [created]
+  # Manual trigger for demos
+  workflow_dispatch:
+    inputs:
+      alert_type:
+        description: "Alert type to simulate"
+        required: true
+        type: choice
+        options:
+          - dependabot
+          - code_scanning
+          - secret_scanning
+      severity:
+        description: "Alert severity"
+        required: true
+        type: choice
+        options:
+          - critical
+          - high
+          - medium
+          - low
+      title:
+        description: "Alert title / CVE ID"
+        required: true
+        default: "CVE-2024-DEMO-001"
+      file_path:
+        description: "Affected file path"
+        required: false
+        default: "package.json"
+      package_name:
+        description: "Affected package (dependabot only)"
+        required: false
+        default: "lodash"
+
+permissions:
+  contents: read
+  issues: write
+  security-events: read
+
+jobs:
+  bridge:
+    name: "Bridge GHAS Alert → Jira"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract alert details
+        id: alert
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "type=${{ inputs.alert_type }}" >> $GITHUB_OUTPUT
+            echo "severity=${{ inputs.severity }}" >> $GITHUB_OUTPUT
+            echo "title=${{ inputs.title }}" >> $GITHUB_OUTPUT
+            echo "file_path=${{ inputs.file_path }}" >> $GITHUB_OUTPUT
+            echo "package_name=${{ inputs.package_name }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "dependabot_alert" ]; then
+            echo "type=dependabot" >> $GITHUB_OUTPUT
+            echo "severity=${{ github.event.alert.severity }}" >> $GITHUB_OUTPUT
+            echo "title=${{ github.event.alert.security_advisory.cve_id || github.event.alert.security_advisory.ghsa_id }}" >> $GITHUB_OUTPUT
+            echo "file_path=package.json" >> $GITHUB_OUTPUT
+            echo "package_name=${{ github.event.alert.security_advisory.vulnerabilities[0].package.name }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "code_scanning_alert" ]; then
+            echo "type=code_scanning" >> $GITHUB_OUTPUT
+            echo "severity=${{ github.event.alert.rule.severity }}" >> $GITHUB_OUTPUT
+            echo "title=${{ github.event.alert.rule.id }}" >> $GITHUB_OUTPUT
+            echo "file_path=${{ github.event.alert.most_recent_instance.location.path }}" >> $GITHUB_OUTPUT
+            echo "package_name=" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "secret_scanning_alert" ]; then
+            echo "type=secret_scanning" >> $GITHUB_OUTPUT
+            echo "severity=critical" >> $GITHUB_OUTPUT
+            echo "title=Secret: ${{ github.event.alert.secret_type_display_name }}" >> $GITHUB_OUTPUT
+            echo "file_path=" >> $GITHUB_OUTPUT
+            echo "package_name=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Call bridge API
+        env:
+          DEMO_SERVER_URL: ${{ vars.DEMO_SERVER_URL || 'http://localhost:3000' }}
+        run: |
+          echo "🔄 Bridging ${{ steps.alert.outputs.type }} alert to Jira..."
+          echo "   Title: ${{ steps.alert.outputs.title }}"
+          echo "   Severity: ${{ steps.alert.outputs.severity }}"
+          echo "   File: ${{ steps.alert.outputs.file_path }}"
+          
+          # Call the bridge endpoint on the demo server
+          curl -s -X POST "${DEMO_SERVER_URL}/api/jira/bridge" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "finding": {
+                "type": "${{ steps.alert.outputs.type }}",
+                "severity": "${{ steps.alert.outputs.severity }}",
+                "title": "${{ steps.alert.outputs.title }}",
+                "filePath": "${{ steps.alert.outputs.file_path }}",
+                "packageName": "${{ steps.alert.outputs.package_name }}"
+              }
+            }' || echo "⚠️ Bridge server not reachable — alert logged for manual processing"
+
+      - name: Create GitHub issue for Copilot
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const severity = '${{ steps.alert.outputs.severity }}'.toUpperCase();
+            const title = `[${severity}] ${{ steps.alert.outputs.title }}`;
+            const body = [
+              `## Security Alert — ${severity}`,
+              '',
+              `**Type:** ${{ steps.alert.outputs.type }}`,
+              `**Severity:** ${severity}`,
+              `**Title:** ${{ steps.alert.outputs.title }}`,
+              `**File:** ${{ steps.alert.outputs.file_path || 'N/A' }}`,
+              `**Package:** ${{ steps.alert.outputs.package_name || 'N/A' }}`,
+              '',
+              '---',
+              '',
+              '### Remediation',
+              '',
+              'Please fix the vulnerability described above.',
+              'If this is a dependency issue, update to the patched version.',
+              'If this is a code issue, apply the recommended fix.',
+            ].join('\n');
+
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['copilot:fix', 'security', `severity:${severity.toLowerCase()}`],
+            });
+
+            console.log(`✅ Created issue #${issue.data.number}: ${title}`);
+            console.log(`   Labels: copilot:fix, security, severity:${severity.toLowerCase()}`);

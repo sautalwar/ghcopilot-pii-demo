@@ -1458,9 +1458,327 @@
         min-width: 160px;
       }
     }
+
+    /* ── New Tabs (5-9) ── */
+    .new-tab-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .new-tab-stats .metric-card { text-align: center; }
+    .filter-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; padding: 14px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+    .filter-bar select, .filter-bar input[type="text"], .filter-bar input[type="number"] { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; font-size: 0.9rem; }
+    .filter-bar label { color: var(--muted); font-size: 0.85rem; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    .filter-bar label input[type="checkbox"] { accent-color: var(--blue); }
+    .cve-list { max-height: 600px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+    .cve-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; transition: opacity 0.4s ease; }
+    .cve-card.fade-in { animation: fadeIn 0.5s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .cve-card-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+    .cve-id { font-family: 'SFMono-Regular', Consolas, monospace; font-weight: 700; color: var(--text); }
+    .severity-badge { padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; }
+    .severity-badge.critical { background: var(--red-soft); color: var(--red); }
+    .severity-badge.high { background: var(--orange-soft); color: var(--orange); }
+    .severity-badge.medium { background: var(--yellow-soft); color: var(--yellow); }
+    .severity-badge.low { background: rgba(63,185,80,0.14); color: var(--green); }
+    .affects-badge { background: rgba(63,185,80,0.14); color: var(--green); padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+    .cve-details { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.9rem; line-height: 1.6; display: none; }
+    .cve-card.expanded .cve-details { display: block; }
+    .threat-banner { background: linear-gradient(135deg, rgba(248,81,73,0.15), rgba(248,81,73,0.05)); border: 1px solid var(--red); border-radius: 12px; padding: 16px 20px; margin-bottom: 18px; color: var(--red); font-weight: 600; font-size: 1rem; display: flex; align-items: center; gap: 10px; }
+    .whatif-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    .whatif-card { border-radius: 12px; padding: 18px; border: 1px solid var(--border); }
+    .whatif-card.patch { background: rgba(63,185,80,0.08); border-color: var(--green); }
+    .whatif-card.nopatch { background: rgba(248,81,73,0.08); border-color: var(--red); }
+    .trend-chart-container { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    .trend-chart-container canvas { max-height: 350px; }
+    .big-metric { text-align: center; padding: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 18px; }
+    .big-metric .value { font-size: 2.5rem; font-weight: 800; color: var(--text); letter-spacing: -0.03em; }
+    .big-metric .label { color: var(--muted); font-size: 0.9rem; margin-top: 6px; }
+    .big-metric .trend-down { color: var(--green); }
+    .big-metric .trend-up { color: var(--red); }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 6px; font-weight: 600; }
+    .form-group select, .form-group input[type="text"] { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; font-size: 0.9rem; }
+    .dedup-result { padding: 14px 18px; border-radius: 10px; margin-top: 12px; font-weight: 600; }
+    .dedup-result.created { background: rgba(63,185,80,0.12); color: var(--green); border: 1px solid var(--green); }
+    .dedup-result.duplicate { background: rgba(210,153,34,0.12); color: var(--yellow); border: 1px solid var(--yellow); }
+    .ticket-table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+    .ticket-table th, .ticket-table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    .ticket-table th { color: var(--muted); font-weight: 700; text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.04em; }
+    .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+    .status-badge.open { background: rgba(88,166,255,0.14); color: var(--blue); }
+    .status-badge.in-progress { background: rgba(210,153,34,0.14); color: var(--yellow); }
+    .status-badge.done { background: rgba(63,185,80,0.14); color: var(--green); }
+    .gate-result { margin-top: 16px; }
+    .gate-check { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    .gate-check .pass { color: var(--green); }
+    .gate-check .fail { color: var(--red); }
+    .exception-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 10px; }
+    .expiry-green { color: var(--green); }
+    .expiry-yellow { color: var(--yellow); }
+    .expiry-red { color: var(--red); }
+    .audit-timeline { max-height: 500px; overflow-y: auto; }
+    .audit-entry { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    .audit-entry .timestamp { color: var(--muted); font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.82rem; white-space: nowrap; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+    .modal-content { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; }
+    .modal-content h3 { margin: 0 0 12px; }
+    .modal-close { float: right; background: none; border: none; color: var(--muted); font-size: 1.3rem; cursor: pointer; }
+    .early-disclosure-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 10px; cursor: pointer; }
+    .early-disclosure-card:hover { border-color: var(--blue); }
+    .epss-gauge { width: 100%; height: 20px; background: var(--bg); border-radius: 10px; overflow: hidden; margin: 8px 0; }
+    .epss-gauge-fill { height: 100%; border-radius: 10px; transition: width 0.5s ease; }
+    .blast-radius-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-top: 16px; }
+    .license-violation-row.denied { color: var(--red); }
+    .license-violation-row.review { color: var(--yellow); }
+
+    /* ── Login Modal ─────────────────────────────────────── */
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(1, 4, 9, 0.92);
+      backdrop-filter: blur(20px);
+      animation: loginFadeIn 400ms ease;
+    }
+    .login-overlay.hidden { display: none; }
+
+    @keyframes loginFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 440px;
+      padding: 36px 32px 28px;
+      border-radius: var(--radius-xl);
+      background: linear-gradient(180deg, rgba(22, 27, 34, 0.98), rgba(13, 17, 23, 0.99));
+      border: 1px solid rgba(88, 166, 255, 0.18);
+      box-shadow: 0 32px 80px rgba(1, 4, 9, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .login-brand {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .login-brand .brand-mark {
+      margin: 0 auto 16px;
+    }
+
+    .login-brand h2 {
+      margin: 0;
+      font-size: 1.35rem;
+      letter-spacing: -0.02em;
+    }
+
+    .login-brand p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .login-form {
+      display: grid;
+      gap: 16px;
+    }
+
+    .form-group {
+      display: grid;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .form-group input {
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      background: rgba(13, 17, 23, 0.8);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.95rem;
+      transition: border-color 200ms ease;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15);
+    }
+
+    .login-error {
+      display: none;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      background: var(--red-soft);
+      border: 1px solid rgba(248, 81, 73, 0.3);
+      color: var(--red);
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .login-error.visible { display: block; }
+
+    .login-btn {
+      padding: 13px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--blue-strong), var(--purple));
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 0.02em;
+      transition: opacity 200ms ease, transform 100ms ease;
+    }
+
+    .login-btn:hover { opacity: 0.9; }
+    .login-btn:active { transform: scale(0.98); }
+    .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .demo-accounts {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .demo-accounts h4 {
+      margin: 0 0 12px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 700;
+    }
+
+    .demo-account-list {
+      display: grid;
+      gap: 4px;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+
+    .demo-account-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text);
+      font-size: 0.85rem;
+      text-align: left;
+      transition: var(--transition);
+      width: 100%;
+    }
+
+    .demo-account-row:hover {
+      background: rgba(88, 166, 255, 0.08);
+      border-color: rgba(88, 166, 255, 0.15);
+    }
+
+    .demo-account-row .account-role {
+      font-weight: 600;
+    }
+
+    .demo-account-row .account-creds {
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+    }
+
+    /* ── User Badge (header) ──────────────────────────────── */
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(22, 27, 34, 0.9);
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .user-badge .user-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--blue-strong), var(--purple));
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 0.72rem;
+      color: #fff;
+    }
+
+    .user-badge .user-info {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.3;
+    }
+
+    .user-badge .user-name {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .user-badge .user-role {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: capitalize;
+    }
+
+    .user-badge .logout-btn {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(248, 81, 73, 0.12);
+      border: 1px solid rgba(248, 81, 73, 0.2);
+      color: var(--red);
+      font-size: 0.78rem;
+      font-weight: 700;
+      transition: var(--transition);
+    }
+
+    .user-badge .logout-btn:hover {
+      background: rgba(248, 81, 73, 0.22);
+    }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+  <!-- Login Modal -->
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="brand-mark"><i class="fa-brands fa-github"></i></div>
+        <h2>Copilot Security Demo</h2>
+        <p>Sign in to access the presenter console</p>
+      </div>
+      <form class="login-form" id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email" required />
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" required />
+        </div>
+        <div class="login-error" id="loginError"></div>
+        <button type="submit" class="login-btn" id="loginBtn"><i class="fa-solid fa-right-to-bracket"></i> Sign In</button>
+      </form>
+      <div class="demo-accounts">
+        <h4><i class="fa-solid fa-users"></i> Demo Accounts</h4>
+        <div class="demo-account-list" id="demoAccountList"></div>
+      </div>
+    </div>
+  </div>
+
   <button class="sidebar-toggle" id="sidebarToggle" aria-label="Open sidebar navigation">
     <i class="fa-solid fa-bars"></i>
   </button>
@@ -1520,7 +1838,15 @@
               data flow, retention, model routing, and policy boundaries with customer-ready visuals.
             </p>
           </div>
-          <div class="hero-actions">
+          <div class="hero-actions" style="align-items: center; gap: 12px;">
+            <div class="user-badge" id="userBadge" style="display:none;">
+              <div class="user-avatar" id="userAvatar"></div>
+              <div class="user-info">
+                <span class="user-name" id="userName"></span>
+                <span class="user-role" id="userRole"></span>
+              </div>
+              <button class="logout-btn" onclick="logout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
+            </div>
             <button class="btn btn-primary" onclick="switchTab(0)"><i class="fa-solid fa-bolt"></i> Launch live demos</button>
             <button class="btn btn-link" onclick="switchTab(4)"><i class="fa-solid fa-brain"></i> Open Copilot Security</button>
             <a class="btn btn-neutral" href="./pii-demo.html"><i class="fa-solid fa-database"></i> Open PII runtime proof</a>
@@ -1625,6 +1951,241 @@
         </div>
       </section>
 
+      <!-- ═══ Tab 5: CVE Feed ═══ -->
+      <section class="tab-panel" id="tab-5">
+        <div class="section-shell">
+          <div class="panel-header">
+            <div>
+              <h3>🐛 CVE Feed</h3>
+              <p>Real-time vulnerability intelligence: track new CVEs, filter by severity, and create tickets for issues affecting your dependencies.</p>
+            </div>
+            <button class="btn btn-neutral" onclick="loadCveFeed()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          </div>
+          <div class="new-tab-stats" id="cveStats">
+            <div class="metric-card"><span>CVEs Today</span><strong id="cvesToday">—</strong></div>
+            <div class="metric-card"><span>Affecting This Repo</span><strong id="cvesAffecting">—</strong></div>
+            <div class="metric-card"><span>Critical / High</span><strong id="cvesCritHigh">—</strong></div>
+          </div>
+          <div class="filter-bar" id="cveFilters">
+            <select id="cveSeverityFilter" onchange="applyCveFilters()">
+              <option value="ALL">All Severities</option>
+              <option value="CRITICAL">Critical</option>
+              <option value="HIGH">High</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="LOW">Low</option>
+            </select>
+            <select id="cveHoursFilter" onchange="applyCveFilters()">
+              <option value="24">Last 24h</option>
+              <option value="48">Last 48h</option>
+              <option value="72" selected>Last 72h</option>
+              <option value="168">Last 7 days</option>
+            </select>
+            <label><input type="checkbox" id="cveMyDeps" onchange="applyCveFilters()"> Only My Deps</label>
+          </div>
+          <div class="cve-list" id="cveList"><p style="color:var(--muted)">Select this tab to load CVE data…</p></div>
+        </div>
+      </section>
+
+      <!-- ═══ Tab 6: Zero-Day Intelligence ═══ -->
+      <section class="tab-panel" id="tab-6">
+        <div class="section-shell">
+          <div class="panel-header">
+            <div>
+              <h3>☢️ Zero-Day Intelligence</h3>
+              <p>Active threat tracking, exploitability scoring, blast-radius analysis, and patch-impact forecasting for your codebase.</p>
+            </div>
+            <button class="btn btn-neutral" onclick="loadZeroDayIntel()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          </div>
+          <div id="zeroDayBanner" class="threat-banner" style="display:none"></div>
+          <h4 style="color:var(--text);margin:18px 0 10px">Early Disclosures</h4>
+          <div id="earlyDisclosures"><p style="color:var(--muted)">Loading early disclosures…</p></div>
+          <h4 style="color:var(--text);margin:18px 0 10px">Exploitability Drilldown</h4>
+          <div id="exploitDrilldown"><p style="color:var(--muted)">Click any advisory above to see exploitability details.</p></div>
+          <h4 style="color:var(--text);margin:18px 0 10px">Blast Radius</h4>
+          <div id="blastRadius" class="blast-radius-section"><p style="color:var(--muted)">Loading…</p></div>
+          <h4 style="color:var(--text);margin:18px 0 10px">What-If Analysis</h4>
+          <div class="whatif-grid" id="whatifCards">
+            <div class="whatif-card patch"><h4 style="color:var(--green)">✅ If We Patch</h4><div id="whatifPatch"><p style="color:var(--muted)">Select an advisory to forecast.</p></div></div>
+            <div class="whatif-card nopatch"><h4 style="color:var(--red)">❌ If We Don't</h4><div id="whatifNoPatch"><p style="color:var(--muted)">Select an advisory to forecast.</p></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ Tab 7: Vulnerability Trends ═══ -->
+      <section class="tab-panel" id="tab-7">
+        <div class="section-shell">
+          <div class="panel-header">
+            <div>
+              <h3>📈 Vulnerability Trends</h3>
+              <p>Track reduction progress over time with executive metrics, MTTR gauges, Copilot remediation impact, and historical trend charts.</p>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-neutral" onclick="loadVulnTrends()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+              <button class="btn btn-primary" onclick="seedTrendData()"><i class="fa-solid fa-database"></i> Generate Demo Data</button>
+            </div>
+          </div>
+          <div id="trendSummaryBanner" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:18px;font-weight:600;color:var(--text)">Loading summary…</div>
+          <div class="trend-chart-container"><canvas id="trendChart"></canvas></div>
+          <div class="new-tab-stats" id="trendMetrics">
+            <div class="big-metric"><div class="value" id="mttrValue">—</div><div class="label">Mean Time To Remediate</div></div>
+            <div class="big-metric"><div class="value" id="copilotImpact">—</div><div class="label">Copilot Remediation Impact</div></div>
+          </div>
+          <h4 style="color:var(--text);margin:18px 0 10px">Remediation Rate (30 / 60 / 90 days)</h4>
+          <div class="new-tab-stats" id="remediationRate"></div>
+          <h4 style="color:var(--text);margin:18px 0 10px">Recently Fixed</h4>
+          <div style="overflow-x:auto"><table class="ticket-table" id="recentlyFixedTable"><thead><tr><th>CVE</th><th>Package</th><th>Severity</th><th>Fixed By</th><th>Time to Fix</th></tr></thead><tbody></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- ═══ Tab 8: Jira Integration ═══ -->
+      <section class="tab-panel" id="tab-8">
+        <div class="section-shell">
+          <div class="panel-header">
+            <div>
+              <h3>🔗 Jira Bridge</h3>
+              <p>Create Jira tickets from security alerts with automatic deduplication. Track ticket lifecycle and link back to GitHub issues.</p>
+            </div>
+            <button class="btn btn-neutral" onclick="loadJiraBridge()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          </div>
+          <div class="new-tab-stats" id="jiraStats">
+            <div class="metric-card"><span>Total Tickets</span><strong id="jiraTotal">—</strong></div>
+            <div class="metric-card"><span>Open</span><strong id="jiraOpen">—</strong></div>
+            <div class="metric-card"><span>In Progress</span><strong id="jiraInProgress">—</strong></div>
+            <div class="metric-card"><span>Done</span><strong id="jiraDone">—</strong></div>
+          </div>
+          <h4 style="color:var(--text);margin:18px 0 10px">Create Ticket</h4>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:18px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+              <div class="form-group"><label>Alert Type</label><select id="jiraAlertType"><option value="dependabot">Dependabot</option><option value="code_scanning">Code Scanning</option><option value="secret_scanning">Secret Scanning</option></select></div>
+              <div class="form-group"><label>CVE ID</label><input type="text" id="jiraCveId" placeholder="CVE-2024-XXXXX"></div>
+              <div class="form-group"><label>Package</label><input type="text" id="jiraPackage" placeholder="e.g. lodash"></div>
+              <div class="form-group"><label>File Path</label><input type="text" id="jiraFilePath" placeholder="e.g. src/utils.js"></div>
+              <div class="form-group"><label>Severity</label><select id="jiraSeverity"><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></div>
+            </div>
+            <button class="btn btn-primary" onclick="createJiraTicket()" style="margin-top:12px"><i class="fa-solid fa-plus"></i> Create Ticket</button>
+            <div id="jiraDedupResult"></div>
+          </div>
+          <h4 style="color:var(--text);margin:18px 0 10px">All Tickets</h4>
+          <div style="overflow-x:auto"><table class="ticket-table" id="jiraTicketTable"><thead><tr><th>Key</th><th>Summary</th><th>Status</th><th>Priority</th><th>Created</th></tr></thead><tbody></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- ═══ Tab 9: Governance & Compliance ═══ -->
+      <section class="tab-panel" id="tab-9">
+        <div class="section-shell">
+          <div class="panel-header">
+            <div>
+              <h3>⚖️ Governance &amp; Compliance</h3>
+              <p>Security gate checks, risk exceptions, license compliance, SBOM export, and audit trail for your repository.</p>
+            </div>
+          </div>
+          <h4 style="color:var(--text);margin:18px 0 10px">Security Gate Check</h4>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:18px">
+            <div style="display:flex;gap:10px;align-items:end">
+              <div class="form-group" style="margin-bottom:0;flex:1"><label>PR Number</label><input type="number" id="gatePrNumber" placeholder="e.g. 42" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:0.9rem"></div>
+              <button class="btn btn-primary" onclick="checkSecurityGate()"><i class="fa-solid fa-shield-halved"></i> Check</button>
+            </div>
+            <div id="gateResult" class="gate-result"></div>
+          </div>
+          <div id="expiringBanner" style="display:none" class="threat-banner"></div>
+          <h4 style="color:var(--text);margin:18px 0 10px">Risk Exceptions</h4>
+          <div id="riskExceptions"><p style="color:var(--muted)">Loading…</p></div>
+          <h4 style="color:var(--text);margin:18px 0 10px">License Compliance</h4>
+          <div class="new-tab-stats" id="licenseStats"></div>
+          <div id="licenseViolations" style="margin-top:12px"></div>
+          <button class="btn btn-neutral" onclick="downloadSBOM()" style="margin-top:12px"><i class="fa-solid fa-download"></i> Download SBOM</button>
+          <h4 style="color:var(--text);margin:18px 0 10px">Audit Trail (30 days)</h4>
+          <div class="audit-timeline" id="auditTrail"><p style="color:var(--muted)">Loading…</p></div>
+        </div>
+      </section>
+
+      <!-- ═══════════ TAB 10 — Admin Panel ═══════════ -->
+      <section class="tab-panel" id="tab-10">
+        <div class="section-shell">
+          <div class="panel-header">
+            <div>
+              <h3>👥 User Administration</h3>
+              <p>Manage users, roles, and permissions for the GHAS demo platform.</p>
+            </div>
+          </div>
+
+          <!-- Activity Summary Badges -->
+          <h4 style="color:var(--text);margin:18px 0 10px">Activity Summary</h4>
+          <div class="new-tab-stats" id="adminRoleSummary"><p style="color:var(--muted)">Loading…</p></div>
+
+          <!-- Create User Form (collapsible) -->
+          <div style="margin:24px 0 18px">
+            <button class="btn btn-neutral" onclick="toggleCreateUserForm()" id="toggleCreateUserBtn" style="gap:8px">
+              <i class="fa-solid fa-plus"></i> Add New User
+              <i class="fa-solid fa-chevron-down" id="createUserChevron" style="margin-left:auto;transition:transform 0.2s"></i>
+            </button>
+          </div>
+          <div id="createUserForm" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:18px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+              <div class="form-group" style="margin-bottom:0">
+                <label>Name *</label>
+                <input type="text" id="newUserName" placeholder="Full name" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:0.9rem">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label>Email *</label>
+                <input type="email" id="newUserEmail" placeholder="user@example.com" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:0.9rem">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label>Password * <small style="color:var(--muted)">(min 8 chars)</small></label>
+                <input type="password" id="newUserPassword" placeholder="Min 8 characters" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:0.9rem">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label>Role *</label>
+                <select id="newUserRole" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:0.9rem">
+                  <option value="">Select a role…</option>
+                  <option value="system_admin">System Admin</option>
+                  <option value="security_admin">Security Admin</option>
+                  <option value="security_analyst">Security Analyst</option>
+                  <option value="developer">Developer</option>
+                  <option value="team_lead">Team Lead</option>
+                  <option value="compliance_officer">Compliance Officer</option>
+                  <option value="demo_operator">Demo Operator</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:10px;align-items:center">
+              <button class="btn btn-primary" onclick="handleCreateUser()"><i class="fa-solid fa-user-plus"></i> Create User</button>
+              <span id="createUserError" style="color:var(--red);font-size:0.88rem;display:none"></span>
+            </div>
+          </div>
+
+          <!-- Users Table -->
+          <h4 style="color:var(--text);margin:18px 0 10px">Users</h4>
+          <div style="margin-bottom:12px">
+            <input type="text" id="adminUserSearch" placeholder="Search by name, email, or role…" oninput="filterAdminUsers()" style="width:100%;max-width:400px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:0.9rem">
+          </div>
+          <div style="overflow-x:auto">
+            <table id="adminUsersTable" style="width:100%;border-collapse:separate;border-spacing:0;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+              <thead>
+                <tr style="background:var(--bg)">
+                  <th onclick="sortAdminUsers('name')" style="cursor:pointer;padding:12px 14px;text-align:left;color:var(--muted);font-size:0.82rem;text-transform:uppercase;letter-spacing:0.08em;border-bottom:1px solid var(--border)">Name <i class="fa-solid fa-sort" style="opacity:0.4;margin-left:4px"></i></th>
+                  <th style="padding:12px 14px;text-align:left;color:var(--muted);font-size:0.82rem;text-transform:uppercase;letter-spacing:0.08em;border-bottom:1px solid var(--border)">Email</th>
+                  <th onclick="sortAdminUsers('role')" style="cursor:pointer;padding:12px 14px;text-align:left;color:var(--muted);font-size:0.82rem;text-transform:uppercase;letter-spacing:0.08em;border-bottom:1px solid var(--border)">Role <i class="fa-solid fa-sort" style="opacity:0.4;margin-left:4px"></i></th>
+                  <th onclick="sortAdminUsers('status')" style="cursor:pointer;padding:12px 14px;text-align:center;color:var(--muted);font-size:0.82rem;text-transform:uppercase;letter-spacing:0.08em;border-bottom:1px solid var(--border)">Status <i class="fa-solid fa-sort" style="opacity:0.4;margin-left:4px"></i></th>
+                  <th style="padding:12px 14px;text-align:center;color:var(--muted);font-size:0.82rem;text-transform:uppercase;letter-spacing:0.08em;border-bottom:1px solid var(--border)">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersBody"><tr><td colspan="5" style="padding:20px;text-align:center;color:var(--muted)">Loading…</td></tr></tbody>
+            </table>
+          </div>
+
+          <!-- Role Permission Matrix -->
+          <h4 style="color:var(--text);margin:28px 0 10px">Role Permission Matrix</h4>
+          <div style="overflow-x:auto">
+            <table id="roleMatrixTable" style="width:100%;border-collapse:separate;border-spacing:0;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;font-size:0.85rem">
+              <thead id="roleMatrixHead"></thead>
+              <tbody id="roleMatrixBody"><tr><td style="padding:20px;text-align:center;color:var(--muted)">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <div class="footer">
         <strong>GitHub Copilot Security Demo Console</strong> · Built as a single-file presenter for enterprise customer demos · <span id="currentYear"></span>
       </div>
@@ -1634,6 +2195,175 @@
   <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="true"></div>
 
   <script>
+    /* ═══════════════════════════════════════════════════════════════
+       AUTH & RBAC
+       ═══════════════════════════════════════════════════════════════ */
+    const ROLE_TAB_ACCESS = {
+      security_admin:    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      security_analyst:  [5, 6, 7, 8, 9],
+      developer:         [5, 7, 9],
+      team_lead:         [5, 6, 7, 8, 9],
+      compliance_officer:[9, 7],
+      demo_operator:     [0, 5, 6, 7, 8, 9],
+      viewer:            [5, 7],
+      system_admin:      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    };
+
+    const DEMO_USERS = [
+      { email: 'admin@ghas-demo.dev',   password: 'Admin123!',    role: 'Security Admin' },
+      { email: 'analyst@ghas-demo.dev', password: 'Analyst123!',  role: 'Security Analyst' },
+      { email: 'dev@ghas-demo.dev',     password: 'Dev123!',      role: 'Developer' },
+      { email: 'lead@ghas-demo.dev',    password: 'Lead123!',     role: 'Team Lead' },
+      { email: 'auditor@ghas-demo.dev', password: 'Auditor123!',  role: 'Compliance Officer' },
+      { email: 'demo@ghas-demo.dev',    password: 'Demo123!',     role: 'Demo Operator' },
+      { email: 'viewer@ghas-demo.dev',  password: 'Viewer123!',   role: 'Viewer' },
+      { email: 'sysadmin@ghas-demo.dev',password: 'SysAdmin123!', role: 'System Admin' }
+    ];
+
+    let _currentUser = null;
+
+    function getAuthToken() {
+      return sessionStorage.getItem('auth_token');
+    }
+
+    function getAuthHeaders() {
+      const token = getAuthToken();
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      return headers;
+    }
+
+    function handleUnauthorized(res) {
+      if (res.status === 401 && _currentUser) {
+        logout();
+        showToast('Session expired. Please log in again.', 'error', 'fa-clock');
+      }
+      return res;
+    }
+
+    function getAllowedTabs() {
+      if (!_currentUser) return [];
+      return ROLE_TAB_ACCESS[_currentUser.role] || [];
+    }
+
+    function showLoginOverlay() {
+      const overlay = document.getElementById('loginOverlay');
+      overlay.classList.remove('hidden');
+      renderDemoAccountList();
+    }
+
+    function hideLoginOverlay() {
+      document.getElementById('loginOverlay').classList.add('hidden');
+    }
+
+    function renderDemoAccountList() {
+      const list = document.getElementById('demoAccountList');
+      list.innerHTML = DEMO_USERS.map(u => `
+        <button class="demo-account-row" onclick="fillLogin('${u.email}', '${u.password}')">
+          <span class="account-role">${u.role}</span>
+          <span class="account-creds">${u.email}</span>
+        </button>
+      `).join('');
+    }
+
+    function fillLogin(email, password) {
+      document.getElementById('loginEmail').value = email;
+      document.getElementById('loginPassword').value = password;
+      document.getElementById('loginError').classList.remove('visible');
+    }
+
+    async function handleLogin(event) {
+      event.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      const errorDiv = document.getElementById('loginError');
+      btn.disabled = true;
+      errorDiv.classList.remove('visible');
+
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (data.success && data.token) {
+          sessionStorage.setItem('auth_token', data.token);
+          _currentUser = data.user;
+          onLoginSuccess();
+        } else {
+          errorDiv.textContent = data.error || 'Invalid credentials';
+          errorDiv.classList.add('visible');
+        }
+      } catch (e) {
+        errorDiv.textContent = 'Connection error — is the server running?';
+        errorDiv.classList.add('visible');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function checkExistingSession() {
+      const token = getAuthToken();
+      if (!token) return false;
+      try {
+        const res = await fetch('/api/auth/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.user) {
+            _currentUser = data.user;
+            return true;
+          }
+        }
+      } catch (_) {}
+      sessionStorage.removeItem('auth_token');
+      return false;
+    }
+
+    function onLoginSuccess() {
+      hideLoginOverlay();
+      updateUserBadge();
+      renderNavigation();
+      const allowed = getAllowedTabs();
+      if (allowed.length > 0) switchTab(allowed[0]);
+      hideRestrictedTabPanels();
+    }
+
+    function updateUserBadge() {
+      if (!_currentUser) return;
+      const badge = document.getElementById('userBadge');
+      const name = _currentUser.name || _currentUser.email || '';
+      const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+      const rolePretty = (_currentUser.role || '').replace(/_/g, ' ');
+      document.getElementById('userAvatar').textContent = initials;
+      document.getElementById('userName').textContent = name;
+      document.getElementById('userRole').textContent = rolePretty;
+      badge.style.display = 'flex';
+    }
+
+    function hideRestrictedTabPanels() {
+      const allowed = getAllowedTabs();
+      document.querySelectorAll('.tab-panel').forEach((panel, idx) => {
+        if (!allowed.includes(idx)) {
+          panel.classList.remove('active');
+          panel.style.display = 'none';
+        } else {
+          panel.style.display = '';
+        }
+      });
+    }
+
+    function logout() {
+      sessionStorage.removeItem('auth_token');
+      _currentUser = null;
+      document.getElementById('userBadge').style.display = 'none';
+      showLoginOverlay();
+    }
+
     const NAV_TABS = [
       {
         index: 0,
@@ -1664,6 +2394,42 @@
         icon: 'fa-solid fa-brain',
         title: 'Copilot Security',
         subtitle: 'Data flow, retention, model controls'
+      },
+      {
+        index: 5,
+        icon: 'fa-solid fa-bug',
+        title: 'CVE Feed',
+        subtitle: 'Real-time vulnerability intelligence'
+      },
+      {
+        index: 6,
+        icon: 'fa-solid fa-radiation',
+        title: 'Zero-Day Intel',
+        subtitle: 'Active threats & exploitability'
+      },
+      {
+        index: 7,
+        icon: 'fa-solid fa-chart-line',
+        title: 'Vuln Trends',
+        subtitle: 'Reduction progress & metrics'
+      },
+      {
+        index: 8,
+        icon: 'fa-brands fa-jira',
+        title: 'Jira Bridge',
+        subtitle: 'Ticket lifecycle & dedup'
+      },
+      {
+        index: 9,
+        icon: 'fa-solid fa-gavel',
+        title: 'Governance',
+        subtitle: 'Security gates & license compliance'
+      },
+      {
+        index: 10,
+        icon: 'fa-solid fa-users-gear',
+        title: 'Admin',
+        subtitle: 'User management & role matrix'
       }
     ];
 
@@ -2217,8 +2983,12 @@ jobs:
     function renderNavigation() {
       const sidebarNav = document.getElementById('sidebarNav');
       const topTabs = document.getElementById('topTabs');
-      const navMarkup = NAV_TABS.map((tab, idx) => `
-        <button class="nav-item ${idx === 0 ? 'active' : ''}" data-tab-target="${tab.index}" aria-label="${escapeHtml(tab.title)}">
+      const allowed = getAllowedTabs();
+      const visibleTabs = NAV_TABS.filter(tab => allowed.includes(tab.index));
+      const firstTab = visibleTabs.length > 0 ? visibleTabs[0].index : 0;
+
+      const navMarkup = visibleTabs.map((tab) => `
+        <button class="nav-item ${tab.index === firstTab ? 'active' : ''}" data-tab-target="${tab.index}" aria-label="${escapeHtml(tab.title)}">
           <div class="nav-copy">
             <strong><i class="${tab.icon}"></i> ${escapeHtml(tab.title)}</strong>
             <small>${escapeHtml(tab.subtitle)}</small>
@@ -2227,8 +2997,8 @@ jobs:
         </button>
       `).join('');
 
-      const topMarkup = NAV_TABS.map((tab, idx) => `
-        <button class="tab-button ${idx === 0 ? 'active' : ''}" data-tab-target="${tab.index}" role="tab" aria-selected="${idx === 0}">
+      const topMarkup = visibleTabs.map((tab) => `
+        <button class="tab-button ${tab.index === firstTab ? 'active' : ''}" data-tab-target="${tab.index}" role="tab" aria-selected="${tab.index === firstTab}">
           <i class="${tab.icon}"></i> ${escapeHtml(tab.title)}
         </button>
       `).join('');
@@ -2241,6 +3011,7 @@ jobs:
       });
     }
 
+    const _tabInitialized = {};
     function switchTab(tabIndex) {
       document.querySelectorAll('.tab-panel').forEach((panel, idx) => panel.classList.toggle('active', idx === tabIndex));
       document.querySelectorAll('.tab-button').forEach((button) => {
@@ -2250,6 +3021,11 @@ jobs:
       });
       document.querySelectorAll('.nav-item').forEach((button) => button.classList.toggle('active', Number(button.dataset.tabTarget) === tabIndex));
       document.body.classList.remove('sidebar-open');
+      if (!_tabInitialized[tabIndex]) {
+        _tabInitialized[tabIndex] = true;
+        const loaders = { 5: loadCveFeed, 6: loadZeroDayIntel, 7: loadVulnTrends, 8: loadJiraBridge, 9: loadGovernance, 10: loadAdminPanel };
+        if (loaders[tabIndex]) loaders[tabIndex]();
+      }
     }
 
     function switchCompetitorView(view) {
@@ -3685,9 +4461,11 @@ async function searchCitizens(name: string) {
 
     async function apiRequest(path, options = {}) {
       const response = await fetch(`${API_BASE}${path}`, {
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         ...options
       });
+
+      handleUnauthorized(response);
 
       let payload = null;
       try {
@@ -3892,10 +4670,663 @@ async function searchCitizens(name: string) {
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    /* ═══════════════════════════════════════════════════════════════
+       TAB 5 — CVE Feed
+       ═══════════════════════════════════════════════════════════════ */
+    let _allCves = [];
+    let _cveEventSource = null;
+
+    async function loadCveFeed() {
+      try {
+        const [statsRes, cvesRes] = await Promise.all([
+          fetch('/api/cves/stats', { headers: getAuthHeaders() }),
+          fetch(`/api/cves/latest?hours=${document.getElementById('cveHoursFilter').value}`, { headers: getAuthHeaders() })
+        ]);
+        if (statsRes.ok) {
+          const stats = await statsRes.json();
+          document.getElementById('cvesToday').textContent = stats.today ?? '—';
+          document.getElementById('cvesAffecting').textContent = stats.affectingRepo ?? '—';
+          document.getElementById('cvesCritHigh').textContent = `${stats.critical ?? 0} / ${stats.high ?? 0}`;
+        }
+        if (cvesRes.ok) {
+          _allCves = await cvesRes.json();
+          if (_allCves.data) _allCves = _allCves.data;
+          renderCveList(_allCves);
+        } else {
+          document.getElementById('cveList').innerHTML = `<p style="color:var(--red)">Error loading CVEs (${cvesRes.status})</p>`;
+        }
+      } catch (e) {
+        document.getElementById('cveList').innerHTML = `<p style="color:var(--red)">Error: ${escapeHtml(e.message)}</p>`;
+      }
+      connectCveStream();
+    }
+
+    function connectCveStream() {
+      if (_cveEventSource) _cveEventSource.close();
+      try {
+        _cveEventSource = new EventSource('/api/cves/stream');
+        _cveEventSource.onmessage = (event) => {
+          try {
+            const cve = JSON.parse(event.data);
+            _allCves.unshift(cve);
+            const list = document.getElementById('cveList');
+            const card = document.createElement('div');
+            card.innerHTML = buildCveCard(cve);
+            const el = card.firstElementChild;
+            el.classList.add('fade-in');
+            list.prepend(el);
+          } catch (_) {}
+        };
+        _cveEventSource.onerror = () => { _cveEventSource.close(); _cveEventSource = null; };
+      } catch (_) {}
+    }
+
+    function applyCveFilters() {
+      const severity = document.getElementById('cveSeverityFilter').value;
+      const myDeps = document.getElementById('cveMyDeps').checked;
+      let filtered = [..._allCves];
+      if (severity !== 'ALL') filtered = filtered.filter(c => (c.severity || '').toUpperCase() === severity);
+      if (myDeps) filtered = filtered.filter(c => c.affectsThisRepo);
+      renderCveList(filtered);
+    }
+
+    function renderCveList(cves) {
+      const list = document.getElementById('cveList');
+      if (!cves || cves.length === 0) { list.innerHTML = '<p style="color:var(--muted)">No CVEs found for the selected filters.</p>'; return; }
+      list.innerHTML = cves.map(buildCveCard).join('');
+    }
+
+    function buildCveCard(cve) {
+      const sev = (cve.severity || 'medium').toLowerCase();
+      const sevColors = { critical: 'critical', high: 'high', medium: 'medium', low: 'low' };
+      return `<div class="cve-card" onclick="this.classList.toggle('expanded')">
+        <div class="cve-card-header">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span class="cve-id">${escapeHtml(cve.cveId || cve.id || '')}</span>
+            <span class="severity-badge ${sevColors[sev] || 'medium'}">${escapeHtml((cve.severity || 'MEDIUM').toUpperCase())}</span>
+            ${cve.affectsThisRepo ? '<span class="affects-badge">Affects Your Code</span>' : ''}
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="color:var(--muted);font-size:0.85rem">CVSS ${cve.cvss ?? '—'}</span>
+            <button class="btn btn-neutral" style="padding:4px 10px;font-size:0.8rem" onclick="event.stopPropagation();createCveJiraTicket('${escapeHtml(cve.cveId || cve.id || '')}')"><i class="fa-solid fa-ticket"></i> Jira</button>
+          </div>
+        </div>
+        <div style="color:var(--muted);font-size:0.88rem">${escapeHtml(cve.packageName || '')} ${escapeHtml(cve.affectedVersions || '')}</div>
+        <div class="cve-details"><p>${escapeHtml(cve.description || 'No description available.')}</p>${cve.references ? `<p style="margin-top:8px"><strong>References:</strong> ${escapeHtml(cve.references)}</p>` : ''}</div>
+      </div>`;
+    }
+
+    async function createCveJiraTicket(cveId) {
+      try {
+        const res = await fetch('/api/jira/bridge', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ alert_type: 'dependabot', cve_id: cveId, source: 'cve-feed' }) });
+        const data = await res.json();
+        showToast(data.success ? `Ticket created: ${data.data?.key || 'OK'}` : (data.error || 'Failed'), data.success ? 'info' : 'error', data.success ? 'fa-check' : 'fa-xmark');
+      } catch (e) { showToast(e.message, 'error', 'fa-xmark'); }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TAB 6 — Zero-Day Intelligence
+       ═══════════════════════════════════════════════════════════════ */
+    let _selectedZeroDay = null;
+
+    async function loadZeroDayIntel() {
+      try {
+        const [threatsRes, disclosuresRes, blastRes] = await Promise.all([
+          fetch('/api/zero-day/active-threats', { headers: getAuthHeaders() }),
+          fetch('/api/zero-day/early-disclosures?hours=168', { headers: getAuthHeaders() }),
+          fetch('/api/zero-day/blast-radius', { headers: getAuthHeaders() })
+        ]);
+        if (threatsRes.ok) {
+          const threats = await threatsRes.json();
+          const count = threats.count ?? (Array.isArray(threats.data) ? threats.data.length : 0);
+          const banner = document.getElementById('zeroDayBanner');
+          if (count > 0) { banner.style.display = 'flex'; banner.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ⚠️ ${count} vulnerabilit${count === 1 ? 'y' : 'ies'} in your deps have active exploits`; }
+          else { banner.style.display = 'none'; }
+        }
+        if (disclosuresRes.ok) {
+          const disclosures = await disclosuresRes.json();
+          const items = disclosures.data || disclosures;
+          const container = document.getElementById('earlyDisclosures');
+          if (!Array.isArray(items) || items.length === 0) { container.innerHTML = '<p style="color:var(--muted)">No early disclosures found.</p>'; }
+          else { container.innerHTML = items.map((d, i) => `<div class="early-disclosure-card" onclick="showExploitDrilldown(${i})"><div style="display:flex;justify-content:space-between;align-items:center"><strong style="color:var(--text)">${escapeHtml(d.cveId || d.id || 'Pre-CVE')}</strong><span class="severity-badge ${(d.severity || 'medium').toLowerCase()}">${escapeHtml((d.severity || 'MEDIUM').toUpperCase())}</span></div><p style="color:var(--muted);margin:6px 0 0;font-size:0.9rem">${escapeHtml(d.title || d.description || '')}</p></div>`).join(''); _zeroDayDisclosures = items; }
+        }
+        if (blastRes.ok) {
+          const blast = await blastRes.json();
+          const bd = blast.data || blast;
+          document.getElementById('blastRadius').innerHTML = `<div class="new-tab-stats"><div class="metric-card"><span>Affected Files</span><strong>${bd.affectedFiles ?? '—'}</strong></div><div class="metric-card"><span>Codebase %</span><strong>${bd.codebasePercentage ?? '—'}%</strong></div><div class="metric-card"><span>Package Chains</span><strong>${bd.packageChains ?? '—'}</strong></div></div>`;
+        }
+      } catch (e) { document.getElementById('earlyDisclosures').innerHTML = `<p style="color:var(--red)">Error: ${escapeHtml(e.message)}</p>`; }
+    }
+
+    let _zeroDayDisclosures = [];
+
+    async function showExploitDrilldown(index) {
+      const d = _zeroDayDisclosures[index];
+      if (!d) return;
+      _selectedZeroDay = d;
+      const container = document.getElementById('exploitDrilldown');
+      container.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px">
+        <h4 style="color:var(--text);margin:0 0 10px">${escapeHtml(d.cveId || d.id || '')}</h4>
+        <p style="color:var(--muted);margin-bottom:12px">${escapeHtml(d.description || '')}</p>
+        <div style="margin-bottom:10px"><strong style="color:var(--text);font-size:0.85rem">EPSS Probability</strong>
+          <div class="epss-gauge"><div class="epss-gauge-fill" style="width:${Math.min((d.epss || 0) * 100, 100)}%;background:${(d.epss || 0) > 0.5 ? 'var(--red)' : (d.epss || 0) > 0.2 ? 'var(--yellow)' : 'var(--green)'}"></div></div>
+          <span style="color:var(--muted);font-size:0.85rem">${((d.epss || 0) * 100).toFixed(1)}%</span></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          ${d.cisaKev ? '<span class="severity-badge critical">CISA KEV Listed</span>' : '<span class="severity-badge low">Not in CISA KEV</span>'}
+          <span class="severity-badge ${d.exploitMaturity === 'active' ? 'critical' : d.exploitMaturity === 'poc' ? 'high' : 'medium'}">Exploit: ${escapeHtml(d.exploitMaturity || 'Unknown')}</span>
+        </div></div>`;
+      loadWhatIf(d.cveId || d.id);
+    }
+
+    async function loadWhatIf(cveId) {
+      try {
+        const res = await fetch(`/api/zero-day/forecast/${encodeURIComponent(cveId)}`, { headers: getAuthHeaders() });
+        if (res.ok) {
+          const data = await res.json();
+          const f = data.data || data;
+          document.getElementById('whatifPatch').innerHTML = `<p style="color:var(--green)">Risk reduction: <strong>${f.patchRiskReduction ?? '—'}%</strong></p><p style="color:var(--muted)">Effort: ${escapeHtml(f.patchEffort || '—')}</p><p style="color:var(--muted)">Timeline: ${escapeHtml(f.patchTimeline || '—')}</p>`;
+          document.getElementById('whatifNoPatch').innerHTML = `<p style="color:var(--red)">Exposure window: <strong>${escapeHtml(f.noActionExposure || '—')}</strong></p><p style="color:var(--muted)">Exploit likelihood: ${escapeHtml(f.noActionLikelihood || '—')}</p><p style="color:var(--muted)">Potential impact: ${escapeHtml(f.noActionImpact || '—')}</p>`;
+        }
+      } catch (_) {}
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TAB 7 — Vulnerability Trends
+       ═══════════════════════════════════════════════════════════════ */
+    let _trendChart = null;
+
+    async function loadVulnTrends() {
+      try {
+        const [summaryRes, timelineRes, mttrRes, impactRes, rateRes, fixedRes] = await Promise.all([
+          fetch('/api/trends/summary', { headers: getAuthHeaders() }),
+          fetch('/api/trends/timeline?days=90', { headers: getAuthHeaders() }),
+          fetch('/api/trends/mttr', { headers: getAuthHeaders() }),
+          fetch('/api/trends/copilot-impact', { headers: getAuthHeaders() }),
+          fetch('/api/trends/rate', { headers: getAuthHeaders() }),
+          fetch('/api/trends/fixed?days=30', { headers: getAuthHeaders() })
+        ]);
+        if (summaryRes.ok) {
+          const s = await summaryRes.json();
+          const sd = s.data || s;
+          document.getElementById('trendSummaryBanner').innerHTML = `📉 <strong>${sd.reductionPercent ?? '—'}% fewer critical vulns</strong> vs 90 days ago &nbsp;|&nbsp; MTTR: <strong>${sd.mttrHours ?? '—'} hours</strong>`;
+        }
+        if (timelineRes.ok) {
+          const tl = await timelineRes.json();
+          const tlData = tl.data || tl;
+          renderTrendChart(tlData);
+        }
+        if (mttrRes.ok) {
+          const m = await mttrRes.json();
+          const md = m.data || m;
+          const improving = md.trend === 'improving' || md.delta < 0;
+          document.getElementById('mttrValue').innerHTML = `${md.hours ?? '—'}h <span class="${improving ? 'trend-down' : 'trend-up'}" style="font-size:1.2rem">${improving ? '↓' : '↑'}</span>`;
+        }
+        if (impactRes.ok) {
+          const ci = await impactRes.json();
+          const cid = ci.data || ci;
+          document.getElementById('copilotImpact').innerHTML = `${cid.fixed ?? 0} / ${cid.total ?? 0} <span style="font-size:1rem;color:var(--muted)">(${cid.percent ?? 0}%)</span>`;
+        }
+        if (rateRes.ok) {
+          const r = await rateRes.json();
+          const rd = r.data || r;
+          document.getElementById('remediationRate').innerHTML = [
+            { label: '30 days', val: rd.days30 },
+            { label: '60 days', val: rd.days60 },
+            { label: '90 days', val: rd.days90 }
+          ].map(x => `<div class="metric-card"><span>${x.label}</span><strong>${x.val ?? '—'}%</strong></div>`).join('');
+        }
+        if (fixedRes.ok) {
+          const f = await fixedRes.json();
+          const fd = f.data || f;
+          const tbody = document.querySelector('#recentlyFixedTable tbody');
+          if (Array.isArray(fd) && fd.length > 0) {
+            tbody.innerHTML = fd.map(r => `<tr><td style="font-family:monospace">${escapeHtml(r.cve || '')}</td><td>${escapeHtml(r.package || '')}</td><td><span class="severity-badge ${(r.severity || 'medium').toLowerCase()}">${escapeHtml((r.severity || '').toUpperCase())}</span></td><td>${escapeHtml(r.fixedBy || '')}</td><td>${escapeHtml(r.timeToFix || '')}</td></tr>`).join('');
+          } else { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted)">No recent fixes found.</td></tr>'; }
+        }
+      } catch (e) { document.getElementById('trendSummaryBanner').innerHTML = `<span style="color:var(--red)">Error: ${escapeHtml(e.message)}</span>`; }
+    }
+
+    function renderTrendChart(data) {
+      const ctx = document.getElementById('trendChart');
+      if (!ctx) return;
+      if (_trendChart) _trendChart.destroy();
+      const labels = (data.dates || data.labels || []).map(d => typeof d === 'string' ? d : new Date(d).toLocaleDateString());
+      _trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Open Vulnerabilities', data: data.open || [], borderColor: '#f85149', backgroundColor: 'rgba(248,81,73,0.1)', fill: true, tension: 0.3 },
+            { label: 'Fixed (Cumulative)', data: data.fixed || [], borderColor: '#3fb950', backgroundColor: 'rgba(63,185,80,0.1)', fill: true, tension: 0.3 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#8b949e' } } },
+          scales: {
+            x: { ticks: { color: '#8b949e', maxTicksLimit: 12 }, grid: { color: 'rgba(48,54,61,0.5)' } },
+            y: { ticks: { color: '#8b949e' }, grid: { color: 'rgba(48,54,61,0.5)' }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    async function seedTrendData() {
+      try {
+        const res = await fetch('/api/trends/seed', { method: 'POST', headers: getAuthHeaders() });
+        if (res.ok) { showToast('Demo trend data generated!', 'info', 'fa-check'); loadVulnTrends(); }
+        else { showToast('Failed to seed data', 'error', 'fa-xmark'); }
+      } catch (e) { showToast(e.message, 'error', 'fa-xmark'); }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TAB 8 — Jira Bridge
+       ═══════════════════════════════════════════════════════════════ */
+    async function loadJiraBridge() {
+      try {
+        const [statsRes, ticketsRes] = await Promise.all([
+          fetch('/api/jira/stats', { headers: getAuthHeaders() }),
+          fetch('/api/jira/tickets', { headers: getAuthHeaders() })
+        ]);
+        if (statsRes.ok) {
+          const s = await statsRes.json();
+          const sd = s.data || s;
+          document.getElementById('jiraTotal').textContent = sd.total ?? '—';
+          document.getElementById('jiraOpen').textContent = sd.open ?? '—';
+          document.getElementById('jiraInProgress').textContent = sd.inProgress ?? '—';
+          document.getElementById('jiraDone').textContent = sd.done ?? '—';
+        }
+        if (ticketsRes.ok) {
+          const t = await ticketsRes.json();
+          const tickets = t.data || t;
+          renderJiraTickets(Array.isArray(tickets) ? tickets : []);
+        }
+      } catch (e) { showToast(e.message, 'error', 'fa-xmark'); }
+    }
+
+    function renderJiraTickets(tickets) {
+      const tbody = document.querySelector('#jiraTicketTable tbody');
+      if (!tickets.length) { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted)">No tickets found.</td></tr>'; return; }
+      tbody.innerHTML = tickets.map(t => {
+        const statusCls = (t.status || '').toLowerCase().replace(/\s+/g, '-');
+        return `<tr style="cursor:pointer" onclick="showTicketDetail('${escapeHtml(t.key || t.id || '')}')"><td><strong>${escapeHtml(t.key || t.id || '')}</strong></td><td>${escapeHtml(t.summary || '')}</td><td><span class="status-badge ${statusCls}">${escapeHtml(t.status || '')}</span></td><td>${escapeHtml(t.priority || '')}</td><td>${escapeHtml(t.created || '')}</td></tr>`;
+      }).join('');
+    }
+
+    async function createJiraTicket() {
+      const payload = {
+        alert_type: document.getElementById('jiraAlertType').value,
+        cve_id: document.getElementById('jiraCveId').value,
+        package_name: document.getElementById('jiraPackage').value,
+        file_path: document.getElementById('jiraFilePath').value,
+        severity: document.getElementById('jiraSeverity').value
+      };
+      const resultDiv = document.getElementById('jiraDedupResult');
+      resultDiv.innerHTML = '<p style="color:var(--muted)">Creating…</p>';
+      try {
+        const res = await fetch('/api/jira/bridge', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload) });
+        const data = await res.json();
+        const d = data.data || data;
+        if (d.duplicate) {
+          resultDiv.innerHTML = `<div class="dedup-result duplicate">♻️ Duplicate found — added comment to <strong>${escapeHtml(d.key || '')}</strong> (confidence: ${d.confidence ?? '—'}%)</div>`;
+        } else {
+          resultDiv.innerHTML = `<div class="dedup-result created">✅ Created <strong>${escapeHtml(d.key || 'ticket')}</strong></div>`;
+        }
+        loadJiraBridge();
+      } catch (e) { resultDiv.innerHTML = `<div class="dedup-result" style="color:var(--red);border-color:var(--red)">Error: ${escapeHtml(e.message)}</div>`; }
+    }
+
+    async function showTicketDetail(key) {
+      try {
+        const res = await fetch(`/api/jira/tickets/${encodeURIComponent(key)}`, { headers: getAuthHeaders() });
+        if (!res.ok) { showToast('Could not load ticket', 'error', 'fa-xmark'); return; }
+        const data = await res.json();
+        const t = data.data || data;
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+        overlay.innerHTML = `<div class="modal-content"><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button><h3>${escapeHtml(t.key || key)}: ${escapeHtml(t.summary || '')}</h3><p><span class="status-badge ${(t.status || '').toLowerCase().replace(/\s+/g, '-')}">${escapeHtml(t.status || '')}</span> &nbsp; Priority: ${escapeHtml(t.priority || '—')}</p><p style="color:var(--muted);margin-top:12px">${escapeHtml(t.description || 'No description.')}</p>${t.comments ? `<h4 style="margin-top:16px;color:var(--text)">Comments</h4>${(Array.isArray(t.comments) ? t.comments : []).map(c => `<div style="border-top:1px solid var(--border);padding:8px 0"><strong style="color:var(--blue)">${escapeHtml(c.author || '')}</strong><span style="color:var(--muted);margin-left:8px;font-size:0.85rem">${escapeHtml(c.created || '')}</span><p style="color:var(--text);margin:4px 0 0">${escapeHtml(c.body || '')}</p></div>`).join('')}` : ''}${t.githubIssues ? `<h4 style="margin-top:16px;color:var(--text)">Linked GitHub Issues</h4><p style="color:var(--muted)">${Array.isArray(t.githubIssues) ? t.githubIssues.map(i => escapeHtml(String(i))).join(', ') : escapeHtml(String(t.githubIssues))}</p>` : ''}</div>`;
+        document.body.appendChild(overlay);
+      } catch (e) { showToast(e.message, 'error', 'fa-xmark'); }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TAB 9 — Governance & Compliance
+       ═══════════════════════════════════════════════════════════════ */
+    async function loadGovernance() {
+      try {
+        const [exceptionsRes, expiringRes, licensesRes, violationsRes, auditRes] = await Promise.all([
+          fetch('/api/governance/exceptions', { headers: getAuthHeaders() }),
+          fetch('/api/governance/exceptions/expiring?days=30', { headers: getAuthHeaders() }),
+          fetch('/api/governance/licenses', { headers: getAuthHeaders() }),
+          fetch('/api/governance/licenses/violations', { headers: getAuthHeaders() }),
+          fetch('/api/governance/audit-trail?days=30', { headers: getAuthHeaders() })
+        ]);
+        if (expiringRes.ok) {
+          const exp = await expiringRes.json();
+          const items = exp.data || exp;
+          const banner = document.getElementById('expiringBanner');
+          if (Array.isArray(items) && items.length > 0) { banner.style.display = 'flex'; banner.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${items.length} risk exception${items.length > 1 ? 's' : ''} expiring within 30 days`; }
+          else { banner.style.display = 'none'; }
+        }
+        if (exceptionsRes.ok) {
+          const ex = await exceptionsRes.json();
+          const exd = ex.data || ex;
+          const container = document.getElementById('riskExceptions');
+          if (Array.isArray(exd) && exd.length > 0) {
+            container.innerHTML = exd.map(e => {
+              const now = Date.now();
+              const expiry = new Date(e.expiry).getTime();
+              const daysLeft = Math.ceil((expiry - now) / 86400000);
+              const expiryClass = daysLeft < 0 ? 'expiry-red' : daysLeft < 30 ? 'expiry-yellow' : 'expiry-green';
+              return `<div class="exception-card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><strong style="color:var(--text)">${escapeHtml(e.path || '')}</strong><span class="${expiryClass}" style="font-weight:600">${daysLeft < 0 ? 'Expired' : daysLeft + ' days left'}</span></div><p style="color:var(--muted);margin:6px 0 0;font-size:0.9rem">Reason: ${escapeHtml(e.reason || '—')} · Approved by: ${escapeHtml(e.approved_by || '—')}</p></div>`;
+            }).join('');
+          } else { container.innerHTML = '<p style="color:var(--muted)">No risk exceptions.</p>'; }
+        }
+        if (licensesRes.ok) {
+          const lic = await licensesRes.json();
+          const ld = lic.data || lic;
+          document.getElementById('licenseStats').innerHTML = `<div class="metric-card"><span>Total Packages</span><strong>${ld.total ?? '—'}</strong></div><div class="metric-card"><span>Approved</span><strong style="color:var(--green)">${ld.approved ?? '—'}</strong></div><div class="metric-card"><span>Denied</span><strong style="color:var(--red)">${ld.denied ?? '—'}</strong></div><div class="metric-card"><span>Review Needed</span><strong style="color:var(--yellow)">${ld.review ?? '—'}</strong></div>`;
+        }
+        if (violationsRes.ok) {
+          const viol = await violationsRes.json();
+          const vd = viol.data || viol;
+          if (Array.isArray(vd) && vd.length > 0) {
+            document.getElementById('licenseViolations').innerHTML = `<table class="ticket-table"><thead><tr><th>Package</th><th>Detected License</th><th>Status</th></tr></thead><tbody>${vd.map(v => `<tr class="license-violation-row ${(v.status || '').toLowerCase()}"><td>${escapeHtml(v.package || '')}</td><td>${escapeHtml(v.license || '')}</td><td><span class="severity-badge ${v.status === 'denied' ? 'critical' : 'medium'}">${escapeHtml(v.status || '')}</span></td></tr>`).join('')}</tbody></table>`;
+          } else { document.getElementById('licenseViolations').innerHTML = '<p style="color:var(--muted)">No license violations.</p>'; }
+        }
+        if (auditRes.ok) {
+          const audit = await auditRes.json();
+          const ad = audit.data || audit;
+          const container = document.getElementById('auditTrail');
+          if (Array.isArray(ad) && ad.length > 0) {
+            container.innerHTML = ad.map(a => `<div class="audit-entry"><span class="timestamp">${escapeHtml(a.timestamp || '')}</span><div><strong style="color:var(--text)">${escapeHtml(a.checkName || a.action || '')}</strong> ${a.pr ? `<span style="color:var(--blue)">PR #${escapeHtml(String(a.pr))}</span>` : ''}<br><span style="color:${a.result === 'pass' || a.result === 'success' ? 'var(--green)' : 'var(--red)'}">${escapeHtml(a.result || '')}</span> ${a.who ? `· ${escapeHtml(a.who)}` : ''}</div></div>`).join('');
+          } else { container.innerHTML = '<p style="color:var(--muted)">No audit entries found.</p>'; }
+        }
+      } catch (e) { document.getElementById('auditTrail').innerHTML = `<p style="color:var(--red)">Error: ${escapeHtml(e.message)}</p>`; }
+    }
+
+    async function checkSecurityGate() {
+      const prNum = document.getElementById('gatePrNumber').value;
+      if (!prNum) { showToast('Enter a PR number', 'warning', 'fa-triangle-exclamation'); return; }
+      const resultDiv = document.getElementById('gateResult');
+      resultDiv.innerHTML = '<p style="color:var(--muted)">Checking…</p>';
+      try {
+        const res = await fetch(`/api/governance/check/${encodeURIComponent(prNum)}`, { method: 'POST', headers: getAuthHeaders() });
+        const data = await res.json();
+        const d = data.data || data;
+        const certified = d.certified || d.status === 'pass';
+        resultDiv.innerHTML = `<div style="padding:16px;border-radius:12px;border:1px solid ${certified ? 'var(--green)' : 'var(--red)'};background:${certified ? 'rgba(63,185,80,0.08)' : 'rgba(248,81,73,0.08)'};margin-top:12px"><h4 style="color:${certified ? 'var(--green)' : 'var(--red)'};margin:0 0 12px">${certified ? '✅ CERTIFIED' : '❌ FAILED'}</h4>${Array.isArray(d.checks) ? d.checks.map(c => `<div class="gate-check"><i class="fa-solid ${c.status === 'pass' ? 'fa-circle-check pass' : 'fa-circle-xmark fail'}"></i><span style="color:var(--text)">${escapeHtml(c.name || '')}</span><span style="color:var(--muted);margin-left:auto;font-size:0.85rem">${escapeHtml(c.details || '')}</span></div>`).join('') : ''}</div>`;
+      } catch (e) { resultDiv.innerHTML = `<p style="color:var(--red)">Error: ${escapeHtml(e.message)}</p>`; }
+    }
+
+    async function downloadSBOM() {
+      try {
+        const res = await fetch('/api/governance/licenses/sbom', { headers: getAuthHeaders() });
+        if (!res.ok) { showToast('Failed to download SBOM', 'error', 'fa-xmark'); return; }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'sbom.json'; a.click();
+        URL.revokeObjectURL(url);
+        showToast('SBOM downloaded', 'info', 'fa-check');
+      } catch (e) { showToast(e.message, 'error', 'fa-xmark'); }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TAB 10 — Admin Panel
+       ═══════════════════════════════════════════════════════════════ */
+    let _adminUsers = [];
+    let _adminRoles = [];
+    let _adminSortField = 'name';
+    let _adminSortAsc = true;
+
+    async function loadAdminPanel() {
+      try {
+        const [usersRes, rolesRes] = await Promise.all([
+          fetch('/api/auth/users', { headers: getAuthHeaders() }).then(r => { handleUnauthorized(r); return r.json(); }),
+          fetch('/api/auth/roles', { headers: getAuthHeaders() }).then(r => r.json())
+        ]);
+        if (usersRes.success) _adminUsers = usersRes.users;
+        if (rolesRes.success) _adminRoles = rolesRes.roles;
+        renderAdminUsers();
+        renderAdminRoleSummary();
+        renderRoleMatrix();
+      } catch (e) {
+        showToast('Failed to load admin panel: ' + e.message, 'error', 'fa-xmark');
+      }
+    }
+
+    function renderAdminRoleSummary() {
+      const container = document.getElementById('adminRoleSummary');
+      const counts = {};
+      _adminUsers.forEach(u => { counts[u.role] = (counts[u.role] || 0) + 1; });
+      const activeCount = _adminUsers.filter(u => u.active).length;
+      const inactiveCount = _adminUsers.filter(u => !u.active).length;
+
+      const roleColors = {
+        system_admin: 'var(--red)', security_admin: 'var(--orange)', security_analyst: 'var(--blue)',
+        developer: 'var(--green)', team_lead: 'var(--teal)', compliance_officer: 'var(--purple)',
+        demo_operator: 'var(--yellow)', viewer: 'var(--muted)'
+      };
+
+      container.innerHTML = `
+        <div class="stat-card"><div class="stat-value">${_adminUsers.length}</div><div class="stat-label">Total Users</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--green)">${activeCount}</div><div class="stat-label">Active</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--red)">${inactiveCount}</div><div class="stat-label">Inactive</div></div>
+        ${Object.entries(counts).map(([role, count]) => `
+          <div class="stat-card"><div class="stat-value" style="color:${roleColors[role] || 'var(--text)'}">${count}</div><div class="stat-label">${escapeHtml(role.replace(/_/g, ' '))}</div></div>
+        `).join('')}
+      `;
+    }
+
+    function renderAdminUsers() {
+      const body = document.getElementById('adminUsersBody');
+      const query = (document.getElementById('adminUserSearch')?.value || '').toLowerCase();
+      let filtered = _adminUsers.filter(u =>
+        u.name.toLowerCase().includes(query) ||
+        u.email.toLowerCase().includes(query) ||
+        u.role.toLowerCase().includes(query)
+      );
+
+      filtered.sort((a, b) => {
+        let va, vb;
+        if (_adminSortField === 'status') { va = a.active ? 0 : 1; vb = b.active ? 0 : 1; }
+        else { va = (a[_adminSortField] || '').toLowerCase(); vb = (b[_adminSortField] || '').toLowerCase(); }
+        if (va < vb) return _adminSortAsc ? -1 : 1;
+        if (va > vb) return _adminSortAsc ? 1 : -1;
+        return 0;
+      });
+
+      if (filtered.length === 0) {
+        body.innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--muted)">No users found</td></tr>';
+        return;
+      }
+
+      const allRoles = ['system_admin','security_admin','security_analyst','developer','team_lead','compliance_officer','demo_operator','viewer'];
+      const isSysAdmin = _currentUser && _currentUser.role === 'system_admin';
+
+      body.innerHTML = filtered.map(u => `
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:10px 14px;color:var(--text)">${escapeHtml(u.name)}</td>
+          <td style="padding:10px 14px;color:var(--muted);font-family:var(--font-mono);font-size:0.85rem">${escapeHtml(u.email)}</td>
+          <td style="padding:10px 14px">
+            ${isSysAdmin ? `
+              <select onchange="handleRoleChange('${u.id}', this.value)" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:0.85rem">
+                ${allRoles.map(r => `<option value="${r}" ${r === u.role ? 'selected' : ''}>${escapeHtml(r.replace(/_/g, ' '))}</option>`).join('')}
+              </select>
+            ` : `<span class="badge" style="background:rgba(88,166,255,0.12);border-color:rgba(88,166,255,0.22);color:var(--blue)">${escapeHtml(u.role.replace(/_/g, ' '))}</span>`}
+          </td>
+          <td style="padding:10px 14px;text-align:center">
+            <span class="status-pill ${u.active ? 'status-ready' : 'status-error'}" style="padding:4px 12px;font-size:0.8rem;border-radius:999px">
+              ${u.active ? '● Active' : '● Inactive'}
+            </span>
+          </td>
+          <td style="padding:10px 14px;text-align:center">
+            <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
+              ${isSysAdmin ? `
+                <button class="btn btn-neutral" style="padding:5px 10px;font-size:0.8rem" onclick="handleResetPassword('${u.id}', '${escapeHtml(u.name)}')" title="Reset Password">
+                  <i class="fa-solid fa-key"></i>
+                </button>
+                ${u.active ? `
+                  <button class="btn btn-neutral" style="padding:5px 10px;font-size:0.8rem;color:var(--red)" onclick="handleDeactivateUser('${u.id}', '${escapeHtml(u.name)}')" title="Deactivate">
+                    <i class="fa-solid fa-user-slash"></i>
+                  </button>
+                ` : `
+                  <button class="btn btn-neutral" style="padding:5px 10px;font-size:0.8rem;color:var(--green)" onclick="handleActivateUser('${u.id}', '${escapeHtml(u.name)}')" title="Activate">
+                    <i class="fa-solid fa-user-check"></i>
+                  </button>
+                `}
+              ` : '<span style="color:var(--muted);font-size:0.8rem">—</span>'}
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function filterAdminUsers() { renderAdminUsers(); }
+
+    function sortAdminUsers(field) {
+      if (_adminSortField === field) { _adminSortAsc = !_adminSortAsc; }
+      else { _adminSortField = field; _adminSortAsc = true; }
+      renderAdminUsers();
+    }
+
+    function toggleCreateUserForm() {
+      const form = document.getElementById('createUserForm');
+      const chevron = document.getElementById('createUserChevron');
+      const visible = form.style.display !== 'none';
+      form.style.display = visible ? 'none' : 'block';
+      chevron.style.transform = visible ? '' : 'rotate(180deg)';
+    }
+
+    async function handleCreateUser() {
+      const name = document.getElementById('newUserName').value.trim();
+      const email = document.getElementById('newUserEmail').value.trim();
+      const password = document.getElementById('newUserPassword').value;
+      const role = document.getElementById('newUserRole').value;
+      const errEl = document.getElementById('createUserError');
+      errEl.style.display = 'none';
+
+      if (!name || !email || !password || !role) {
+        errEl.textContent = 'All fields are required'; errEl.style.display = 'inline'; return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errEl.textContent = 'Invalid email format'; errEl.style.display = 'inline'; return;
+      }
+      if (password.length < 8) {
+        errEl.textContent = 'Password must be at least 8 characters'; errEl.style.display = 'inline'; return;
+      }
+
+      try {
+        const res = await fetch('/api/auth/users', {
+          method: 'POST', headers: getAuthHeaders(),
+          body: JSON.stringify({ name, email, password, role })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) { errEl.textContent = data.error || 'Failed to create user'; errEl.style.display = 'inline'; return; }
+        showToast(`User "${name}" created successfully`, 'success', 'fa-user-plus');
+        document.getElementById('newUserName').value = '';
+        document.getElementById('newUserEmail').value = '';
+        document.getElementById('newUserPassword').value = '';
+        document.getElementById('newUserRole').value = '';
+        toggleCreateUserForm();
+        _tabInitialized[10] = false;
+        loadAdminPanel();
+      } catch (e) { errEl.textContent = e.message; errEl.style.display = 'inline'; }
+    }
+
+    async function handleRoleChange(userId, newRole) {
+      try {
+        const res = await fetch(`/api/auth/users/${userId}`, {
+          method: 'PUT', headers: getAuthHeaders(),
+          body: JSON.stringify({ role: newRole })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) { showToast(data.error || 'Failed to update role', 'error', 'fa-xmark'); return; }
+        showToast(`Role updated to ${newRole.replace(/_/g, ' ')}`, 'success', 'fa-pen');
+        _tabInitialized[10] = false;
+        loadAdminPanel();
+      } catch (e) { showToast(e.message, 'error', 'fa-xmark'); }
+    }
+
+    async function handleDeactivateUser(userId, name) {
+      if (!confirm(`Deactivate user "${name}"? They will not be able to log in.`)) return;
+      try {
+        const res = await fetch(`/api/auth/users/${userId}`, { method: 'DELETE', headers: getAuthHeaders() });
+        const data = await res.json();
+        if (!res.ok || !data.success) { showToast(data.error || 'Failed to deactivate', 'error', 'fa-xmark'); return; }
+        showToast(`User "${name}" deactivated`, 'warning', 'fa-user-slash');
+        _tabInitialized[10] = false;
+        loadAdminPanel();
+      } catch (e) { showToast(e.message, 'error', 'fa-xmark'); }
+    }
+
+    async function handleActivateUser(userId, name) {
+      try {
+        const res = await fetch(`/api/auth/users/${userId}/activate`, { method: 'POST', headers: getAuthHeaders() });
+        const data = await res.json();
+        if (!res.ok || !data.success) { showToast(data.error || 'Failed to activate', 'error', 'fa-xmark'); return; }
+        showToast(`User "${name}" activated`, 'success', 'fa-user-check');
+        _tabInitialized[10] = false;
+        loadAdminPanel();
+      } catch (e) { showToast(e.message, 'error', 'fa-xmark'); }
+    }
+
+    async function handleResetPassword(userId, name) {
+      const newPassword = prompt(`Enter new password for "${name}" (min 8 characters):`);
+      if (!newPassword) return;
+      if (newPassword.length < 8) { showToast('Password must be at least 8 characters', 'error', 'fa-xmark'); return; }
+      try {
+        const res = await fetch(`/api/auth/users/${userId}/reset-password`, {
+          method: 'POST', headers: getAuthHeaders(),
+          body: JSON.stringify({ newPassword })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) { showToast(data.error || 'Failed to reset password', 'error', 'fa-xmark'); return; }
+        showToast(`Password reset for "${name}"`, 'success', 'fa-key');
+      } catch (e) { showToast(e.message, 'error', 'fa-xmark'); }
+    }
+
+    function renderRoleMatrix() {
+      if (!_adminRoles.length) return;
+      const allPerms = [...new Set(_adminRoles.flatMap(r => r.permissions))].sort();
+      const head = document.getElementById('roleMatrixHead');
+      const body = document.getElementById('roleMatrixBody');
+
+      head.innerHTML = `<tr style="background:var(--bg)">
+        <th style="padding:10px 12px;text-align:left;color:var(--muted);font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em;border-bottom:1px solid var(--border);position:sticky;left:0;background:var(--bg);z-index:1">Role</th>
+        ${allPerms.map(p => `<th style="padding:10px 8px;text-align:center;color:var(--muted);font-size:0.72rem;border-bottom:1px solid var(--border);writing-mode:vertical-lr;min-width:36px">${escapeHtml(p)}</th>`).join('')}
+      </tr>`;
+
+      body.innerHTML = _adminRoles.map(r => `
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:8px 12px;color:var(--text);font-weight:600;font-size:0.85rem;white-space:nowrap;position:sticky;left:0;background:var(--surface);z-index:1">${escapeHtml(r.role.replace(/_/g, ' '))}</td>
+          ${allPerms.map(p => {
+            const has = r.permissions.includes('*') || r.permissions.includes(p) || (r.permissions.includes('*:read') && p.endsWith(':read'));
+            return `<td style="padding:6px;text-align:center">${has ? '<i class="fa-solid fa-check" style="color:var(--green)"></i>' : '<span style="color:var(--border)">—</span>'}</td>`;
+          }).join('')}
+        </tr>
+      `).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
       initializeState();
       initializeWorkflowDemoState();
-      renderNavigation();
+
+      const hasSession = await checkExistingSession();
+      if (hasSession) {
+        hideLoginOverlay();
+        updateUserBadge();
+        renderNavigation();
+        hideRestrictedTabPanels();
+        const allowed = getAllowedTabs();
+        if (allowed.length > 0) switchTab(allowed[0]);
+      } else {
+        showLoginOverlay();
+        renderNavigation();
+      }
+
       renderDemoCards();
       renderGhasShowcase();
       renderBusinessEnterprise();
@@ -3905,7 +5336,7 @@ async function searchCitizens(name: string) {
       document.getElementById('currentYear').textContent = new Date().getFullYear();
       document.getElementById('sidebarToggle').addEventListener('click', () => document.body.classList.toggle('sidebar-open'));
       switchCompetitorView('gitlab');
-      refreshAllStatuses(true);
+      if (hasSession) refreshAllStatuses(true);
     });
   </script>
 </body>

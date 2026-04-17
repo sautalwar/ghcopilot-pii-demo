@@ -1,0 +1,49 @@
+# .ghas-policy.yml — Risk Exception Controls
+# Defines repos, directories, files, and rules that are exempt from security monitoring.
+# Each exception requires a reason, approver, and expiration date.
+version: "1.0"
+
+exceptions:
+  # Directory-level exceptions
+  directories:
+    - path: "src/demo-incidents/**"
+      reason: "Intentionally vulnerable demo files — not production code"
+      approved_by: "saurabh@company.com"
+      permanent: true
+
+    - path: "test/fixtures/**"
+      reason: "Test fixtures with fake secrets/PII for testing"
+      approved_by: "security-team@company.com"
+      permanent: true
+
+    - path: "data/**"
+      reason: "SQLite databases with synthetic demo data"
+      approved_by: "saurabh@company.com"
+      permanent: true
+
+  # File-level exceptions
+  files:
+    - path: ".env.example"
+      reason: "Example env file with placeholder values, not real credentials"
+      approved_by: "saurabh@company.com"
+      permanent: true
+
+  # Rule-level exceptions
+  rules:
+    - id: "CWE-798"
+      scope: "src/demo-incidents/**"
+      reason: "Demo incident files intentionally contain hardcoded credentials for GHAS detection"
+      approved_by: "security-team@company.com"
+      permanent: true
+
+    - id: "CWE-798"
+      scope: "test/**"
+      reason: "Test files intentionally contain fake credentials"
+      approved_by: "security-team@company.com"
+      permanent: true
+
+# How expired exceptions are handled
+expiration_policy:
+  warn_days_before: 30
+  action_on_expire: "reactivate"
+  notify: ["security-team@company.com"]

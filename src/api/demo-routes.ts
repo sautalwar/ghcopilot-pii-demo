@@ -13,8 +13,13 @@ import {
   type SecretScanningAlertSummary,
   type WorkflowRunSummary,
 } from "./github-client";
+import { optionalAuth, requireRole } from '../middleware/rbac';
 
 const router = Router();
+
+// TODO: Make auth required in production
+router.use(optionalAuth);
+router.use(requireRole('demo_operator', 'security_admin'));
 
 interface DemoStatusPayload {
   id: string;
