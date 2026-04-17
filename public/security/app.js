@@ -6,7 +6,7 @@
   // ---------------------------------------------------------------------------
 
   const API_BASE = '';
-  const FETCH_TIMEOUT = 30000;
+  const FETCH_TIMEOUT = 120000; // 2 min — content scanning fetches many files
   const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
   const SEVERITY_LABELS = { critical: 'CRITICAL', high: 'HIGH', medium: 'MEDIUM', low: 'LOW', info: 'INFO' };
 
@@ -540,27 +540,100 @@
           renderRecommendations(recData);
           updateSummary(repoData.summary, repoData);
         } else {
-          // GHAS scan for selected GitHub repo
+          // Content-based scan for remote GitHub repos (GHAS + file scanning)
           var parts = currentRepoMode.split('/');
           var owner = parts[0];
           var repo = parts[1];
-          showLoading('Scanning ' + currentRepoMode + '…');
+          showLoading('Scanning ' + currentRepoMode + ' (fetching files)…');
 
-          const alertsData = await fetchJSON('/api/multi/repos/' + owner + '/' + repo + '/alerts');
-          var grouped = alertsData.data || alertsData;
-          ghasAlerts = [].concat(
-            (grouped.critical || []).map(function (a) { a._repo = currentRepoMode; return a; }),
-            (grouped.high || []).map(function (a) { a._repo = currentRepoMode; return a; }),
-            (grouped.medium || []).map(function (a) { a._repo = currentRepoMode; return a; }),
-            (grouped.low || []).map(function (a) { a._repo = currentRepoMode; return a; })
-          );
+          // Run content-based scan AND GHAS scan in parallel
+          const [contentData, alertsData] = await Promise.all([
+            fetchJSON('/api/multi/repos/' + owner + '/' + repo + '/content-scan'),
+            fetchJSON('/api/multi/repos/' + owner + '/' + repo + '/alerts').catch(function () { return { data: {} }; }),
+          ]);
+
+          var content = contentData.data || contentData;
+          var alerts = alertsData.data || alertsData;
+
+          // Render file tree from content scan
+          if (content.tree) {
+            renderFileTree(content.tree);
+          }
+
+          // Merge GHAS alerts + content findings into a unified list
+          var ghasAlertsList = [];
+          if (alerts.bySeverity) {
+            var grouped = alerts.bySeverity || alerts;
+            ghasAlertsList = [].concat(
+              (grouped.critical || []),
+              (grouped.high || []),
+              (grouped.medium || []),
+              (grouped.low || [])
+            );
+          }
+
+          // Content scan findings are already SecurityFinding objects
+          var contentFindings = (content.findings || []).map(function (f) {
+            f._repo = currentRepoMode;
+            f._source = f.type === 'secret-pattern' ? 'content-scan' : 'content-scan';
+            return f;
+          });
+
+          // Tag GHAS alerts with source
+          ghasAlertsList.forEach(function (a) {
+            a._repo = currentRepoMode;
+            a._source = 'ghas';
+          });
+
+          // Combine and deduplicate (prefer GHAS findings if same file+line)
+          var seen = new Set();
+          var mergedFindings = [];
+          ghasAlertsList.forEach(function (a) {
+            var key = (a.file || '') + ':' + (a.line || 0);
+            seen.add(key);
+            mergedFindings.push(a);
+          });
+          contentFindings.forEach(function (f) {
+            var key = (f.file || '') + ':' + (f.line || 0);
+            if (!seen.has(key)) {
+              mergedFindings.push(f);
+            }
+          });
+
+          ghasAlerts = mergedFindings;
           renderGHASFindings(ghasAlerts);
-          updateGHASSummary(ghasAlerts, 1);
 
-          // Clear tree and deps panels for GHAS mode
-          if (fileTreeContainer) fileTreeContainer.innerHTML = '<p class="placeholder">File tree not available for remote repos</p>';
-          if (depTreeView) depTreeView.innerHTML = '<p class="placeholder">Use local scan for dependency tree</p>';
-          if (recommendationsView) recommendationsView.innerHTML = '<p class="placeholder">Use local scan for recommendations</p>';
+          // Update summary with content scan stats
+          var summary = content.summary || {};
+          if (summaryBar) summaryBar.classList.remove('hidden');
+          setStat('stat-critical', summary.bySeverity ? summary.bySeverity.critical : 0);
+          setStat('stat-high', summary.bySeverity ? summary.bySeverity.high : 0);
+          setStat('stat-medium', summary.bySeverity ? summary.bySeverity.medium : 0);
+          setStat('stat-low', summary.bySeverity ? summary.bySeverity.low : 0);
+          setStat('stat-total', (summary.scannedFiles || 0) + '/' + (summary.totalFiles || 0) + ' files');
+          setStat('stat-duration', (summary.scanDurationMs || 0) + ' ms Scan Time');
+
+          // Render dependencies from content scan
+          if (content.dependencies && content.dependencies.length > 0) {
+            renderRemoteDeps(content.dependencies);
+          } else {
+            if (depTreeView) depTreeView.innerHTML = '<p class="placeholder">No package.json found in repo</p>';
+          }
+
+          if (recommendationsView) {
+            var recHtml = '<div class="rec-list">';
+            if (mergedFindings.length > 0) {
+              var critCount = mergedFindings.filter(function (f) { return f.severity === 'critical'; }).length;
+              var highCount = mergedFindings.filter(function (f) { return f.severity === 'high'; }).length;
+              if (critCount > 0) recHtml += '<div class="rec-item severity-critical"><strong>🚨 ' + critCount + ' critical findings</strong> — address immediately</div>';
+              if (highCount > 0) recHtml += '<div class="rec-item severity-high"><strong>⚠️ ' + highCount + ' high findings</strong> — fix before next release</div>';
+              recHtml += '<div class="rec-item"><strong>💡 Tip:</strong> Click "Fix" on any finding to see remediation guidance</div>';
+            } else {
+              recHtml += '<div class="rec-item">✅ No security findings detected in scanned files</div>';
+            }
+            recHtml += '</div>';
+            recommendationsView.innerHTML = recHtml;
+          }
         }
 
         if (scanStatus) scanStatus.textContent = 'Scan complete';
@@ -784,6 +857,34 @@
   // ---------------------------------------------------------------------------
   // 5. Dependency Tree Rendering
   // ---------------------------------------------------------------------------
+
+  function renderRemoteDeps(deps) {
+    if (!depTreeView) return;
+    if (!deps || deps.length === 0) {
+      depTreeView.innerHTML = '<p class="empty-state">No dependencies found</p>';
+      return;
+    }
+    depTreeView.innerHTML = '';
+    var header = document.createElement('div');
+    header.className = 'dep-tree-header';
+    var directCount = deps.filter(function (d) { return d.type === 'direct'; }).length;
+    var devCount = deps.filter(function (d) { return d.type === 'dev'; }).length;
+    header.innerHTML =
+      '<span class="dep-stat">Direct: <strong>' + directCount + '</strong></span>' +
+      '<span class="dep-stat">Dev: <strong>' + devCount + '</strong></span>' +
+      '<span class="dep-stat">Total: <strong>' + deps.length + '</strong></span>';
+    depTreeView.appendChild(header);
+
+    deps.forEach(function (dep) {
+      var el = document.createElement('div');
+      el.className = 'dep-node' + (dep.type === 'direct' ? ' direct' : '');
+      var nameSpan = '<span class="dep-name">' + escapeHTML(dep.name) + '</span>';
+      var verSpan = '<span class="dep-version">@' + escapeHTML(dep.version) + '</span>';
+      var typeTag = dep.type === 'dev' ? '<span class="dep-license license-warning">dev</span>' : '<span class="dep-license license-allowed">prod</span>';
+      el.innerHTML = '<div class="dep-node-header">' + nameSpan + verSpan + typeTag + '</div>';
+      depTreeView.appendChild(el);
+    });
+  }
 
   function renderDepTree(data) {
     if (!depTreeView) return;

@@ -3,6 +3,7 @@ import {
   listUserRepos,
   scanRepo,
   scanAllRepos,
+  scanRepoContents,
   SecurityFinding,
 } from "../services/multi-repo-scanner";
 import {
@@ -172,6 +173,21 @@ router.get(
       }
       const status = await getRemediationStatus(fullName, prNumber);
       res.json({ success: true, data: status });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  }
+);
+
+// GET /repos/:owner/:repo/content-scan — Content-based scan (fetches actual files)
+router.get(
+  "/repos/:owner/:repo/content-scan",
+  async (req: Request, res: Response) => {
+    try {
+      const owner = req.params.owner;
+      const repo = req.params.repo;
+      const result = await scanRepoContents(owner, repo);
+      res.json({ success: true, data: result });
     } catch (err: any) {
       res.status(500).json({ success: false, error: err.message });
     }
