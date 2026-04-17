@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GHAS Security Scanner</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <svg class="shield-icon" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7l-9-5z"/>
+        <path d="M9 12l2 2 4-4" stroke="#3fb950"/>
+      </svg>
+      <h1>GHAS Security Scanner</h1>
+    </div>
+    <div class="header-right">
+      <button id="scan-btn" class="btn-scan">🔍 Scan Repository</button>
+      <span id="scan-status" class="scan-status">Ready</span>
+    </div>
+  </header>
+
+  <!-- Summary Bar (hidden until scan completes) -->
+  <div id="summary-bar" class="summary-bar hidden">
+    <div class="stat critical"><span id="stat-critical">0</span> Critical</div>
+    <div class="stat high"><span id="stat-high">0</span> High</div>
+    <div class="stat medium"><span id="stat-medium">0</span> Medium</div>
+    <div class="stat low"><span id="stat-low">0</span> Low</div>
+    <div class="stat total"><span id="stat-total">0</span> Total Files</div>
+    <div class="stat duration"><span id="stat-duration">0</span>ms Scan Time</div>
+  </div>
+
+  <!-- 3-Panel Layout -->
+  <main class="panels">
+    <!-- Left: File Tree -->
+    <section class="panel panel-tree" id="panel-tree">
+      <div class="panel-header">
+        <h2>📁 Repository Files</h2>
+        <input id="tree-search" type="text" placeholder="Filter files..." class="search-input">
+      </div>
+      <div id="file-tree" class="tree-container">
+        <p class="placeholder">Click "Scan Repository" to begin</p>
+      </div>
+    </section>
+
+    <!-- Center: Scan Results -->
+    <section class="panel panel-results" id="panel-results">
+      <div class="panel-header">
+        <h2>🛡️ Security Findings</h2>
+        <div class="filter-pills">
+          <button class="pill active" data-filter="all">All</button>
+          <button class="pill" data-filter="secret">Secrets</button>
+          <button class="pill" data-filter="vulnerable-import">Deps</button>
+          <button class="pill" data-filter="license-issue">License</button>
+        </div>
+      </div>
+      <div id="findings-list" class="findings-container">
+        <p class="placeholder">No scan results yet</p>
+      </div>
+    </section>
+
+    <!-- Right: Dependency Tree + Recommendations -->
+    <section class="panel panel-deps" id="panel-deps">
+      <div class="panel-header">
+        <h2>🌳 Dependencies</h2>
+        <div class="tab-bar">
+          <button class="tab active" data-tab="dep-tree">Tree</button>
+          <button class="tab" data-tab="recommendations">Fixes</button>
+        </div>
+      </div>
+      <div id="dep-tree-view" class="dep-container">
+        <p class="placeholder">Dependencies will appear after scan</p>
+      </div>
+      <div id="recommendations-view" class="dep-container hidden">
+        <p class="placeholder">Recommendations will appear after scan</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay" class="loading-overlay hidden">
+    <div class="spinner"></div>
+    <p id="loading-text">Scanning repository...</p>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

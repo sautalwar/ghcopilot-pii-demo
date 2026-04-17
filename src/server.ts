@@ -11,6 +11,7 @@ import vulnTrendsRoutes from "./api/vuln-trends-routes";
 import governanceRoutes from "./api/governance-routes";
 import jiraRoutes from "./api/jira-routes";
 import pipelineRoutes from "./api/pipeline-routes";
+import scanRoutes from "./api/scan-routes";
 import { piiDemoRouter } from "./pii-demo/pii-routes";
 
 dotenv.config();
@@ -38,6 +39,7 @@ app.use("/api/trends", vulnTrendsRoutes);
 app.use("/api/governance", governanceRoutes);
 app.use("/api/jira", jiraRoutes);
 app.use("/api/pipeline", pipelineRoutes);
+app.use("/api/scan", scanRoutes);
 
 app.use((error: unknown, _request: Request, response: Response, _next: NextFunction) => {
   const message = error instanceof Error ? error.message : "Unexpected server error";
